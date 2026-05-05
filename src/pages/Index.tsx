@@ -154,7 +154,7 @@ const Index = () => {
                     size="lg"
                     className="rounded-xl border border-white/20 bg-white/5 px-6 py-6 text-base font-semibold text-white backdrop-blur-md hover:bg-white/15 hover:text-white"
                   >
-                    Boka demo
+                    Så fungerar det
                   </Button>
                 </div>
 
