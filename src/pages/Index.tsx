@@ -174,55 +174,6 @@ const Index = () => {
               </div>
             </div>
 
-            {/* HOW IT WORKS */}
-            <div
-              id="how"
-              className="relative mt-6 overflow-hidden rounded-3xl p-8 md:p-10"
-              style={{ background: "var(--gradient-section)", boxShadow: "var(--shadow-soft)" }}
-            >
-              <div className="grid grid-cols-12 gap-6">
-                <div className="col-span-12 md:col-span-5">
-                  <a
-                    href="#"
-                    className="group inline-flex items-center gap-2 rounded-full bg-white/60 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary backdrop-blur-md"
-                  >
-                    Så fungerar det
-                    <ArrowRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
-                  </a>
-                  <h2 className="mt-4 text-3xl font-bold leading-[1.1] md:text-[2.5rem]">
-                    Tre steg från rådata till beslut.
-                  </h2>
-                  <p className="mt-3 text-[15px] font-medium leading-relaxed text-foreground/70">
-                    Lumen är byggt som ett verktyg — inte en tjänst. Du styr
-                    flödet, filtrerar datan och exporterar resultatet.
-                  </p>
-                </div>
-
-                <div className="col-span-12 grid gap-3 md:col-span-7 md:grid-cols-3">
-                  {[
-                    { n: "01", t: "Indexera", d: "Importera eller koppla din leverantörsdata via API." },
-                    { n: "02", t: "Analysera", d: "Filtrera, jämför och identifiera avvikelser snabbt." },
-                    { n: "03", t: "Agera", d: "Exportera rapporter eller pusha resultat till era system." },
-                  ].map((s) => (
-                    <div
-                      key={s.n}
-                      className="glass rounded-xl p-5 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-deep)]"
-                    >
-                      <div
-                        className="inline-block rounded-md px-2 py-0.5 text-[11px] font-bold text-white"
-                        style={{ background: "var(--gradient-cta)" }}
-                      >
-                        {s.n}
-                      </div>
-                      <div className="mt-3 text-[15px] font-bold">{s.t}</div>
-                      <div className="mt-1 text-[13px] font-medium leading-relaxed text-foreground/65">
-                        {s.d}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </section>
         </div>
       </main>
