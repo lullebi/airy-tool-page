@@ -164,6 +164,17 @@ const Index = () => {
 
           </section>
         </div>
+
+        <section id="how-it-works" className="mt-20 md:mt-28">
+          <div className="mb-8 max-w-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/60">
+              Process
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+              Så fungerar det
+            </h2>
+          </div>
+        </section>
       </main>
 
       <footer className="relative z-10 border-t border-white/40 py-6">
