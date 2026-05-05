@@ -166,7 +166,7 @@ const Index = () => {
         </div>
 
         <section id="how-it-works" className="mt-20 md:mt-28">
-          <div className="mb-8 max-w-2xl">
+          <div className="mx-auto max-w-2xl text-center">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/60">
               Process
             </p>
