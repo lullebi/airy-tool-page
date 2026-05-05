@@ -150,11 +150,12 @@ const Index = () => {
                     <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
                   </Button>
                   <Button
+                    asChild
                     variant="ghost"
                     size="lg"
                     className="rounded-xl border border-white/20 bg-white/5 px-6 py-6 text-base font-semibold text-white backdrop-blur-md hover:bg-white/15 hover:text-white"
                   >
-                    Så fungerar det
+                    <a href="#how-it-works">Så fungerar det</a>
                   </Button>
                 </div>
 
