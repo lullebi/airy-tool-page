@@ -111,9 +111,9 @@ const Index = () => {
           </aside>
 
           {/* HERO RIGHT */}
-          <section className="col-span-12 lg:col-span-9">
+          <section className="col-span-12 lg:col-span-9 flex">
             <div
-              className="relative overflow-hidden rounded-3xl p-8 md:p-14 lg:p-16 text-white"
+              className="relative flex w-full flex-col justify-center overflow-hidden rounded-3xl p-8 md:p-14 lg:p-16 text-white"
               style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-deep)" }}
             >
               {/* grid + glows */}
@@ -166,7 +166,7 @@ const Index = () => {
         </div>
 
         <section id="how-it-works" className="mt-20 md:mt-28">
-          <div className="mb-8 max-w-2xl">
+          <div className="mx-auto max-w-2xl text-center">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/60">
               Process
             </p>
