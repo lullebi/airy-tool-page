@@ -47,7 +47,7 @@ const Index = () => {
           </a>
           <div className="flex items-center gap-1 md:gap-2">
             <a
-              href="#how"
+              href="#how-it-works"
               className="rounded-xl px-4 py-2 text-sm font-semibold text-foreground/80 transition hover:bg-white/50 hover:text-foreground"
             >
               Så fungerar det
@@ -150,11 +150,12 @@ const Index = () => {
                     <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
                   </Button>
                   <Button
+                    asChild
                     variant="ghost"
                     size="lg"
                     className="rounded-xl border border-white/20 bg-white/5 px-6 py-6 text-base font-semibold text-white backdrop-blur-md hover:bg-white/15 hover:text-white"
                   >
-                    Så fungerar det
+                    <a href="#how-it-works">Så fungerar det</a>
                   </Button>
                 </div>
 
@@ -163,6 +164,17 @@ const Index = () => {
 
           </section>
         </div>
+
+        <section id="how-it-works" className="mt-20 md:mt-28">
+          <div className="mb-8 max-w-2xl">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/60">
+              Process
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+              Så fungerar det
+            </h2>
+          </div>
+        </section>
       </main>
 
       <footer className="relative z-10 border-t border-white/40 py-6">
