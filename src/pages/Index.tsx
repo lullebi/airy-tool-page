@@ -47,7 +47,7 @@ const Index = () => {
           </a>
           <div className="flex items-center gap-1 md:gap-2">
             <a
-              href="#how"
+              href="#how-it-works"
               className="rounded-xl px-4 py-2 text-sm font-semibold text-foreground/80 transition hover:bg-white/50 hover:text-foreground"
             >
               Så fungerar det
