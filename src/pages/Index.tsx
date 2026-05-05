@@ -143,11 +143,14 @@ const Index = () => {
 
                 <div className="mt-9 flex flex-wrap items-center gap-3">
                   <Button
+                    asChild
                     size="lg"
                     className="group rounded-xl bg-white px-6 py-6 text-base font-bold text-primary shadow-[var(--shadow-glow)] hover:bg-sky-50"
                   >
-                    Registrera leverantörer
-                    <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
+                    <a href="/registrera-leverantorer">
+                      Registrera leverantörer
+                      <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
+                    </a>
                   </Button>
                   <Button
                     asChild
