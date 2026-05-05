@@ -158,19 +158,6 @@ const Index = () => {
                   </Button>
                 </div>
 
-                {/* metric strip */}
-                <div className="mt-12 grid grid-cols-3 gap-4 border-t border-white/15 pt-7">
-                  {[
-                    { k: "12 400+", v: "leverantörer indexerade" },
-                    { k: "98.4%", v: "datatäckning Norden" },
-                    { k: "3.2 min", v: "snitt analysstid" },
-                  ].map((m) => (
-                    <div key={m.k}>
-                      <div className="text-2xl font-bold tracking-tight md:text-3xl">{m.k}</div>
-                      <div className="mt-1 text-xs font-medium text-white/60 md:text-sm">{m.v}</div>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
 
