@@ -939,15 +939,99 @@ const Step5Measurement = ({
   const nischade = hasDeep ? vendors.filter((v) => !isEU(v)) : laneB;
   const kanda = hasDeep ? vendors.filter(isEU) : laneA.length ? laneA : vendors;
 
-  const handleExport = () => {
+  const handleExport = async () => {
     toast("Genererar högupplöst rapport...", {
       description: "Eurostack-analys förbereds för nedladdning.",
     });
-    setTimeout(() => {
-      toast.success("Rapport klar", {
-        description: "Din PDF-rapport har genererats.",
+    try {
+      const { default: jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 48;
+      let y = margin;
+
+      const { total } = computeVendorScore(step1, quick, deep, hasDeep);
+      const euCount = vendors.filter(isEU).length;
+      const nonEuCount = vendors.length - euCount;
+      const euPct = vendors.length ? Math.round((euCount / vendors.length) * 100) : 0;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      doc.text("Eurostack — Fullständig analys", margin, y);
+      y += 26;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(110);
+      doc.text(
+        `Genererad ${new Date().toLocaleDateString("sv-SE")} • ${vendors.length} leverantörer`,
+        margin,
+        y,
+      );
+      y += 24;
+
+      doc.setTextColor(20);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.text("Sammanfattning", margin, y);
+      y += 18;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.text(`Total Eurostack-score: ${total}/100`, margin, y); y += 16;
+      doc.text(`EU-leverantörer: ${euCount} (${euPct}%)`, margin, y); y += 16;
+      doc.text(`Icke-EU-leverantörer: ${nonEuCount} (${100 - euPct}%)`, margin, y); y += 16;
+      doc.text(`Sektor: ${step1.sector || "–"}`, margin, y); y += 16;
+      doc.text(`Prioriteringar: ${step1.priorities.join(", ") || "–"}`, margin, y); y += 24;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.text("Leverantörer", margin, y);
+      y += 16;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+
+      vendors.forEach((v, i) => {
+        if (y > pageH - margin - 60) {
+          doc.addPage();
+          y = margin;
+        }
+        const eu = isEU(v);
+        const status = statusFromScore(total);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${i + 1}. ${v.name}`, margin, y);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(110);
+        doc.text(
+          `${v.type ?? "–"} • ${v.country ?? "–"} • ${eu ? "EU" : "Icke-EU"} • Status: ${status.label}`,
+          margin,
+          y + 14,
+        );
+        if (!eu) {
+          const alt = EU_ALTERNATIVES[v.name] ?? defaultAlternative;
+          doc.setTextColor(20);
+          doc.text(`EU-alternativ: ${alt.name} (${alt.country})`, margin, y + 28);
+          y += 44;
+        } else {
+          y += 30;
+        }
+        doc.setTextColor(20);
       });
-    }, 1800);
+
+      doc.setFontSize(9);
+      doc.setTextColor(140);
+      doc.text("© 2026 Lumen Analytics AB — Eurostack Quiz", margin, pageH - 24);
+
+      const filename = `eurostack-rapport-${new Date().toISOString().slice(0, 10)}.pdf`;
+      doc.save(filename);
+
+      toast.success("Rapport klar", {
+        description: "Din PDF-rapport har laddats ned.",
+      });
+    } catch (err) {
+      toast.error("Kunde inte generera rapport", {
+        description: err instanceof Error ? err.message : "Okänt fel",
+      });
+    }
   };
 
   const renderCard = (v: VendorLike) => {
