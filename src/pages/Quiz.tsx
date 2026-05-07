@@ -241,10 +241,37 @@ const Quiz = () => {
     readiness: "Medel",
   });
   const [quickAnswers, setQuickAnswers] = useState<Answers>({});
-  const [deepAnswers, setDeepAnswers] = useState<Answers>({});
+  // Per-vendor deep dive answers, keyed by vendor id.
+  const [deepAnswersByVendor, setDeepAnswersByVendor] = useState<Record<string, Answers>>({});
   // Deep Dive aktiveras för leverantörer där dataset saknar info.
   // Här simulerat — användaren kan toggla.
   const [deepDiveEnabled, setDeepDiveEnabled] = useState(true);
+  // Index för vilken leverantör i Deep Dive-loopen som granskas just nu.
+  const [deepVendorIndex, setDeepVendorIndex] = useState(0);
+
+  // Vendors that get a deep dive (when enabled, all of them — kan filtreras vid datasetkoppling)
+  const deepVendors = deepDiveEnabled ? vendors : [];
+  const currentDeepVendor = deepVendors[deepVendorIndex];
+
+  // Skip Security Level cert-related deep dive questions if Quick Scan said "Ja" on certifications.
+  const skipCerts = quickAnswers["qs_certifications"] === "Ja";
+  const SKIPPED_DEEP_IDS = new Set(skipCerts ? ["dd_sec_audit", "dd_sec_pen"] : []);
+  const activeDeepQuestions = useMemo(
+    () => DEEP_DIVE.filter((q) => !SKIPPED_DEEP_IDS.has(q.id)),
+    [skipCerts],
+  );
+
+  const currentDeepAnswers = currentDeepVendor
+    ? deepAnswersByVendor[currentDeepVendor.id] ?? {}
+    : {};
+  const setCurrentDeepAnswers: React.Dispatch<React.SetStateAction<Answers>> = (updater) => {
+    if (!currentDeepVendor) return;
+    setDeepAnswersByVendor((prev) => {
+      const existing = prev[currentDeepVendor.id] ?? {};
+      const next = typeof updater === "function" ? (updater as (a: Answers) => Answers)(existing) : updater;
+      return { ...prev, [currentDeepVendor.id]: next };
+    });
+  };
 
   const progress = ((stepIndex + 1) / STEPS.length) * 100;
 
@@ -252,10 +279,12 @@ const Quiz = () => {
     if (stepIndex === 0)
       return step1.priorities.length > 0 && step1.sector !== "" && step1.readiness !== "";
     if (stepIndex === 1) return QUICK_SCAN.every((q) => quickAnswers[q.id]);
-    if (stepIndex === 2)
-      return !deepDiveEnabled || DEEP_DIVE.every((q) => deepAnswers[q.id]);
+    if (stepIndex === 2) {
+      if (!deepDiveEnabled || deepVendors.length === 0) return true;
+      return activeDeepQuestions.every((q) => currentDeepAnswers[q.id]);
+    }
     return true;
-  }, [stepIndex, step1, quickAnswers, deepAnswers, deepDiveEnabled]);
+  }, [stepIndex, step1, quickAnswers, currentDeepAnswers, deepDiveEnabled, deepVendors.length, activeDeepQuestions]);
 
   const goNext = () =>
     setStepIndex((i) => Math.min(STEPS.length - 1, i + 1));
