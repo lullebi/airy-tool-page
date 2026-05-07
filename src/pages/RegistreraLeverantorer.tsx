@@ -287,12 +287,15 @@ const RegistreraLeverantorer = () => {
         <div className="mt-10 flex justify-end">
           <Button
             size="lg"
+            asChild
             disabled={!hasAnyVendor}
             className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
             style={{ background: "var(--gradient-cta)" }}
           >
-            Starta quiz
-            <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
+            <Link to="/quiz" state={{ vendors }}>
+              Starta quiz
+              <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
+            </Link>
           </Button>
         </div>
       </main>
