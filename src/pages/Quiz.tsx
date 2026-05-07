@@ -661,26 +661,44 @@ const StepQuestions = ({
 const Step3DeepDive = ({
   enabled,
   setEnabled,
+  vendor,
+  vendorIndex,
+  vendorTotal,
   answers,
   setAnswers,
+  activeQuestions,
+  skippedCertNotice,
+  onPrevVendor,
+  canPrevVendor,
 }: {
   enabled: boolean;
   setEnabled: (b: boolean) => void;
+  vendor?: VendorLike;
+  vendorIndex: number;
+  vendorTotal: number;
   answers: Answers;
   setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
+  activeQuestions: Question[];
+  skippedCertNotice: boolean;
+  onPrevVendor: () => void;
+  canPrevVendor: boolean;
 }) => {
   const categories = useMemo(() => {
     const map = new Map<string, Question[]>();
-    DEEP_DIVE.forEach((q) => {
+    activeQuestions.forEach((q) => {
       map.set(q.kategori, [...(map.get(q.kategori) ?? []), q]);
     });
     return Array.from(map.entries());
-  }, []);
+  }, [activeQuestions]);
 
   return (
     <Card
       title="Deep Dive"
-      subtitle="Aktiveras för leverantörer där datasetet saknar information. Detaljerad granskning per kategori."
+      subtitle={
+        enabled && vendor
+          ? `Nu granskar vi säkerhet och jurisdiktion för ${vendor.name}`
+          : "Aktiveras för leverantörer där datasetet saknar information. Detaljerad granskning per leverantör."
+      }
     >
       <label className="mb-6 flex items-center gap-3 rounded-xl bg-white/60 p-3 ring-1 ring-white/70">
         <Checkbox
@@ -696,52 +714,84 @@ const Step3DeepDive = ({
         <p className="rounded-xl bg-white/60 p-5 text-sm text-foreground/70 ring-1 ring-white/70">
           Deep Dive är inaktiverad. Quick Scan-resultatet används direkt i analysen.
         </p>
-      ) : (
-        <div className="grid gap-8">
-          {categories.map(([cat, qs]) => (
-            <div key={cat}>
-              <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-foreground/70">
-                {cat}
-              </h3>
-              <div className="grid gap-4">
-                {qs.map((q, i) => (
-                  <div
-                    key={q.id}
-                    className="rounded-2xl bg-white/60 p-5 ring-1 ring-white/70"
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
-                      Fråga {i + 1}
-                    </p>
-                    <p className="mt-1 text-base font-semibold text-foreground">
-                      {q.text}
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {q.svarsalternativ.map((opt) => {
-                        const active = answers[q.id] === opt.label;
-                        return (
-                          <button
-                            key={opt.label}
-                            type="button"
-                            onClick={() =>
-                              setAnswers((a) => ({ ...a, [q.id]: opt.label }))
-                            }
-                            className={`rounded-xl px-4 py-2 text-sm font-semibold transition ring-1 ${
-                              active
-                                ? "bg-foreground text-background ring-foreground"
-                                : "bg-white text-foreground/80 ring-white/80 hover:bg-white/90"
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
+      ) : vendor ? (
+        <>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/70 p-4 ring-1 ring-white/70">
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-foreground px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-background">
+                {vendor.name}
+              </span>
+              <span className="text-xs font-medium text-foreground/60">
+                Leverantör {vendorIndex + 1} av {vendorTotal} · {vendor.type ?? "—"} · {vendor.country ?? "—"}
+              </span>
             </div>
-          ))}
-        </div>
+            {canPrevVendor && (
+              <button
+                type="button"
+                onClick={onPrevVendor}
+                className="inline-flex items-center gap-1 rounded-lg bg-white/80 px-3 py-1.5 text-xs font-semibold text-foreground/80 ring-1 ring-white/70 transition hover:bg-white"
+              >
+                <ArrowLeft className="h-3 w-3" /> Föregående leverantör
+              </button>
+            )}
+          </div>
+
+          {skippedCertNotice && (
+            <p className="mb-4 rounded-xl bg-emerald-50/80 px-4 py-2 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200">
+              Certifieringsfrågor hoppas över eftersom Quick Scan bekräftade befintliga certifieringar.
+            </p>
+          )}
+
+          <div className="grid gap-8">
+            {categories.map(([cat, qs]) => (
+              <div key={cat}>
+                <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-foreground/70">
+                  {cat}
+                </h3>
+                <div className="grid gap-4">
+                  {qs.map((q, i) => (
+                    <div
+                      key={q.id}
+                      className="rounded-2xl bg-white/60 p-5 ring-1 ring-white/70"
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
+                        Fråga {i + 1}
+                      </p>
+                      <p className="mt-1 text-base font-semibold text-foreground">
+                        {q.text}
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {q.svarsalternativ.map((opt) => {
+                          const active = answers[q.id] === opt.label;
+                          return (
+                            <button
+                              key={opt.label}
+                              type="button"
+                              onClick={() =>
+                                setAnswers((a) => ({ ...a, [q.id]: opt.label }))
+                              }
+                              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ring-1 ${
+                                active
+                                  ? "bg-foreground text-background ring-foreground"
+                                  : "bg-white text-foreground/80 ring-white/80 hover:bg-white/90"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p className="rounded-xl bg-white/60 p-5 text-sm text-foreground/70 ring-1 ring-white/70">
+          Inga leverantörer att granska.
+        </p>
       )}
     </Card>
   );
