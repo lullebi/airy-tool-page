@@ -814,4 +814,326 @@ const Contribution = ({ label, value }: { label: string; value: number }) => (
   </div>
 );
 
+/* =========================================================================
+   STEP 5 — Measurement / Mätningssida
+   ========================================================================= */
+
+type ScoreBadge = { key: string; label: string; value: number; evidence: string };
+
+const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean): ScoreBadge[] => {
+  const findQ = (id: string) => [...QUICK_SCAN, ...DEEP_DIVE].find((q) => q.id === id);
+  const ans = (id: string) => (id in quick ? quick[id] : deep[id]) ?? "—";
+  const score = (id: string) => {
+    const q = findQ(id);
+    if (!q) return 0;
+    const a = id in quick ? quick : deep;
+    return scoreFor(q, a);
+  };
+
+  const base: ScoreBadge[] = [
+    {
+      key: "data_residency",
+      label: "Data Residency",
+      value: hasDeep ? score("dd_loc_eu") : score("qs_sensitive_data"),
+      evidence: hasDeep
+        ? `Mätt mot: "${findQ("dd_loc_eu")?.text}" → ${ans("dd_loc_eu")}`
+        : `Mätt mot: "${findQ("qs_sensitive_data")?.text}" → ${ans("qs_sensitive_data")}`,
+    },
+    {
+      key: "nis2",
+      label: "NIS2 Readiness",
+      value: hasDeep ? score("dd_inc_plan") : score("qs_business_critical"),
+      evidence: hasDeep
+        ? `Mätt mot: "${findQ("dd_inc_plan")?.text}" → ${ans("dd_inc_plan")}`
+        : `Mätt mot: "${findQ("qs_business_critical")?.text}" → ${ans("qs_business_critical")}`,
+    },
+    {
+      key: "dora",
+      label: "DORA Resilience",
+      value: hasDeep ? score("dd_own_dora") : score("qs_legal_agreements"),
+      evidence: hasDeep
+        ? `Mätt mot: "${findQ("dd_own_dora")?.text}" → ${ans("dd_own_dora")}`
+        : `Mätt mot: "${findQ("qs_legal_agreements")?.text}" → ${ans("qs_legal_agreements")}`,
+    },
+    {
+      key: "gdpr",
+      label: "GDPR Assurance",
+      value: hasDeep ? score("dd_own_gdpr") : score("qs_certifications"),
+      evidence: hasDeep
+        ? `Mätt mot: "${findQ("dd_own_gdpr")?.text}" → ${ans("dd_own_gdpr")}`
+        : `Mätt mot: "${findQ("qs_certifications")?.text}" → ${ans("qs_certifications")}`,
+    },
+  ];
+  return base;
+};
+
+const Step5Measurement = ({
+  vendors,
+  step1,
+  quick,
+  deep,
+  hasDeep,
+}: {
+  vendors: VendorLike[];
+  step1: Step1State;
+  quick: Answers;
+  deep: Answers;
+  hasDeep: boolean;
+}) => {
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const euCount = vendors.filter(isEU).length;
+  const nonEuCount = vendors.length - euCount;
+  const total = vendors.length || 1;
+  const euPct = Math.round((euCount / total) * 100);
+  const nonEuPct = 100 - euPct;
+
+  // Donut math
+  const r = 54;
+  const c = 2 * Math.PI * r;
+  const euDash = (euPct / 100) * c;
+
+  const complianceText =
+    euPct >= 70
+      ? "Hög EU-andel – stark suveränitetsstatus."
+      : euPct >= 40
+        ? "Blandad portfölj – delvis EU-suverän."
+        : "Hög exponering mot icke-EU – ersättning rekommenderas.";
+
+  // Lane B = vendors that received a deep-dive analysis
+  const laneB = hasDeep ? vendors : [];
+  const laneA = hasDeep ? [] : vendors;
+  // Simple split: if hasDeep, treat non-EU as deep-dive (nischade), EU as general
+  const nischade = hasDeep ? vendors.filter((v) => !isEU(v)) : laneB;
+  const kanda = hasDeep ? vendors.filter(isEU) : laneA.length ? laneA : vendors;
+
+  const handleExport = () => {
+    toast("Genererar högupplöst rapport...", {
+      description: "Eurostack-analys förbereds för nedladdning.",
+    });
+    setTimeout(() => {
+      toast.success("Rapport klar", {
+        description: "Din PDF-rapport har genererats.",
+      });
+    }, 1800);
+  };
+
+  const renderCard = (v: VendorLike) => {
+    const eu = isEU(v);
+    const { total: tot } = computeVendorScore(step1, quick, deep, hasDeep);
+    const status = statusFromScore(tot);
+    const badges = buildBadges(quick, deep, hasDeep);
+    const isOpen = openId === v.id;
+    const alt = EU_ALTERNATIVES[v.name] ?? defaultAlternative;
+
+    return (
+      <div
+        key={v.id}
+        className={`min-w-[280px] flex-shrink-0 rounded-2xl bg-white/75 p-4 ring-1 transition ${
+          eu ? "ring-emerald-200" : "ring-rose-200"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => !eu && setOpenId(isOpen ? null : v.id)}
+          className="w-full text-left"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-sm font-bold text-foreground">{v.name}</p>
+              <p className="text-[11px] font-medium text-foreground/60">
+                {v.type ?? "—"} · {v.country ?? "—"}
+              </p>
+            </div>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                eu
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-rose-100 text-rose-700"
+              }`}
+            >
+              {eu ? "EU" : "Non-EU"}
+            </span>
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-1.5">
+            {badges.map((b) => (
+              <div
+                key={b.key}
+                title={b.evidence}
+                className="rounded-lg bg-white/80 px-2 py-1.5 ring-1 ring-white/70"
+              >
+                <p className="text-[9px] font-bold uppercase tracking-wider text-foreground/55">
+                  {b.label}
+                </p>
+                <p className="mt-0.5 text-xs font-bold text-foreground">{b.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 flex items-center justify-between">
+            <span
+              className={`text-[11px] font-semibold ${
+                status.tone === "ok"
+                  ? "text-emerald-600"
+                  : status.tone === "warn"
+                    ? "text-amber-600"
+                    : "text-rose-600"
+              }`}
+            >
+              {status.label}
+            </span>
+            {!eu && (
+              <ChevronDown
+                className={`h-4 w-4 text-foreground/60 transition ${isOpen ? "rotate-180" : ""}`}
+              />
+            )}
+          </div>
+        </button>
+
+        {!eu && isOpen && (
+          <div className="mt-4 rounded-xl bg-rose-50/70 p-3 ring-1 ring-rose-200/70 animate-in fade-in slide-in-from-top-1 duration-200">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">
+              Riskanalys
+            </p>
+            <ul className="mt-1 space-y-1 text-[11px] font-medium text-foreground/75">
+              {badges
+                .filter((b) => b.value < 70)
+                .map((b) => (
+                  <li key={b.key}>
+                    • <span className="font-semibold">{b.label}:</span> {b.evidence}
+                  </li>
+                ))}
+              <li>• Jurisdiktion utanför EU – ev. CLOUD Act-exponering.</li>
+            </ul>
+
+            <div className="mt-3 rounded-lg bg-white/80 p-3 ring-1 ring-white/70">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-foreground/55">
+                Matchande EU-alternativ
+              </p>
+              <p className="mt-0.5 text-sm font-bold text-foreground">{alt.name}</p>
+              <p className="text-[11px] font-medium text-foreground/65">{alt.country}</p>
+              <p className="mt-1 text-[11px] text-foreground/70">{alt.reason}</p>
+              <Button
+                onClick={() =>
+                  toast.success(`${v.name} markerad för ersättning`, {
+                    description: `Simulerad swap till ${alt.name}.`,
+                  })
+                }
+                className="mt-3 h-8 w-full rounded-lg text-[11px] font-bold text-white"
+                style={{ background: "var(--gradient-cta)" }}
+              >
+                <Repeat className="mr-1 h-3 w-3" />
+                Ersätt med detta alternativ
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <Card
+      title="Mätning"
+      subtitle="Översikt av era leverantörer mätt mot Eurostack-standard."
+    >
+      {/* HEADER: Donut + summary */}
+      <div className="mb-8 flex flex-col items-center gap-6 rounded-2xl bg-white/60 p-5 ring-1 ring-white/70 md:flex-row md:items-center md:gap-8">
+        <div className="relative h-36 w-36 flex-shrink-0">
+          <svg viewBox="0 0 140 140" className="h-full w-full -rotate-90">
+            <circle cx="70" cy="70" r={r} fill="none" stroke="hsl(0 80% 60%)" strokeWidth="16" />
+            <circle
+              cx="70"
+              cy="70"
+              r={r}
+              fill="none"
+              stroke="hsl(150 65% 45%)"
+              strokeWidth="16"
+              strokeDasharray={`${euDash} ${c}`}
+              strokeLinecap="butt"
+            />
+          </svg>
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-2xl font-bold text-foreground">{euPct}%</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/60">
+              EU
+            </span>
+          </div>
+        </div>
+
+        <div className="flex-1">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/55">
+            Compliance Status
+          </p>
+          <p className="mt-1 text-lg font-bold text-foreground">{complianceText}</p>
+          <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium text-foreground/70">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+              EU: {euCount} ({euPct}%)
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
+              Non-EU: {nonEuCount} ({nonEuPct}%)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* SWIMLANE A */}
+      <div className="mb-6">
+        <div className="mb-2 flex items-baseline justify-between">
+          <h3 className="text-sm font-bold text-foreground">
+            Kända leverantörer <span className="text-foreground/50">· General</span>
+          </h3>
+          <span className="text-[11px] font-medium text-foreground/55">
+            Quick Scan tillämpad
+          </span>
+        </div>
+        <div className="flex gap-3 overflow-x-auto pb-3">
+          {kanda.length > 0 ? (
+            kanda.map(renderCard)
+          ) : (
+            <p className="text-xs text-foreground/55">Inga leverantörer i denna lane.</p>
+          )}
+        </div>
+      </div>
+
+      {/* SWIMLANE B */}
+      <div className="mb-6">
+        <div className="mb-2 flex items-baseline justify-between">
+          <h3 className="text-sm font-bold text-foreground">
+            Nischade leverantörer <span className="text-foreground/50">· Deep-Dive</span>
+          </h3>
+          <span className="text-[11px] font-medium text-foreground/55">
+            Detaljerad teknisk analys
+          </span>
+        </div>
+        <div className="flex gap-3 overflow-x-auto pb-3">
+          {nischade.length > 0 ? (
+            nischade.map(renderCard)
+          ) : (
+            <p className="text-xs text-foreground/55">
+              Inga leverantörer har genomgått deep-dive ännu.
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Sticky Export */}
+      <div className="sticky bottom-4 mt-4 flex justify-center">
+        <Button
+          onClick={handleExport}
+          size="lg"
+          className="group w-full max-w-md rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
+          style={{ background: "var(--gradient-cta)" }}
+        >
+          <Download className="mr-2 h-5 w-5" />
+          Exportera rapport
+        </Button>
+      </div>
+    </Card>
+  );
+};
+
 export default Quiz;
