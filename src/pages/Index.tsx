@@ -1,5 +1,6 @@
 import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const newsItems = [
   {
@@ -56,10 +57,11 @@ const Index = () => {
               Så fungerar det
             </a>
             <Button
+              asChild
               className="rounded-xl px-5 font-semibold text-white shadow-[var(--shadow-soft)] hover:opacity-95"
               style={{ background: "var(--gradient-cta)" }}
             >
-              Registrera
+              <Link to="/registrera-leverantorer">Registrera</Link>
             </Button>
           </div>
         </nav>
