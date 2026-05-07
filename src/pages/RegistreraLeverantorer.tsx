@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -11,80 +12,90 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 type Vendor = {
   id: string;
   name: string;
-  service: string;
-  region: string;
-  dataLocation: string;
+  type: string;
+  country: string;
+  system: string;
+  mustKeep: boolean;
 };
 
-const REGIONS = ["Sverige", "Norden", "EU", "Storbritannien", "USA", "Övrigt"];
-const DATA_LOCATIONS = ["EU", "USA", "Other"];
+const VENDOR_TYPES = ["SaaS", "Infrastruktur", "Plattform", "Kommunikation", "Annat"];
+
+const QUICK_PICKS: { name: string; type: string; country: string }[] = [
+  { name: "Microsoft", type: "SaaS", country: "USA" },
+  { name: "Google", type: "SaaS", country: "USA" },
+  { name: "AWS", type: "Infrastruktur", country: "USA" },
+  { name: "Azure", type: "Infrastruktur", country: "USA" },
+  { name: "ChatGPT", type: "SaaS", country: "USA" },
+  { name: "Slack", type: "Kommunikation", country: "USA" },
+  { name: "Dropbox", type: "SaaS", country: "USA" },
+  { name: "Zoom", type: "Kommunikation", country: "USA" },
+  { name: "Salesforce", type: "SaaS", country: "USA" },
+  { name: "Notion", type: "SaaS", country: "USA" },
+  { name: "Nextcloud", type: "SaaS", country: "Tyskland" },
+  { name: "OVHcloud", type: "Infrastruktur", country: "Frankrike" },
+];
+
+const emptyVendor = (): Vendor => ({
+  id: crypto.randomUUID(),
+  name: "",
+  type: "",
+  country: "",
+  system: "",
+  mustKeep: false,
+});
 
 const RegistreraLeverantorer = () => {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [name, setName] = useState("");
-  const [service, setService] = useState("");
-  const [region, setRegion] = useState("");
-  const [dataLocation, setDataLocation] = useState("");
+  const [vendors, setVendors] = useState<Vendor[]>([emptyVendor()]);
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState<Vendor | null>(null);
-
-  const canAdd = name.trim() && service.trim() && region && dataLocation;
-
-  const addVendor = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canAdd) return;
-    setVendors((v) => [
-      ...v,
-      {
-        id: crypto.randomUUID(),
-        name: name.trim(),
-        service: service.trim(),
-        region,
-        dataLocation,
-      },
-    ]);
-    setName("");
-    setService("");
-    setRegion("");
-    setDataLocation("");
-  };
+  const updateVendor = (id: string, patch: Partial<Vendor>) =>
+    setVendors((vs) => vs.map((v) => (v.id === id ? { ...v, ...patch } : v)));
 
   const removeVendor = (id: string) =>
-    setVendors((v) => v.filter((x) => x.id !== id));
+    setVendors((vs) => (vs.length === 1 ? [emptyVendor()] : vs.filter((v) => v.id !== id)));
 
-  const startEdit = (v: Vendor) => {
-    setEditingId(v.id);
-    setEditDraft({ ...v });
+  const addVendor = () => setVendors((vs) => [...vs, emptyVendor()]);
+
+  const selectedQuickPicks = new Set(
+    vendors.map((v) => v.name.trim().toLowerCase()).filter(Boolean),
+  );
+
+  const handleQuickPick = (pick: typeof QUICK_PICKS[number]) => {
+    const key = pick.name.toLowerCase();
+    if (selectedQuickPicks.has(key)) {
+      // toggle off: remove first matching
+      setVendors((vs) => {
+        const idx = vs.findIndex((v) => v.name.trim().toLowerCase() === key);
+        if (idx === -1) return vs;
+        const next = vs.filter((_, i) => i !== idx);
+        return next.length === 0 ? [emptyVendor()] : next;
+      });
+      return;
+    }
+    setVendors((vs) => {
+      // fill first empty card, otherwise append
+      const emptyIdx = vs.findIndex((v) => !v.name && !v.type && !v.country && !v.system);
+      const filled: Vendor = {
+        id: emptyIdx === -1 ? crypto.randomUUID() : vs[emptyIdx].id,
+        name: pick.name,
+        type: pick.type,
+        country: pick.country,
+        system: "",
+        mustKeep: false,
+      };
+      if (emptyIdx === -1) return [...vs, filled];
+      return vs.map((v, i) => (i === emptyIdx ? filled : v));
+    });
   };
 
-  const saveEdit = () => {
-    if (!editDraft) return;
-    setVendors((vs) => vs.map((v) => (v.id === editDraft.id ? editDraft : v)));
-    setEditingId(null);
-    setEditDraft(null);
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditDraft(null);
-  };
+  const hasAnyVendor = vendors.some((v) => v.name.trim().length > 0);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Ambient depth — same vibe as landing */}
+      {/* Ambient depth */}
       <div className="pointer-events-none absolute -top-32 -left-32 h-[520px] w-[520px] rounded-full bg-blue-300/30 blur-3xl" />
       <div className="pointer-events-none absolute top-1/4 -right-40 h-[640px] w-[640px] rounded-full bg-blue-900/20 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-1/3 h-[420px] w-[420px] rounded-full bg-sky-400/20 blur-3xl" />
@@ -110,271 +121,180 @@ const RegistreraLeverantorer = () => {
         </nav>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-6xl px-4 pb-24 pt-10 md:px-8 md:pt-14">
+      <main className="relative z-10 mx-auto max-w-5xl px-4 pb-24 pt-10 md:px-8 md:pt-14">
         {/* INTRO */}
-        <section className="mb-10 max-w-2xl">
+        <section className="mb-10 max-w-3xl">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/60">
-            Steg 1 av 2
+            Steg 1 av 3 – Leverantörer
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-            Registrera leverantörer
+            Lägg till era{" "}
+            <span className="text-primary">tech suppliers</span>
           </h1>
           <p className="mt-3 text-base font-medium leading-relaxed text-foreground/70">
-            Lägg till dina leverantörer för att analysera risk och beroenden.
+            Registrera de leverantörer ni använder idag. Markera vilka ni måste behålla även
+            om de är icke-EU, så rekommenderar vi riskreducering.
           </p>
         </section>
 
-        <div className="grid grid-cols-12 gap-6 md:gap-8">
-          {/* INPUT FORM */}
-          <section className="col-span-12 lg:col-span-5">
-            <div className="glass rounded-2xl p-6 shadow-[var(--shadow-soft)] md:p-7">
-              <h2 className="text-lg font-bold tracking-tight text-foreground">
-                Ny leverantör
-              </h2>
-              <p className="mt-1 text-sm text-foreground/60">
-                Fyll i uppgifterna nedan och lägg till i listan.
-              </p>
+        {/* SNABBVAL */}
+        <section className="mb-8">
+          <div className="glass rounded-2xl p-6 shadow-[var(--shadow-soft)] md:p-7">
+            <div className="mb-4 flex items-baseline justify-between">
+              <h2 className="text-lg font-bold tracking-tight text-foreground">Snabbval</h2>
+              <span className="text-xs font-medium text-foreground/55">
+                Klicka för att lägga till
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {QUICK_PICKS.map((pick) => {
+                const active = selectedQuickPicks.has(pick.name.toLowerCase());
+                return (
+                  <button
+                    key={pick.name}
+                    type="button"
+                    onClick={() => handleQuickPick(pick)}
+                    className={
+                      "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition " +
+                      (active
+                        ? "border-primary bg-primary text-primary-foreground shadow-[var(--shadow-soft)]"
+                        : "border-white/60 bg-white/60 text-foreground/80 hover:bg-white hover:text-foreground")
+                    }
+                  >
+                    <Plus
+                      className={
+                        "h-3.5 w-3.5 transition " + (active ? "rotate-45" : "")
+                      }
+                    />
+                    {pick.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
 
-              <form onSubmit={addVendor} className="mt-6 space-y-4">
+        {/* VENDOR CARDS */}
+        <section className="space-y-5">
+          {vendors.map((v, idx) => (
+            <div
+              key={v.id}
+              className="glass rounded-2xl p-6 shadow-[var(--shadow-soft)] md:p-7"
+            >
+              <div className="mb-5 flex items-center justify-between">
+                <h3 className="text-base font-bold tracking-tight text-foreground">
+                  Leverantör #{idx + 1}
+                </h3>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => removeVendor(v.id)}
+                  aria-label="Ta bort leverantör"
+                  className="h-8 w-8 text-foreground/55 hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="name" className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
                     Leverantörsnamn
                   </Label>
                   <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="t.ex. Acme AB"
-                    maxLength={100}
+                    value={v.name}
+                    onChange={(e) => updateVendor(v.id, { name: e.target.value })}
+                    placeholder="t.ex. Microsoft 365"
                     className="bg-white/70"
+                    maxLength={120}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="service" className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
-                    Tjänst / produkt
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
+                    Typ
+                  </Label>
+                  <Select
+                    value={v.type}
+                    onValueChange={(val) => updateVendor(v.id, { type: val })}
+                  >
+                    <SelectTrigger className="bg-white/70">
+                      <SelectValue placeholder="Välj typ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {VENDOR_TYPES.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {t}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
+                    Land
                   </Label>
                   <Input
-                    id="service"
-                    value={service}
-                    onChange={(e) => setService(e.target.value)}
-                    placeholder="t.ex. Molnlagring"
-                    maxLength={120}
+                    value={v.country}
+                    onChange={(e) => updateVendor(v.id, { country: e.target.value })}
+                    placeholder="t.ex. USA, Tyskland"
                     className="bg-white/70"
+                    maxLength={80}
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
-                    Land / region
+                    System <span className="font-normal normal-case text-foreground/45">(valfritt)</span>
                   </Label>
-                  <Select value={region} onValueChange={setRegion}>
-                    <SelectTrigger className="bg-white/70">
-                      <SelectValue placeholder="Välj region" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {REGIONS.map((r) => (
-                        <SelectItem key={r} value={r}>
-                          {r}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    value={v.system}
+                    onChange={(e) => updateVendor(v.id, { system: e.target.value })}
+                    placeholder="t.ex. CRM, mail, lagring"
+                    className="bg-white/70"
+                    maxLength={120}
+                  />
                 </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
-                    Dataplats
-                  </Label>
-                  <Select value={dataLocation} onValueChange={setDataLocation}>
-                    <SelectTrigger className="bg-white/70">
-                      <SelectValue placeholder="Välj dataplats" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DATA_LOCATIONS.map((d) => (
-                        <SelectItem key={d} value={d}>
-                          {d}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={!canAdd}
-                  className="mt-2 w-full rounded-xl py-6 font-semibold text-white shadow-[var(--shadow-soft)] hover:opacity-95"
-                  style={{ background: "var(--gradient-cta)" }}
-                >
-                  <Plus className="h-4 w-4" />
-                  Lägg till leverantör
-                </Button>
-              </form>
-            </div>
-          </section>
-
-          {/* VENDOR LIST */}
-          <section className="col-span-12 lg:col-span-7">
-            <div className="glass rounded-2xl p-6 shadow-[var(--shadow-soft)] md:p-7">
-              <div className="mb-5 flex items-baseline justify-between">
-                <h2 className="text-lg font-bold tracking-tight text-foreground">
-                  Dina leverantörer
-                </h2>
-                <span className="text-xs font-semibold uppercase tracking-wider text-foreground/55">
-                  {vendors.length} st
-                </span>
               </div>
 
-              {vendors.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-foreground/15 bg-white/40 p-10 text-center">
-                  <p className="text-sm font-medium text-foreground/60">
-                    Inga leverantörer tillagda ännu.
-                  </p>
-                  <p className="mt-1 text-xs text-foreground/45">
-                    Börja med att fylla i formuläret till vänster.
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-hidden rounded-xl border border-white/60 bg-white/50">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className="text-xs font-bold uppercase tracking-wider">Namn</TableHead>
-                        <TableHead className="text-xs font-bold uppercase tracking-wider">Tjänst</TableHead>
-                        <TableHead className="text-xs font-bold uppercase tracking-wider">Region</TableHead>
-                        <TableHead className="w-[110px] text-right text-xs font-bold uppercase tracking-wider">
-                          Åtgärder
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {vendors.map((v) => {
-                        const isEditing = editingId === v.id;
-                        return (
-                          <TableRow key={v.id}>
-                            <TableCell className="font-semibold text-foreground">
-                              {isEditing ? (
-                                <Input
-                                  value={editDraft?.name ?? ""}
-                                  onChange={(e) =>
-                                    setEditDraft((d) => d && { ...d, name: e.target.value })
-                                  }
-                                  className="h-8 bg-white"
-                                />
-                              ) : (
-                                v.name
-                              )}
-                            </TableCell>
-                            <TableCell className="text-foreground/75">
-                              {isEditing ? (
-                                <Input
-                                  value={editDraft?.service ?? ""}
-                                  onChange={(e) =>
-                                    setEditDraft((d) => d && { ...d, service: e.target.value })
-                                  }
-                                  className="h-8 bg-white"
-                                />
-                              ) : (
-                                v.service
-                              )}
-                            </TableCell>
-                            <TableCell className="text-foreground/75">
-                              {isEditing ? (
-                                <Select
-                                  value={editDraft?.region}
-                                  onValueChange={(val) =>
-                                    setEditDraft((d) => d && { ...d, region: val })
-                                  }
-                                >
-                                  <SelectTrigger className="h-8 bg-white">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {REGIONS.map((r) => (
-                                      <SelectItem key={r} value={r}>
-                                        {r}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                <span className="inline-flex items-center gap-2">
-                                  {v.region}
-                                  <span className="rounded-md bg-foreground/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-foreground/60">
-                                    {v.dataLocation}
-                                  </span>
-                                </span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="inline-flex items-center gap-1">
-                                {isEditing ? (
-                                  <>
-                                    <Button
-                                      type="button"
-                                      size="icon"
-                                      variant="ghost"
-                                      onClick={saveEdit}
-                                      className="h-8 w-8 text-primary hover:bg-primary/10"
-                                    >
-                                      <Check className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      size="icon"
-                                      variant="ghost"
-                                      onClick={cancelEdit}
-                                      className="h-8 w-8 text-foreground/60 hover:bg-foreground/5"
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Button
-                                      type="button"
-                                      size="icon"
-                                      variant="ghost"
-                                      onClick={() => startEdit(v)}
-                                      className="h-8 w-8 text-foreground/70 hover:bg-foreground/5"
-                                    >
-                                      <Pencil className="h-3.5 w-3.5" />
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      size="icon"
-                                      variant="ghost"
-                                      onClick={() => removeVendor(v.id)}
-                                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
+              <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-white/60 bg-white/40 p-4 transition hover:bg-white/60">
+                <Checkbox
+                  checked={v.mustKeep}
+                  onCheckedChange={(c) => updateVendor(v.id, { mustKeep: c === true })}
+                  className="mt-0.5"
+                />
+                <span className="text-sm font-medium leading-relaxed text-foreground/80">
+                  Den här leverantören måste vi behålla just nu, även om den bedöms som
+                  icke-EU eller hög risk.
+                </span>
+              </label>
             </div>
+          ))}
 
-            {/* CTA */}
-            <div className="mt-6 flex justify-end">
-              <Button
-                size="lg"
-                disabled={vendors.length === 0}
-                className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
-                style={{ background: "var(--gradient-cta)" }}
-              >
-                Starta analys
-                <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
-              </Button>
-            </div>
-          </section>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addVendor}
+            className="w-full rounded-xl border-dashed border-foreground/20 bg-white/40 py-6 text-sm font-semibold text-foreground/75 hover:bg-white/70"
+          >
+            <Plus className="h-4 w-4" />
+            Lägg till leverantör
+          </Button>
+        </section>
+
+        {/* CTA */}
+        <div className="mt-10 flex justify-end">
+          <Button
+            size="lg"
+            disabled={!hasAnyVendor}
+            className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
+            style={{ background: "var(--gradient-cta)" }}
+          >
+            Starta analys
+            <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
+          </Button>
         </div>
       </main>
 
