@@ -92,6 +92,8 @@ const RegistreraLeverantorer = () => {
   };
 
   const hasAnyVendor = vendors.some((v) => v.name.trim().length > 0);
+  const hasCritical = vendors.some((v) => v.name.trim().length > 0 && v.mustKeep);
+  const canStart = hasAnyVendor && hasCritical;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -284,19 +286,37 @@ const RegistreraLeverantorer = () => {
         </section>
 
         {/* CTA */}
-        <div className="mt-10 flex justify-end">
-          <Button
-            size="lg"
-            asChild
-            disabled={!hasAnyVendor}
-            className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
-            style={{ background: "var(--gradient-cta)" }}
-          >
-            <Link to="/quiz" state={{ vendors }}>
+        <div className="mt-10 flex flex-col items-end gap-2">
+          {!canStart && (
+            <p className="text-xs font-medium text-foreground/60">
+              {hasAnyVendor
+                ? "Markera minst en leverantör som affärskritisk för att fortsätta"
+                : "Lägg till minst en leverantör för att fortsätta"}
+            </p>
+          )}
+          {canStart ? (
+            <Button
+              size="lg"
+              asChild
+              className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
+              style={{ background: "var(--gradient-cta)" }}
+            >
+              <Link to="/quiz" state={{ vendors }}>
+                Starta quiz
+                <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              disabled
+              className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)]"
+              style={{ background: "var(--gradient-cta)" }}
+            >
               Starta quiz
-              <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
-            </Link>
-          </Button>
+              <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          )}
         </div>
       </main>
 
