@@ -7,18 +7,21 @@ const newsItems = [
     title: "Ny analysmotor live",
     desc: "Realtidsjämförelser av leverantörer med 4× snabbare prestanda.",
     tag: "Produkt",
+    href: "https://www.reuters.com/technology/",
   },
   {
     icon: BarChart3,
     title: "Marknadsrapport Q2",
     desc: "Datadriven översikt över prisrörelser och leverantörstrender.",
     tag: "Insikt",
+    href: "https://www.reuters.com/technology/cybersecurity/",
   },
   {
     icon: Zap,
     title: "API för konsulter",
     desc: "Integrera leverantörsdata direkt i era egna system och rapporter.",
     tag: "Integration",
+    href: "https://www.reuters.com/technology/artificial-intelligence/",
   },
 ];
 
