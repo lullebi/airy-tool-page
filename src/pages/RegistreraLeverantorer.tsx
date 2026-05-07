@@ -132,8 +132,7 @@ const RegistreraLeverantorer = () => {
             <span className="text-primary">tech suppliers</span>
           </h1>
           <p className="mt-3 text-base font-medium leading-relaxed text-foreground/70">
-            Registrera de leverantörer ni använder idag. Markera vilka ni måste behålla även
-            om de är icke-EU, så rekommenderar vi riskreducering.
+            Registrera klientens leverantörer för att analysera risk och beroenden. Markera vilka som är affärskritiska för att få relevanta rekommendationer.
           </p>
         </section>
 
