@@ -387,7 +387,7 @@ const Quiz = () => {
               className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
               style={{ background: "var(--gradient-cta)" }}
             >
-              Fortsätt
+              Fullständig analys
               <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
             </Button>
           ) : (
@@ -1035,7 +1035,7 @@ const Step5Measurement = ({
 
   return (
     <Card
-      title="Mätning"
+      title="Fullständig analys"
       subtitle="Översikt av era leverantörer mätt mot Eurostack-standard."
     >
       {/* HEADER: Donut + summary */}
