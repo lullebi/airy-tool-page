@@ -286,9 +286,27 @@ const Quiz = () => {
     return true;
   }, [stepIndex, step1, quickAnswers, currentDeepAnswers, deepDiveEnabled, deepVendors.length, activeDeepQuestions]);
 
-  const goNext = () =>
+  const goNext = () => {
+    // Loop through vendors inside the Deep Dive step.
+    if (stepIndex === 2 && deepDiveEnabled && deepVendors.length > 0) {
+      const isLast = deepVendorIndex >= deepVendors.length - 1;
+      const name = currentDeepVendor?.name ?? "leverantör";
+      if (!isLast) {
+        toast.success(`Data sparad för ${name}`, { description: "Går vidare till nästa..." });
+        setDeepVendorIndex((i) => i + 1);
+        return;
+      }
+      toast.success(`Data sparad för ${name}`, { description: "Går vidare till Resultat" });
+    }
     setStepIndex((i) => Math.min(STEPS.length - 1, i + 1));
-  const goBack = () => setStepIndex((i) => Math.max(0, i - 1));
+  };
+  const goBack = () => {
+    if (stepIndex === 2 && deepDiveEnabled && deepVendorIndex > 0) {
+      setDeepVendorIndex((i) => i - 1);
+      return;
+    }
+    setStepIndex((i) => Math.max(0, i - 1));
+  };
 
   // Dev/testing shortcut: pre-fill all answers with mock values and jump to result.
   const skipToResult = () => {
