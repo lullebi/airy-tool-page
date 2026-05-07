@@ -425,6 +425,16 @@ const Quiz = () => {
         </div>
       </main>
 
+      {/* Dev shortcut — testing only */}
+      <button
+        type="button"
+        onClick={skipToResult}
+        title="Dev: hoppa till resultat med mock-data"
+        className="fixed bottom-2 right-2 z-30 rounded-md bg-foreground/5 px-2 py-1 text-[10px] font-medium text-foreground/40 opacity-40 ring-1 ring-foreground/10 backdrop-blur transition hover:opacity-100 hover:text-foreground/80"
+      >
+        Hoppa till resultat
+      </button>
+
       <footer className="relative z-10 border-t border-white/40 py-6">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 text-xs font-medium text-foreground/60 md:px-10">
           <span>© 2026 Lumen Analytics AB</span>
