@@ -261,6 +261,28 @@ const Quiz = () => {
     setStepIndex((i) => Math.min(STEPS.length - 1, i + 1));
   const goBack = () => setStepIndex((i) => Math.max(0, i - 1));
 
+  // Dev/testing shortcut: pre-fill all answers with mock values and jump to result.
+  const skipToResult = () => {
+    setStep1({
+      priorities: ["Säkerhet", "Compliance"],
+      sector: "Finans",
+      euDataWeight: 4,
+      readiness: "Medel",
+    });
+    const mockQuick: Answers = {};
+    QUICK_SCAN.forEach((q) => {
+      mockQuick[q.id] = q.svarsalternativ[0].label;
+    });
+    setQuickAnswers(mockQuick);
+    const mockDeep: Answers = {};
+    DEEP_DIVE.forEach((q) => {
+      mockDeep[q.id] = q.svarsalternativ[0].label;
+    });
+    setDeepAnswers(mockDeep);
+    setDeepDiveEnabled(true);
+    setStepIndex(3);
+  };
+
   const togglePriority = (label: string) =>
     setStep1((s) => ({
       ...s,
@@ -402,6 +424,16 @@ const Quiz = () => {
           )}
         </div>
       </main>
+
+      {/* Dev shortcut — testing only */}
+      <button
+        type="button"
+        onClick={skipToResult}
+        title="Dev: hoppa till resultat med mock-data"
+        className="fixed bottom-2 right-2 z-30 rounded-md bg-foreground/5 px-2 py-1 text-[10px] font-medium text-foreground/40 opacity-40 ring-1 ring-foreground/10 backdrop-blur transition hover:opacity-100 hover:text-foreground/80"
+      >
+        Hoppa till resultat
+      </button>
 
       <footer className="relative z-10 border-t border-white/40 py-6">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 text-xs font-medium text-foreground/60 md:px-10">
