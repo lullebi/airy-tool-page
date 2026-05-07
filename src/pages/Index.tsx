@@ -7,18 +7,21 @@ const newsItems = [
     title: "Ny analysmotor live",
     desc: "Realtidsjämförelser av leverantörer med 4× snabbare prestanda.",
     tag: "Produkt",
+    href: "https://www.reuters.com/technology/",
   },
   {
     icon: BarChart3,
     title: "Marknadsrapport Q2",
     desc: "Datadriven översikt över prisrörelser och leverantörstrender.",
     tag: "Insikt",
+    href: "https://www.reuters.com/technology/cybersecurity/",
   },
   {
     icon: Zap,
     title: "API för konsulter",
     desc: "Integrera leverantörsdata direkt i era egna system och rapporter.",
     tag: "Integration",
+    href: "https://www.reuters.com/technology/artificial-intelligence/",
   },
 ];
 
@@ -79,8 +82,10 @@ const Index = () => {
                 return (
                   <a
                     key={i}
-                    href="#"
-                    className="glass group block rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-deep)]"
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="glass group block cursor-pointer rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-deep)]"
                   >
                     <div className="mb-3 flex items-center justify-between">
                       <span
