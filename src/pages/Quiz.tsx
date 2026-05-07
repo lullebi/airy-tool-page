@@ -399,8 +399,15 @@ const Quiz = () => {
             <Step3DeepDive
               enabled={deepDiveEnabled}
               setEnabled={setDeepDiveEnabled}
-              answers={deepAnswers}
-              setAnswers={setDeepAnswers}
+              vendor={currentDeepVendor}
+              vendorIndex={deepVendorIndex}
+              vendorTotal={deepVendors.length}
+              answers={currentDeepAnswers}
+              setAnswers={setCurrentDeepAnswers}
+              activeQuestions={activeDeepQuestions}
+              skippedCertNotice={skipCerts}
+              onPrevVendor={() => setDeepVendorIndex((i) => Math.max(0, i - 1))}
+              canPrevVendor={deepVendorIndex > 0}
             />
           )}
           {stepIndex === 3 && (
@@ -408,7 +415,7 @@ const Quiz = () => {
               vendors={vendors}
               step1={step1}
               quick={quickAnswers}
-              deep={deepAnswers}
+              deepByVendor={deepAnswersByVendor}
               hasDeep={deepDiveEnabled}
             />
           )}
@@ -417,7 +424,7 @@ const Quiz = () => {
               vendors={vendors}
               step1={step1}
               quick={quickAnswers}
-              deep={deepAnswers}
+              deepByVendor={deepAnswersByVendor}
               hasDeep={deepDiveEnabled}
             />
           )}
