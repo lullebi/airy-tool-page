@@ -1010,15 +1010,16 @@ const Step5Measurement = ({
   vendors,
   step1,
   quick,
-  deep,
+  deepByVendor,
   hasDeep,
 }: {
   vendors: VendorLike[];
   step1: Step1State;
   quick: Answers;
-  deep: Answers;
+  deepByVendor: Record<string, Answers>;
   hasDeep: boolean;
 }) => {
+  const deepFor = (v: VendorLike) => deepByVendor[v.id] ?? {};
   const [openId, setOpenId] = useState<string | null>(null);
 
   const euCount = vendors.filter(isEU).length;
