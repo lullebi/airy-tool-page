@@ -92,8 +92,7 @@ const RegistreraLeverantorer = () => {
   };
 
   const hasAnyVendor = vendors.some((v) => v.name.trim().length > 0);
-  const hasCritical = vendors.some((v) => v.name.trim().length > 0 && v.mustKeep);
-  const canStart = hasAnyVendor && hasCritical;
+  const canStart = hasAnyVendor;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -289,9 +288,7 @@ const RegistreraLeverantorer = () => {
         <div className="mt-10 flex flex-col items-end gap-2">
           {!canStart && (
             <p className="text-xs font-medium text-foreground/60">
-              {hasAnyVendor
-                ? "Markera minst en leverantör som affärskritisk för att fortsätta"
-                : "Lägg till minst en leverantör för att fortsätta"}
+              Lägg till minst en leverantör för att fortsätta
             </p>
           )}
           {canStart ? (
