@@ -307,8 +307,11 @@ const Quiz = () => {
     DEEP_DIVE.forEach((q) => {
       mockDeep[q.id] = q.svarsalternativ[0].label;
     });
-    setDeepAnswers(mockDeep);
+    const allDeep: Record<string, Answers> = {};
+    vendors.forEach((v) => { allDeep[v.id] = { ...mockDeep }; });
+    setDeepAnswersByVendor(allDeep);
     setDeepDiveEnabled(true);
+    setDeepVendorIndex(0);
     setStepIndex(3);
   };
 
