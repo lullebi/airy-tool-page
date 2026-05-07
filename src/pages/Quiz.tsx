@@ -358,6 +358,15 @@ const Quiz = () => {
               hasDeep={deepDiveEnabled}
             />
           )}
+          {stepIndex === 4 && (
+            <Step5Measurement
+              vendors={vendors}
+              step1={step1}
+              quick={quickAnswers}
+              deep={deepAnswers}
+              hasDeep={deepDiveEnabled}
+            />
+          )}
         </div>
 
         {/* NAV */}
