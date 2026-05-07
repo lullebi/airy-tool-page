@@ -241,10 +241,37 @@ const Quiz = () => {
     readiness: "Medel",
   });
   const [quickAnswers, setQuickAnswers] = useState<Answers>({});
-  const [deepAnswers, setDeepAnswers] = useState<Answers>({});
+  // Per-vendor deep dive answers, keyed by vendor id.
+  const [deepAnswersByVendor, setDeepAnswersByVendor] = useState<Record<string, Answers>>({});
   // Deep Dive aktiveras för leverantörer där dataset saknar info.
   // Här simulerat — användaren kan toggla.
   const [deepDiveEnabled, setDeepDiveEnabled] = useState(true);
+  // Index för vilken leverantör i Deep Dive-loopen som granskas just nu.
+  const [deepVendorIndex, setDeepVendorIndex] = useState(0);
+
+  // Vendors that get a deep dive (when enabled, all of them — kan filtreras vid datasetkoppling)
+  const deepVendors = deepDiveEnabled ? vendors : [];
+  const currentDeepVendor = deepVendors[deepVendorIndex];
+
+  // Skip Security Level cert-related deep dive questions if Quick Scan said "Ja" on certifications.
+  const skipCerts = quickAnswers["qs_certifications"] === "Ja";
+  const SKIPPED_DEEP_IDS = new Set(skipCerts ? ["dd_sec_audit", "dd_sec_pen"] : []);
+  const activeDeepQuestions = useMemo(
+    () => DEEP_DIVE.filter((q) => !SKIPPED_DEEP_IDS.has(q.id)),
+    [skipCerts],
+  );
+
+  const currentDeepAnswers = currentDeepVendor
+    ? deepAnswersByVendor[currentDeepVendor.id] ?? {}
+    : {};
+  const setCurrentDeepAnswers: React.Dispatch<React.SetStateAction<Answers>> = (updater) => {
+    if (!currentDeepVendor) return;
+    setDeepAnswersByVendor((prev) => {
+      const existing = prev[currentDeepVendor.id] ?? {};
+      const next = typeof updater === "function" ? (updater as (a: Answers) => Answers)(existing) : updater;
+      return { ...prev, [currentDeepVendor.id]: next };
+    });
+  };
 
   const progress = ((stepIndex + 1) / STEPS.length) * 100;
 
@@ -252,14 +279,34 @@ const Quiz = () => {
     if (stepIndex === 0)
       return step1.priorities.length > 0 && step1.sector !== "" && step1.readiness !== "";
     if (stepIndex === 1) return QUICK_SCAN.every((q) => quickAnswers[q.id]);
-    if (stepIndex === 2)
-      return !deepDiveEnabled || DEEP_DIVE.every((q) => deepAnswers[q.id]);
+    if (stepIndex === 2) {
+      if (!deepDiveEnabled || deepVendors.length === 0) return true;
+      return activeDeepQuestions.every((q) => currentDeepAnswers[q.id]);
+    }
     return true;
-  }, [stepIndex, step1, quickAnswers, deepAnswers, deepDiveEnabled]);
+  }, [stepIndex, step1, quickAnswers, currentDeepAnswers, deepDiveEnabled, deepVendors.length, activeDeepQuestions]);
 
-  const goNext = () =>
+  const goNext = () => {
+    // Loop through vendors inside the Deep Dive step.
+    if (stepIndex === 2 && deepDiveEnabled && deepVendors.length > 0) {
+      const isLast = deepVendorIndex >= deepVendors.length - 1;
+      const name = currentDeepVendor?.name ?? "leverantör";
+      if (!isLast) {
+        toast.success(`Data sparad för ${name}`, { description: "Går vidare till nästa..." });
+        setDeepVendorIndex((i) => i + 1);
+        return;
+      }
+      toast.success(`Data sparad för ${name}`, { description: "Går vidare till Resultat" });
+    }
     setStepIndex((i) => Math.min(STEPS.length - 1, i + 1));
-  const goBack = () => setStepIndex((i) => Math.max(0, i - 1));
+  };
+  const goBack = () => {
+    if (stepIndex === 2 && deepDiveEnabled && deepVendorIndex > 0) {
+      setDeepVendorIndex((i) => i - 1);
+      return;
+    }
+    setStepIndex((i) => Math.max(0, i - 1));
+  };
 
   // Dev/testing shortcut: pre-fill all answers with mock values and jump to result.
   const skipToResult = () => {
@@ -278,8 +325,11 @@ const Quiz = () => {
     DEEP_DIVE.forEach((q) => {
       mockDeep[q.id] = q.svarsalternativ[0].label;
     });
-    setDeepAnswers(mockDeep);
+    const allDeep: Record<string, Answers> = {};
+    vendors.forEach((v) => { allDeep[v.id] = { ...mockDeep }; });
+    setDeepAnswersByVendor(allDeep);
     setDeepDiveEnabled(true);
+    setDeepVendorIndex(0);
     setStepIndex(3);
   };
 
@@ -367,8 +417,15 @@ const Quiz = () => {
             <Step3DeepDive
               enabled={deepDiveEnabled}
               setEnabled={setDeepDiveEnabled}
-              answers={deepAnswers}
-              setAnswers={setDeepAnswers}
+              vendor={currentDeepVendor}
+              vendorIndex={deepVendorIndex}
+              vendorTotal={deepVendors.length}
+              answers={currentDeepAnswers}
+              setAnswers={setCurrentDeepAnswers}
+              activeQuestions={activeDeepQuestions}
+              skippedCertNotice={skipCerts}
+              onPrevVendor={() => setDeepVendorIndex((i) => Math.max(0, i - 1))}
+              canPrevVendor={deepVendorIndex > 0}
             />
           )}
           {stepIndex === 3 && (
@@ -376,7 +433,7 @@ const Quiz = () => {
               vendors={vendors}
               step1={step1}
               quick={quickAnswers}
-              deep={deepAnswers}
+              deepByVendor={deepAnswersByVendor}
               hasDeep={deepDiveEnabled}
             />
           )}
@@ -385,7 +442,7 @@ const Quiz = () => {
               vendors={vendors}
               step1={step1}
               quick={quickAnswers}
-              deep={deepAnswers}
+              deepByVendor={deepAnswersByVendor}
               hasDeep={deepDiveEnabled}
             />
           )}
@@ -604,26 +661,44 @@ const StepQuestions = ({
 const Step3DeepDive = ({
   enabled,
   setEnabled,
+  vendor,
+  vendorIndex,
+  vendorTotal,
   answers,
   setAnswers,
+  activeQuestions,
+  skippedCertNotice,
+  onPrevVendor,
+  canPrevVendor,
 }: {
   enabled: boolean;
   setEnabled: (b: boolean) => void;
+  vendor?: VendorLike;
+  vendorIndex: number;
+  vendorTotal: number;
   answers: Answers;
   setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
+  activeQuestions: Question[];
+  skippedCertNotice: boolean;
+  onPrevVendor: () => void;
+  canPrevVendor: boolean;
 }) => {
   const categories = useMemo(() => {
     const map = new Map<string, Question[]>();
-    DEEP_DIVE.forEach((q) => {
+    activeQuestions.forEach((q) => {
       map.set(q.kategori, [...(map.get(q.kategori) ?? []), q]);
     });
     return Array.from(map.entries());
-  }, []);
+  }, [activeQuestions]);
 
   return (
     <Card
       title="Deep Dive"
-      subtitle="Aktiveras för leverantörer där datasetet saknar information. Detaljerad granskning per kategori."
+      subtitle={
+        enabled && vendor
+          ? `Nu granskar vi säkerhet och jurisdiktion för ${vendor.name}`
+          : "Aktiveras för leverantörer där datasetet saknar information. Detaljerad granskning per leverantör."
+      }
     >
       <label className="mb-6 flex items-center gap-3 rounded-xl bg-white/60 p-3 ring-1 ring-white/70">
         <Checkbox
@@ -639,52 +714,84 @@ const Step3DeepDive = ({
         <p className="rounded-xl bg-white/60 p-5 text-sm text-foreground/70 ring-1 ring-white/70">
           Deep Dive är inaktiverad. Quick Scan-resultatet används direkt i analysen.
         </p>
-      ) : (
-        <div className="grid gap-8">
-          {categories.map(([cat, qs]) => (
-            <div key={cat}>
-              <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-foreground/70">
-                {cat}
-              </h3>
-              <div className="grid gap-4">
-                {qs.map((q, i) => (
-                  <div
-                    key={q.id}
-                    className="rounded-2xl bg-white/60 p-5 ring-1 ring-white/70"
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
-                      Fråga {i + 1}
-                    </p>
-                    <p className="mt-1 text-base font-semibold text-foreground">
-                      {q.text}
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {q.svarsalternativ.map((opt) => {
-                        const active = answers[q.id] === opt.label;
-                        return (
-                          <button
-                            key={opt.label}
-                            type="button"
-                            onClick={() =>
-                              setAnswers((a) => ({ ...a, [q.id]: opt.label }))
-                            }
-                            className={`rounded-xl px-4 py-2 text-sm font-semibold transition ring-1 ${
-                              active
-                                ? "bg-foreground text-background ring-foreground"
-                                : "bg-white text-foreground/80 ring-white/80 hover:bg-white/90"
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
+      ) : vendor ? (
+        <>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white/70 p-4 ring-1 ring-white/70">
+            <div className="flex items-center gap-3">
+              <span className="rounded-full bg-foreground px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-background">
+                {vendor.name}
+              </span>
+              <span className="text-xs font-medium text-foreground/60">
+                Leverantör {vendorIndex + 1} av {vendorTotal} · {vendor.type ?? "—"} · {vendor.country ?? "—"}
+              </span>
             </div>
-          ))}
-        </div>
+            {canPrevVendor && (
+              <button
+                type="button"
+                onClick={onPrevVendor}
+                className="inline-flex items-center gap-1 rounded-lg bg-white/80 px-3 py-1.5 text-xs font-semibold text-foreground/80 ring-1 ring-white/70 transition hover:bg-white"
+              >
+                <ArrowLeft className="h-3 w-3" /> Föregående leverantör
+              </button>
+            )}
+          </div>
+
+          {skippedCertNotice && (
+            <p className="mb-4 rounded-xl bg-emerald-50/80 px-4 py-2 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200">
+              Certifieringsfrågor hoppas över eftersom Quick Scan bekräftade befintliga certifieringar.
+            </p>
+          )}
+
+          <div className="grid gap-8">
+            {categories.map(([cat, qs]) => (
+              <div key={cat}>
+                <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-foreground/70">
+                  {cat}
+                </h3>
+                <div className="grid gap-4">
+                  {qs.map((q, i) => (
+                    <div
+                      key={q.id}
+                      className="rounded-2xl bg-white/60 p-5 ring-1 ring-white/70"
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
+                        Fråga {i + 1}
+                      </p>
+                      <p className="mt-1 text-base font-semibold text-foreground">
+                        {q.text}
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {q.svarsalternativ.map((opt) => {
+                          const active = answers[q.id] === opt.label;
+                          return (
+                            <button
+                              key={opt.label}
+                              type="button"
+                              onClick={() =>
+                                setAnswers((a) => ({ ...a, [q.id]: opt.label }))
+                              }
+                              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ring-1 ${
+                                active
+                                  ? "bg-foreground text-background ring-foreground"
+                                  : "bg-white text-foreground/80 ring-white/80 hover:bg-white/90"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p className="rounded-xl bg-white/60 p-5 text-sm text-foreground/70 ring-1 ring-white/70">
+          Inga leverantörer att granska.
+        </p>
       )}
     </Card>
   );
@@ -697,18 +804,18 @@ const Step4Result = ({
   vendors,
   step1,
   quick,
-  deep,
+  deepByVendor,
   hasDeep,
 }: {
   vendors: VendorLike[];
   step1: Step1State;
   quick: Answers;
-  deep: Answers;
+  deepByVendor: Record<string, Answers>;
   hasDeep: boolean;
 }) => {
   const scores = vendors.map((v) => ({
     vendor: v,
-    ...computeVendorScore(step1, quick, deep, hasDeep),
+    ...computeVendorScore(step1, quick, deepByVendor[v.id] ?? {}, hasDeep),
   }));
 
   return (
@@ -903,15 +1010,16 @@ const Step5Measurement = ({
   vendors,
   step1,
   quick,
-  deep,
+  deepByVendor,
   hasDeep,
 }: {
   vendors: VendorLike[];
   step1: Step1State;
   quick: Answers;
-  deep: Answers;
+  deepByVendor: Record<string, Answers>;
   hasDeep: boolean;
 }) => {
+  const deepFor = (v: VendorLike) => deepByVendor[v.id] ?? {};
   const [openId, setOpenId] = useState<string | null>(null);
 
   const euCount = vendors.filter(isEU).length;
@@ -951,7 +1059,8 @@ const Step5Measurement = ({
       const margin = 48;
       let y = margin;
 
-      const { total } = computeVendorScore(step1, quick, deep, hasDeep);
+      const perVendorTotals = vendors.map((v) => computeVendorScore(step1, quick, deepFor(v), hasDeep).total);
+      const total = perVendorTotals.length ? Math.round(perVendorTotals.reduce((a, b) => a + b, 0) / perVendorTotals.length) : 0;
       const euCount = vendors.filter(isEU).length;
       const nonEuCount = vendors.length - euCount;
       const euPct = vendors.length ? Math.round((euCount / vendors.length) * 100) : 0;
@@ -1036,6 +1145,7 @@ const Step5Measurement = ({
 
   const renderCard = (v: VendorLike) => {
     const eu = isEU(v);
+    const deep = deepFor(v);
     const { total: tot } = computeVendorScore(step1, quick, deep, hasDeep);
     const status = statusFromScore(tot);
     const badges = buildBadges(quick, deep, hasDeep);
