@@ -82,8 +82,10 @@ const Index = () => {
                 return (
                   <a
                     key={i}
-                    href="#"
-                    className="glass group block rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-deep)]"
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="glass group block cursor-pointer rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-deep)]"
                   >
                     <div className="mb-3 flex items-center justify-between">
                       <span
