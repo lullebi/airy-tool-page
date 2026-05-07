@@ -261,6 +261,28 @@ const Quiz = () => {
     setStepIndex((i) => Math.min(STEPS.length - 1, i + 1));
   const goBack = () => setStepIndex((i) => Math.max(0, i - 1));
 
+  // Dev/testing shortcut: pre-fill all answers with mock values and jump to result.
+  const skipToResult = () => {
+    setStep1({
+      priorities: ["Säkerhet", "Compliance"],
+      sector: "Finans",
+      euDataWeight: 4,
+      readiness: "Medel",
+    });
+    const mockQuick: Answers = {};
+    QUICK_SCAN.forEach((q) => {
+      mockQuick[q.id] = q.svarsalternativ[0].label;
+    });
+    setQuickAnswers(mockQuick);
+    const mockDeep: Answers = {};
+    DEEP_DIVE.forEach((q) => {
+      mockDeep[q.id] = q.svarsalternativ[0].label;
+    });
+    setDeepAnswers(mockDeep);
+    setDeepDiveEnabled(true);
+    setStepIndex(3);
+  };
+
   const togglePriority = (label: string) =>
     setStep1((s) => ({
       ...s,
