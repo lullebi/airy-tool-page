@@ -804,18 +804,18 @@ const Step4Result = ({
   vendors,
   step1,
   quick,
-  deep,
+  deepByVendor,
   hasDeep,
 }: {
   vendors: VendorLike[];
   step1: Step1State;
   quick: Answers;
-  deep: Answers;
+  deepByVendor: Record<string, Answers>;
   hasDeep: boolean;
 }) => {
   const scores = vendors.map((v) => ({
     vendor: v,
-    ...computeVendorScore(step1, quick, deep, hasDeep),
+    ...computeVendorScore(step1, quick, deepByVendor[v.id] ?? {}, hasDeep),
   }));
 
   return (
