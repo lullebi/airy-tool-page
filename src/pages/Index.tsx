@@ -1,4 +1,4 @@
-import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp } from "lucide-react";
+import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp, ClipboardList, SlidersHorizontal, ScanSearch, ShieldCheck, LineChart, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -180,9 +180,115 @@ const Index = () => {
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/60">
               Process
             </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-              Så fungerar det
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-5xl">
+              Så fungerar{" "}
+              <span className="bg-gradient-to-r from-blue-600 to-sky-400 bg-clip-text text-transparent">
+                det
+              </span>
             </h2>
+            <p className="mt-5 text-base leading-relaxed text-foreground/70 md:text-lg">
+              Få en tydlig översikt över hur analysen fungerar. Processen guidar er steg för steg
+              från registrering av tech suppliers till ett färdigt riskresultat.
+            </p>
+          </div>
+
+          {/* Step cards */}
+          <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                icon: ClipboardList,
+                title: "1. Registrera tech suppliers",
+                desc: "Ni börjar med att lägga till de leverantörer ni använder idag. För varje leverantör anger ni namn, system, land, dataplats och om leverantören måste behållas även vid icke-EU-risk.",
+              },
+              {
+                icon: SlidersHorizontal,
+                title: "2. Konfigurering",
+                desc: "Ni sätter vikt och kontext för analysen. Exempelvis vad som är viktigast för er: säkerhet, kostnad, compliance eller flexibilitet. Ni anger också sektor, hur viktig EU-datalagring är och hur redo ni är att byta tjänster.",
+              },
+              {
+                icon: ScanSearch,
+                title: "3. Quick Scan",
+                desc: "Systemet gör en snabb bedömning av alla leverantörer. Här kontrolleras exempelvis känslig data, certifieringar, affärskritikalitet och antal användare. Detta ger en första riskbild.",
+              },
+              {
+                icon: ShieldCheck,
+                title: "4. Deep Dive",
+                desc: "För kritiska leverantörer eller där information saknas ställer systemet följdfrågor. Frågorna kan handla om säkerhetsnivå, incidenthantering, dataplats, jurisdiktion, ägarskap och regelverk.",
+              },
+              {
+                icon: LineChart,
+                title: "5. Riskanalys och resultat",
+                desc: "Resultatet visar en tydlig leverantörslista med komponentbidrag, status och total score. Analysen visar om ni bör behålla leverantören, reducera risk eller överväga ett EU-alternativ.",
+              },
+            ].map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <div
+                  key={i}
+                  className="glass group rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-deep)]"
+                >
+                  <div
+                    className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-[var(--shadow-soft)]"
+                    style={{ background: "var(--gradient-cta)" }}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-base font-bold leading-snug text-foreground">
+                    {step.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-foreground/70">{step.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Vad mäts? */}
+          <div className="glass mt-10 rounded-3xl p-7 md:p-9">
+            <div className="mb-5 flex items-center gap-3">
+              <div
+                className="grid h-9 w-9 place-items-center rounded-lg text-white"
+                style={{ background: "var(--gradient-cta)" }}
+              >
+                <BarChart3 className="h-4 w-4" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground md:text-2xl">Vad mäts?</h3>
+            </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {[
+                "DORA – hög vikt för kritiska system",
+                "NIS2 – leverantörskedja och incidentrisk",
+                "GDPR – persondata och överföring",
+                "Suveränitet – jurisdiktion och ägarskap",
+                "Data Act – kontroll och portabilitet",
+                "EU-certifiering – bevisbar efterlevnad",
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-xl border border-white/60 bg-white/50 px-4 py-3 text-sm font-medium text-foreground/85 backdrop-blur-sm"
+                >
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500 shadow-[0_0_8px_hsl(var(--blue-500))]" />
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dataset */}
+          <div className="mt-6 rounded-2xl border border-white/50 bg-white/30 p-6 backdrop-blur-sm md:p-7">
+            <div className="flex items-start gap-4">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-foreground/5 text-foreground/70">
+                <Database className="h-4 w-4" />
+              </div>
+              <div>
+                <h4 className="text-base font-bold text-foreground">Dataset och källor</h4>
+                <p className="mt-1.5 text-sm leading-relaxed text-foreground/65">
+                  Datasetet samlar information om kända leverantörer. Det används för att besvara
+                  frågor som redan finns dokumenterade, exempelvis land, dataplats, certifieringar
+                  och kända regelverksrisker. Om information saknas skickas frågan vidare till
+                  Deep Dive.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
       </main>
