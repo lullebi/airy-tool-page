@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, ShieldAlert, ChevronDown, Download, Repeat, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, ShieldAlert, ChevronDown, Download, Repeat, ShieldCheck, Inbox, Sparkles } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -939,6 +939,28 @@ const Step4Result = ({
                 <Contribution label="EU-vikt" value={euWeight} />
                 <Contribution label="Beredskap" value={readinessScore} />
               </div>
+
+              {(() => {
+                const contribs = [
+                  { key: "quick", value: quickScore, reg: "Data Act" },
+                  { key: "deep", value: deepScore, reg: "DORA" },
+                  { key: "eu", value: euWeight, reg: "GDPR & EU-suveränitet" },
+                  { key: "readiness", value: readinessScore, reg: "NIS2" },
+                ];
+                const weakest = contribs.reduce((a, b) => (a.value <= b.value ? a : b));
+                return (
+                  <div className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2 ring-1 ring-amber-200">
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                    <p className="text-xs font-medium text-amber-900">
+                      Poängen påverkas främst av brister i enlighet med{" "}
+                      <span className="font-bold underline decoration-amber-600 decoration-2 underline-offset-2">
+                        {weakest.reg}
+                      </span>
+                      .
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           );
         })}
@@ -1423,7 +1445,15 @@ const Step5Measurement = ({
           {kanda.length > 0 ? (
             kanda.map(renderCard)
           ) : (
-            <p className="text-xs text-foreground/55">Inga leverantörer i denna lane.</p>
+            <div className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-foreground/20 bg-white/50 px-4 py-8 text-center">
+              <Inbox className="h-6 w-6 text-foreground/40" aria-hidden="true" />
+              <p className="text-sm font-semibold text-foreground/70">
+                Inga kända leverantörer ännu
+              </p>
+              <p className="text-xs text-foreground/55">
+                Lägg till leverantörer från snabbvalet för att se dem här.
+              </p>
+            </div>
           )}
         </div>
       </div>
