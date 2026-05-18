@@ -91,8 +91,13 @@ const RegistreraLeverantorer = () => {
     });
   };
 
-  const hasAnyVendor = vendors.some((v) => v.name.trim().length > 0);
-  const canStart = hasAnyVendor;
+  const knownNames = new Set(QUICK_PICKS.map((p) => p.name.toLowerCase()));
+  const namedVendors = vendors.filter((v) => v.name.trim().length > 0);
+  const hasAnyVendor = namedVendors.length > 0;
+  const incompleteCustomVendors = namedVendors.filter(
+    (v) => !knownNames.has(v.name.trim().toLowerCase()) && (!v.type || !v.country.trim()),
+  );
+  const canStart = hasAnyVendor && incompleteCustomVendors.length === 0;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
