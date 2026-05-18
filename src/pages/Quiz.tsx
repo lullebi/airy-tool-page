@@ -34,7 +34,7 @@ type Question = {
 const STEP1_PRIORITIES: Option[] = [
   { label: "Säkerhet", scoreValue: 100 },
   { label: "Kostnad", scoreValue: 100 },
-  { label: "Compliance", scoreValue: 100 },
+  { label: "Efterlevnad", scoreValue: 100 },
   { label: "Flexibilitet", scoreValue: 100 },
   { label: "Skalbarhet", scoreValue: 100 },
 ];
@@ -59,7 +59,7 @@ const STEP1_READINESS: Option[] = [
 const QUICK_SCAN: Question[] = [
   {
     id: "qs_sensitive_data",
-    kategori: "Quick Scan",
+    kategori: "Snabbanalys",
     text: "Hanterar era leverantörer känslig data?",
     viktning: 0.3,
     type: "single",
@@ -71,7 +71,7 @@ const QUICK_SCAN: Question[] = [
   },
   {
     id: "qs_certifications",
-    kategori: "Quick Scan",
+    kategori: "Snabbanalys",
     text: "Har era tech-leverantörer certifieringar (ISO 27001, SOC2, C5)?",
     viktning: 0.25,
     type: "single",
@@ -83,7 +83,7 @@ const QUICK_SCAN: Question[] = [
   },
   {
     id: "qs_business_critical",
-    kategori: "Quick Scan",
+    kategori: "Snabbanalys",
     text: "Är era leverantörer affärskritiska?",
     viktning: 0.25,
     type: "single",
@@ -95,7 +95,7 @@ const QUICK_SCAN: Question[] = [
   },
   {
     id: "qs_legal_agreements",
-    kategori: "Quick Scan",
+    kategori: "Snabbanalys",
     text: "Har ni avtal som motsvarar DPA, SLA eller liknande juridiska krav?",
     viktning: 0.2,
     type: "single",
@@ -153,7 +153,7 @@ type Answers = Record<string, string>; // questionId -> option label
 
 type VendorLike = { id: string; name: string; type?: string; country?: string; mustKeep?: boolean };
 
-const STEPS = ["Konfiguration", "Quick Scan", "Deep Dive", "Resultat", "Mätning"] as const;
+const STEPS = ["Konfiguration", "Snabbanalys", "Fördjupad analys", "Resultat", "Mätning"] as const;
 
 const EU_COUNTRIES = new Set([
   "Sverige","Tyskland","Frankrike","Nederländerna","Spanien","Italien","Polen",
@@ -243,17 +243,17 @@ const Quiz = () => {
   const [quickAnswers, setQuickAnswers] = useState<Answers>({});
   // Per-vendor deep dive answers, keyed by vendor id.
   const [deepAnswersByVendor, setDeepAnswersByVendor] = useState<Record<string, Answers>>({});
-  // Deep Dive aktiveras för leverantörer där dataset saknar info.
+  // Fördjupad analys aktiveras för leverantörer där dataset saknar info.
   // Här simulerat — användaren kan toggla.
   const [deepDiveEnabled, setDeepDiveEnabled] = useState(true);
-  // Index för vilken leverantör i Deep Dive-loopen som granskas just nu.
+  // Index för vilken leverantör i Fördjupad analys-loopen som granskas just nu.
   const [deepVendorIndex, setDeepVendorIndex] = useState(0);
 
   // Vendors that get a deep dive (when enabled, all of them — kan filtreras vid datasetkoppling)
   const deepVendors = deepDiveEnabled ? vendors : [];
   const currentDeepVendor = deepVendors[deepVendorIndex];
 
-  // Skip Security Level cert-related deep dive questions if Quick Scan said "Ja" on certifications.
+  // Skip Security Level cert-related deep dive questions if Snabbanalys said "Ja" on certifications.
   const skipCerts = quickAnswers["qs_certifications"] === "Ja";
   const SKIPPED_DEEP_IDS = new Set(skipCerts ? ["dd_sec_audit", "dd_sec_pen"] : []);
   const activeDeepQuestions = useMemo(
@@ -287,7 +287,7 @@ const Quiz = () => {
   }, [stepIndex, step1, quickAnswers, currentDeepAnswers, deepDiveEnabled, deepVendors.length, activeDeepQuestions]);
 
   const goNext = () => {
-    // Loop through vendors inside the Deep Dive step.
+    // Loop through vendors inside the Fördjupad analys step.
     if (stepIndex === 2 && deepDiveEnabled && deepVendors.length > 0) {
       const isLast = deepVendorIndex >= deepVendors.length - 1;
       const name = currentDeepVendor?.name ?? "leverantör";
@@ -311,7 +311,7 @@ const Quiz = () => {
   // Dev/testing shortcut: pre-fill all answers with mock values and jump to result.
   const skipToResult = () => {
     setStep1({
-      priorities: ["Säkerhet", "Compliance"],
+      priorities: ["Säkerhet", "Efterlevnad"],
       sector: "Finans",
       euDataWeight: 4,
       readiness: "Medel",
@@ -406,7 +406,7 @@ const Quiz = () => {
           )}
           {stepIndex === 1 && (
             <StepQuestions
-              title="Quick Scan"
+              title="Snabbanalys"
               subtitle="Generella frågor som gäller alla nuvarande leverantörer."
               questions={QUICK_SCAN}
               answers={quickAnswers}
@@ -466,7 +466,7 @@ const Quiz = () => {
               className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
               style={{ background: "var(--gradient-cta)" }}
             >
-              Gå till Quick Scan
+              Gå till Snabbanalys
               <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
             </Button>
           ) : (
@@ -656,7 +656,7 @@ const StepQuestions = ({
 );
 
 /* =========================================================================
-   STEP 3 — Deep Dive (kategoriserad)
+   STEP 3 — Fördjupad analys (kategoriserad)
    ========================================================================= */
 const Step3DeepDive = ({
   enabled,
@@ -693,7 +693,7 @@ const Step3DeepDive = ({
 
   return (
     <Card
-      title="Deep Dive"
+      title="Fördjupad analys"
       subtitle={
         enabled && vendor
           ? `Nu granskar vi säkerhet och jurisdiktion för ${vendor.name}`
@@ -706,13 +706,13 @@ const Step3DeepDive = ({
           onCheckedChange={(v) => setEnabled(Boolean(v))}
         />
         <span className="text-sm font-medium text-foreground/80">
-          Aktivera Deep Dive (rekommenderas vid okända eller nischade leverantörer)
+          Aktivera Fördjupad analys (rekommenderas vid okända eller nischade leverantörer)
         </span>
       </label>
 
       {!enabled ? (
         <p className="rounded-xl bg-white/60 p-5 text-sm text-foreground/70 ring-1 ring-white/70">
-          Deep Dive är inaktiverad. Quick Scan-resultatet används direkt i analysen.
+          Fördjupad analys är inaktiverad. Snabbanalys-resultatet används direkt i analysen.
         </p>
       ) : vendor ? (
         <>
@@ -738,7 +738,7 @@ const Step3DeepDive = ({
 
           {skippedCertNotice && (
             <p className="mb-4 rounded-xl bg-emerald-50/80 px-4 py-2 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200">
-              Certifieringsfrågor hoppas över eftersom Quick Scan bekräftade befintliga certifieringar.
+              Certifieringsfrågor hoppas över eftersom Snabbanalys bekräftade befintliga certifieringar.
             </p>
           )}
 
@@ -876,8 +876,8 @@ const Step4Result = ({
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-medium text-foreground/70 md:grid-cols-4">
-                <Contribution label="Quick Scan" value={quickScore} />
-                <Contribution label="Deep Dive" value={deepScore} />
+                <Contribution label="Snabbanalys" value={quickScore} />
+                <Contribution label="Fördjupad analys" value={deepScore} />
                 <Contribution label="EU-vikt" value={euWeight} />
                 <Contribution label="Beredskap" value={readinessScore} />
               </div>
@@ -1313,7 +1313,7 @@ const Step5Measurement = ({
             Kända leverantörer <span className="text-foreground/50">· Generellt</span>
           </h3>
           <span className="text-[11px] font-medium text-foreground/55">
-            Quick Scan tillämpad
+            Snabbanalys tillämpad
           </span>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-3">
