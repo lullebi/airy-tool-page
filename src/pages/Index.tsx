@@ -143,9 +143,9 @@ const Index = () => {
                 </h1>
 
                 <p className="mt-6 max-w-xl text-base font-medium leading-relaxed text-white/75 md:text-lg">
-                  En analytisk plattform för konsulter och beslutsfattare —
-                  jämför leverantörer, kartlägg marknaden och fatta beslut
-                  baserade på data, inte mellanhänder.
+                  En analytisk plattform för konsulter — stärk era leveranser,
+                  motivera era rekommendationer med data och sälj tjänster
+                  byggda på fakta, inte mellanhänder.
                 </p>
 
                 <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -193,50 +193,88 @@ const Index = () => {
           </div>
 
           {/* Step cards */}
-          <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="relative mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 icon: ClipboardList,
                 title: "1. Registrera tech-leverantörer",
-                desc: "Ni börjar med att lägga till de leverantörer ni använder idag. För varje leverantör anger ni namn, system, land, dataplats och om leverantören måste behållas även vid icke-EU-risk.",
+                bullets: [
+                  "Lägg till leverantörer ni använder idag",
+                  "Ange namn, system, land och dataplats",
+                  "Markera leverantörer som måste behållas",
+                ],
               },
               {
                 icon: SlidersHorizontal,
                 title: "2. Konfigurering",
-                desc: "Ni sätter vikt och kontext för analysen. Exempelvis vad som är viktigast för er: säkerhet, kostnad, compliance eller flexibilitet. Ni anger också sektor, hur viktig EU-datalagring är och hur redo ni är att byta tjänster.",
+                bullets: [
+                  "Vikta säkerhet, kostnad, efterlevnad eller flexibilitet",
+                  "Välj sektor och betydelse av EU-datalagring",
+                  "Ange er beredskap att byta tjänster",
+                ],
               },
               {
                 icon: ScanSearch,
                 title: "3. Snabbanalys",
-                desc: "Systemet gör en snabb bedömning av alla leverantörer. Här kontrolleras exempelvis känslig data, certifieringar, affärskritikalitet och antal användare. Detta ger en första riskbild.",
+                bullets: [
+                  "Snabb bedömning av alla leverantörer",
+                  "Kontroll av känslig data och certifieringar",
+                  "Första riskbild baserad på kritikalitet",
+                ],
               },
               {
                 icon: ShieldCheck,
                 title: "4. Fördjupad analys",
-                desc: "För kritiska leverantörer eller där information saknas ställer systemet följdfrågor. Frågorna kan handla om säkerhetsnivå, incidenthantering, dataplats, jurisdiktion, ägarskap och regelverk.",
+                bullets: [
+                  "Följdfrågor för kritiska leverantörer",
+                  "Säkerhetsnivå, incidenthantering och dataplats",
+                  "Jurisdiktion, ägarskap och regelverk",
+                ],
               },
               {
                 icon: LineChart,
                 title: "5. Riskanalys och resultat",
-                desc: "Resultatet visar en tydlig leverantörslista med komponentbidrag, status och total score. Analysen visar om ni bör behålla leverantören, reducera risk eller överväga ett EU-alternativ.",
+                bullets: [
+                  "Leverantörslista med komponentbidrag och status",
+                  "Total score per leverantör",
+                  "Rekommendation: behåll, reducera eller byt",
+                ],
               },
             ].map((step, i) => {
               const Icon = step.icon;
+              // Arrow connectors: between 1→2, 2→3 (row 1) and 4→5 (row 2) at lg.
+              const showArrow = i === 0 || i === 1 || i === 3;
               return (
-                <div
-                  key={i}
-                  className="glass group rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-deep)]"
-                >
-                  <div
-                    className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-[var(--shadow-soft)]"
-                    style={{ background: "var(--gradient-cta)" }}
-                  >
-                    <Icon className="h-5 w-5" />
+                <div key={i} className="relative">
+                  <div className="glass group h-full rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-deep)]">
+                    <div
+                      className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-[var(--shadow-soft)]"
+                      style={{ background: "var(--gradient-cta)" }}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="text-base font-bold leading-snug text-foreground">
+                      {step.title}
+                    </h3>
+                    <ul className="mt-3 space-y-1.5 text-sm leading-relaxed text-foreground/70">
+                      {step.bullets.map((b, bi) => (
+                        <li key={bi} className="flex gap-2">
+                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/70" />
+                          <span>{b}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <h3 className="text-base font-bold leading-snug text-foreground">
-                    {step.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-foreground/70">{step.desc}</p>
+                  {showArrow && (
+                    <div className="pointer-events-none absolute right-[-14px] top-1/2 z-10 hidden -translate-y-1/2 lg:block">
+                      <div
+                        className="grid h-7 w-7 place-items-center rounded-full text-white shadow-[var(--shadow-soft)]"
+                        style={{ background: "var(--gradient-cta)" }}
+                      >
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
