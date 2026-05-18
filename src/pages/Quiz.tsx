@@ -462,8 +462,7 @@ const Quiz = () => {
         <div className="mt-10 flex items-center justify-between">
           <Button
             variant="ghost"
-            onClick={goBack}
-            disabled={stepIndex === 0}
+            onClick={() => (stepIndex === 0 ? navigate("/registrera-leverantorer") : goBack())}
             className="rounded-xl px-5 py-5 text-sm font-semibold"
           >
             <ArrowLeft className="mr-1 h-4 w-4" /> Tillbaka
