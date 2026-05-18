@@ -482,14 +482,6 @@ const Quiz = () => {
           ) : (
             <Button
               size="lg"
-              asChild
-              className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
-              style={{ background: "var(--gradient-cta)" }}
-            >
-              <Link to="/">Klar</Link>
-            </Button>
-            <Button
-              size="lg"
               onClick={() => setCompletionOpen(true)}
               className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
               style={{ background: "var(--gradient-cta)" }}
