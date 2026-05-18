@@ -242,6 +242,8 @@ const Quiz = () => {
   const vendors = stateVendors && stateVendors.length > 0 ? stateVendors : DEFAULT_VENDORS;
 
   const [stepIndex, setStepIndex] = useState(0);
+  const [completionOpen, setCompletionOpen] = useState(false);
+  const navigate = useNavigate();
   const [step1, setStep1] = useState<Step1State>({
     priorities: [],
     sector: "",
