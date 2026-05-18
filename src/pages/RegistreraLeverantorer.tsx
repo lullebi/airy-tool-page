@@ -91,8 +91,13 @@ const RegistreraLeverantorer = () => {
     });
   };
 
-  const hasAnyVendor = vendors.some((v) => v.name.trim().length > 0);
-  const canStart = hasAnyVendor;
+  const knownNames = new Set(QUICK_PICKS.map((p) => p.name.toLowerCase()));
+  const namedVendors = vendors.filter((v) => v.name.trim().length > 0);
+  const hasAnyVendor = namedVendors.length > 0;
+  const incompleteCustomVendors = namedVendors.filter(
+    (v) => !knownNames.has(v.name.trim().toLowerCase()) && (!v.type || !v.country.trim()),
+  );
+  const canStart = hasAnyVendor && incompleteCustomVendors.length === 0;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -283,7 +288,12 @@ const RegistreraLeverantorer = () => {
 
         {/* CTA */}
         <div className="mt-10 flex flex-col items-end gap-2">
-          {!canStart && (
+          {!canStart && hasAnyVendor && incompleteCustomVendors.length > 0 && (
+            <p className="text-xs font-medium text-foreground/60">
+              Ange Typ och Land för alla leverantörer som inte finns i Snabbval
+            </p>
+          )}
+          {!hasAnyVendor && (
             <p className="text-xs font-medium text-foreground/60">
               Lägg till minst en leverantör för att fortsätta
             </p>
