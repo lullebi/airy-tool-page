@@ -488,9 +488,50 @@ const Quiz = () => {
             >
               <Link to="/">Klar</Link>
             </Button>
+            <Button
+              size="lg"
+              onClick={() => setCompletionOpen(true)}
+              className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
+              style={{ background: "var(--gradient-cta)" }}
+            >
+              Klar
+            </Button>
           )}
         </div>
       </main>
+
+      <Dialog open={completionOpen} onOpenChange={setCompletionOpen}>
+        <DialogContent className="rounded-2xl shadow-xl sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <ShieldCheck className="h-6 w-6 text-primary" />
+            </div>
+            <DialogTitle className="text-center text-xl">Analysen är slutförd</DialogTitle>
+            <DialogDescription className="text-center">
+              Riskbedömningen har sammanställts och leverantörsanalysen är nu klar. Resultatet kan användas som beslutsunderlag för vidare utvärdering.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-center text-xs text-muted-foreground">
+            Tack för att ni använder Eurostack.
+          </p>
+          <DialogFooter className="mt-2 gap-2 sm:justify-center">
+            <Button
+              variant="outline"
+              onClick={() => setCompletionOpen(false)}
+              className="rounded-xl"
+            >
+              Stäng
+            </Button>
+            <Button
+              onClick={() => { setCompletionOpen(false); navigate("/"); }}
+              className="rounded-xl text-white"
+              style={{ background: "var(--gradient-cta)" }}
+            >
+              Till startsidan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dev shortcut — testing only */}
       <button
