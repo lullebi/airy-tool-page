@@ -972,7 +972,7 @@ const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean): ScoreBadg
   const base: ScoreBadge[] = [
     {
       key: "data_residency",
-      label: "Data Residency",
+      label: "Datalagring",
       value: hasDeep ? score("dd_loc_eu") : score("qs_sensitive_data"),
       evidence: hasDeep
         ? `Mätt mot: "${findQ("dd_loc_eu")?.text}" → ${ans("dd_loc_eu")}`
@@ -980,7 +980,7 @@ const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean): ScoreBadg
     },
     {
       key: "nis2",
-      label: "NIS2 Readiness",
+      label: "NIS2-beredskap",
       value: hasDeep ? score("dd_inc_plan") : score("qs_business_critical"),
       evidence: hasDeep
         ? `Mätt mot: "${findQ("dd_inc_plan")?.text}" → ${ans("dd_inc_plan")}`
@@ -988,7 +988,7 @@ const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean): ScoreBadg
     },
     {
       key: "dora",
-      label: "DORA Resilience",
+      label: "DORA-motståndskraft",
       value: hasDeep ? score("dd_own_dora") : score("qs_legal_agreements"),
       evidence: hasDeep
         ? `Mätt mot: "${findQ("dd_own_dora")?.text}" → ${ans("dd_own_dora")}`
@@ -996,7 +996,7 @@ const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean): ScoreBadg
     },
     {
       key: "gdpr",
-      label: "GDPR Assurance",
+      label: "GDPR-garanti",
       value: hasDeep ? score("dd_own_gdpr") : score("qs_certifications"),
       evidence: hasDeep
         ? `Mätt mot: "${findQ("dd_own_gdpr")?.text}" → ${ans("dd_own_gdpr")}`
@@ -1178,7 +1178,7 @@ const Step5Measurement = ({
                   : "bg-rose-100 text-rose-700"
               }`}
             >
-              {eu ? "EU" : "Non-EU"}
+              {eu ? "EU" : "Icke-EU"}
             </span>
           </div>
 
@@ -1290,7 +1290,7 @@ const Step5Measurement = ({
 
         <div className="flex-1">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/55">
-            Compliance Status
+            Efterlevnadsstatus
           </p>
           <p className="mt-1 text-lg font-bold text-foreground">{complianceText}</p>
           <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium text-foreground/70">
@@ -1300,7 +1300,7 @@ const Step5Measurement = ({
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-              Non-EU: {nonEuCount} ({nonEuPct}%)
+              Icke-EU: {nonEuCount} ({nonEuPct}%)
             </span>
           </div>
         </div>
@@ -1310,7 +1310,7 @@ const Step5Measurement = ({
       <div className="mb-6">
         <div className="mb-2 flex items-baseline justify-between">
           <h3 className="text-sm font-bold text-foreground">
-            Kända leverantörer <span className="text-foreground/50">· General</span>
+            Kända leverantörer <span className="text-foreground/50">· Generellt</span>
           </h3>
           <span className="text-[11px] font-medium text-foreground/55">
             Quick Scan tillämpad
@@ -1329,7 +1329,7 @@ const Step5Measurement = ({
       <div className="mb-6">
         <div className="mb-2 flex items-baseline justify-between">
           <h3 className="text-sm font-bold text-foreground">
-            Nischade leverantörer <span className="text-foreground/50">· Deep-Dive</span>
+            Nischade leverantörer <span className="text-foreground/50">· Djupanalys</span>
           </h3>
           <span className="text-[11px] font-medium text-foreground/55">
             Detaljerad teknisk analys
