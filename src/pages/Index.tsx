@@ -240,7 +240,7 @@ const Index = () => {
                   "Rekommendation: behåll, reducera eller byt",
                 ],
               },
-            }].map((step, i) => {
+            ].map((step, i) => {
               const Icon = step.icon;
               const [num, ...rest] = step.title.split(". ");
               const titleText = rest.join(". ");
