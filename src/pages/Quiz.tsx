@@ -476,7 +476,7 @@ const Quiz = () => {
               className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
               style={{ background: "var(--gradient-cta)" }}
             >
-              <Link to="/registrera-leverantorer">Klar</Link>
+              <Link to="/">Klar</Link>
             </Button>
           )}
         </div>
