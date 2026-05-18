@@ -125,9 +125,6 @@ const RegistreraLeverantorer = () => {
       <main className="relative z-10 mx-auto max-w-5xl px-4 pb-24 pt-10 md:px-8 md:pt-14">
         {/* INTRO */}
         <section className="mb-10 max-w-3xl">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/60">
-            Steg 1 av 3 – Leverantörer
-          </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
             Lägg till era{" "}
             <span className="text-primary">tech-leverantörer</span>
