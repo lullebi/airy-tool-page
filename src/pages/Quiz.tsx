@@ -58,10 +58,30 @@ const STEP1_SECTORS = [
   "Energi",
 ];
 
-const STEP1_READINESS: Option[] = [
-  { label: "Inom 24h", scoreValue: 100 },
-  { label: "Inom en vecka", scoreValue: 50 },
-  { label: "Ej tidskritiskt", scoreValue: 0 },
+const STEP1_READINESS: (Option & { description: string })[] = [
+  {
+    label: "Mycket låg",
+    scoreValue: 0,
+    description: "Vi har inga reservrutiner; verksamheten stannar helt upp.",
+  },
+  {
+    label: "Låg",
+    scoreValue: 33,
+    description:
+      "Vi har en viss beredskap, men drabbas av stora och omedelbara verksamhetsstörningar.",
+  },
+  {
+    label: "God",
+    scoreValue: 66,
+    description:
+      "Vi har manuella rutiner eller alternativa arbetssätt som gör att vi klarar oss under en begränsad tid.",
+  },
+  {
+    label: "Mycket god",
+    scoreValue: 100,
+    description:
+      "Vi har redundans (reservsystem) och en testad kontinuitetsplan; verksamheten påverkas minimalt.",
+  },
 ];
 
 const QUICK_SCAN: Question[] = [
