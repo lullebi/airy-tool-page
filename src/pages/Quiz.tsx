@@ -475,7 +475,9 @@ const Quiz = () => {
               className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
               style={{ background: "var(--gradient-cta)" }}
             >
-              {["Gå till snabbanalys", "Gå till fördjupad analys", "Gå till resultat", "Gå till mätning"][stepIndex]}
+              {stepIndex === 2 && deepDiveEnabled && deepVendors.length > 1 && deepVendorIndex < deepVendors.length - 1
+                ? "Nästa"
+                : ["Gå till snabbanalys", "Gå till fördjupad analys", "Gå till resultat", "Gå till mätning"][stepIndex]}
               <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
             </Button>
           ) : (
