@@ -236,7 +236,7 @@ const Index = () => {
                 title: "5. Riskanalys och resultat",
                 bullets: [
                   "Leverantörslista med komponentbidrag och status",
-                  "Total score per leverantör",
+                  "Total poäng per leverantör",
                   "Rekommendation: behåll, reducera eller byt",
                 ],
               },
