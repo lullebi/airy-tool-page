@@ -268,7 +268,7 @@ const Quiz = () => {
     priorities: [],
     sector: "",
     euDataWeight: 3,
-    readiness: "Inom en vecka",
+    readiness: "God",
   });
   const [quickAnswers, setQuickAnswers] = useState<Answers>({});
   // Per-vendor deep dive answers, keyed by vendor id.
@@ -344,7 +344,7 @@ const Quiz = () => {
       priorities: ["Säkerhet", "Efterlevnad"],
       sector: "Finans",
       euDataWeight: 4,
-      readiness: "Inom en vecka",
+      readiness: "God",
     });
     const mockQuick: Answers = {};
     QUICK_SCAN.forEach((q) => {
