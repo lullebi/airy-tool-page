@@ -97,7 +97,9 @@ const RegistreraLeverantorer = () => {
   const incompleteCustomVendors = namedVendors.filter(
     (v) => !knownNames.has(v.name.trim().toLowerCase()) && (!v.type || !v.country.trim()),
   );
-  const canStart = hasAnyVendor && incompleteCustomVendors.length === 0;
+  const missingSystemVendors = namedVendors.filter((v) => !v.system.trim());
+  const canStart =
+    hasAnyVendor && incompleteCustomVendors.length === 0 && missingSystemVendors.length === 0;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -249,7 +251,7 @@ const RegistreraLeverantorer = () => {
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
-                    System <span className="font-normal normal-case text-foreground/45">(valfritt)</span>
+                    System
                   </Label>
                   <Input
                     value={v.system}
