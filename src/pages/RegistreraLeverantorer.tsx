@@ -288,7 +288,12 @@ const RegistreraLeverantorer = () => {
 
         {/* CTA */}
         <div className="mt-10 flex flex-col items-end gap-2">
-          {!canStart && (
+          {!canStart && hasAnyVendor && incompleteCustomVendors.length > 0 && (
+            <p className="text-xs font-medium text-foreground/60">
+              Ange Typ och Land för alla leverantörer som inte finns i Snabbval
+            </p>
+          )}
+          {!hasAnyVendor && (
             <p className="text-xs font-medium text-foreground/60">
               Lägg till minst en leverantör för att fortsätta
             </p>
