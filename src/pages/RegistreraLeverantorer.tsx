@@ -130,7 +130,7 @@ const RegistreraLeverantorer = () => {
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
             Lägg till era{" "}
-            <span className="text-primary">tech suppliers</span>
+            <span className="text-primary">tech-leverantörer</span>
           </h1>
           <p className="mt-3 text-base font-medium leading-relaxed text-foreground/70">
             Registrera klientens leverantörer för att analysera risk och beroenden. Markera vilka som är affärskritiska för att få relevanta rekommendationer.

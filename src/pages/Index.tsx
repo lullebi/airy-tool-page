@@ -188,7 +188,7 @@ const Index = () => {
             </h2>
             <p className="mt-5 text-base leading-relaxed text-foreground/70 md:text-lg">
               Få en tydlig översikt över hur analysen fungerar. Processen guidar er steg för steg
-              från registrering av tech suppliers till ett färdigt riskresultat.
+              från registrering av tech-leverantörer till ett färdigt riskresultat.
             </p>
           </div>
 
@@ -197,7 +197,7 @@ const Index = () => {
             {[
               {
                 icon: ClipboardList,
-                title: "1. Registrera tech suppliers",
+                title: "1. Registrera tech-leverantörer",
                 desc: "Ni börjar med att lägga till de leverantörer ni använder idag. För varje leverantör anger ni namn, system, land, dataplats och om leverantören måste behållas även vid icke-EU-risk.",
               },
               {
