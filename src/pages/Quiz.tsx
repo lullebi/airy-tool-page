@@ -623,7 +623,7 @@ const Step1Konfig = ({
       </Field>
 
       {/* Readiness */}
-      <Field label="Beredskap vid avstängning av utländska tjänster">
+      <Field label="Hur snabbt behöver ni kunna byta ut en kritisk tjänst vid ett avbrott?">
         <div className="grid grid-cols-3 gap-2">
           {STEP1_READINESS.map((r) => {
             const active = state.readiness === r.label;
