@@ -743,15 +743,6 @@ const Step3DeepDive = ({
           : "Aktiveras för leverantörer där datasetet saknar information. Detaljerad granskning per leverantör."
       }
     >
-      <label className="mb-6 flex items-center gap-3 rounded-xl bg-white/60 p-3 ring-1 ring-white/70">
-        <Checkbox
-          checked={enabled}
-          onCheckedChange={(v) => setEnabled(Boolean(v))}
-        />
-        <span className="text-sm font-medium text-foreground/80">
-          Aktivera Fördjupad analys (rekommenderas vid okända eller nischade leverantörer)
-        </span>
-      </label>
 
       {!enabled ? (
         <p className="rounded-xl bg-white/60 p-5 text-sm text-foreground/70 ring-1 ring-white/70">
