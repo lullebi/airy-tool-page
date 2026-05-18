@@ -1217,6 +1217,62 @@ const Step5Measurement = ({
             </span>
           </div>
 
+          <div className="mt-3 rounded-lg bg-white/80 px-2.5 py-2 ring-1 ring-white/70">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-foreground/55">
+              Riskprofil
+            </p>
+            <div className="mt-1.5 space-y-1.5">
+              <div className="flex items-start gap-1.5">
+                <AlertTriangle
+                  className={`mt-0.5 h-3 w-3 flex-shrink-0 ${eu ? "text-emerald-600" : "text-rose-600"}`}
+                />
+                <p className="text-[11px] font-medium text-foreground/75">
+                  <span className="font-bold text-foreground/80">Compliance-risk: </span>
+                  <span className={eu ? "font-bold text-emerald-600" : "font-bold text-rose-600"}>
+                    {eu ? "Låg risk" : "Hög risk"}
+                  </span>
+                  <span className="text-foreground/65">
+                    {eu
+                      ? " – Jurisdiktion inom EU."
+                      : " – Jurisdiktion utanför EU (exponering mot CLOUD Act)."}
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-start gap-1.5">
+                <ShieldCheck
+                  className={`mt-0.5 h-3 w-3 flex-shrink-0 ${
+                    status.tone === "ok"
+                      ? "text-emerald-600"
+                      : status.tone === "warn"
+                        ? "text-amber-600"
+                        : "text-rose-600"
+                  }`}
+                />
+                <p className="text-[11px] font-medium text-foreground/75">
+                  <span className="font-bold text-foreground/80">Säkerhetsrisk: </span>
+                  <span
+                    className={`font-bold ${
+                      status.tone === "ok"
+                        ? "text-emerald-600"
+                        : status.tone === "warn"
+                          ? "text-amber-600"
+                          : "text-rose-600"
+                    }`}
+                  >
+                    {status.tone === "ok" ? "Låg risk" : status.tone === "warn" ? "Medel risk" : "Hög risk"}
+                  </span>
+                  <span className="text-foreground/65">
+                    {status.tone === "ok"
+                      ? " – Hög teknisk motståndskraft och regulatorisk beredskap (NIS2/DORA)."
+                      : status.tone === "warn"
+                        ? " – Acceptabel teknisk motståndskraft, vissa förbättringsområden."
+                        : " – Bristande teknisk motståndskraft, åtgärder rekommenderas."}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="mt-3 grid grid-cols-2 gap-1.5">
             {badges.map((b) => (
               <div
@@ -1232,24 +1288,13 @@ const Step5Measurement = ({
             ))}
           </div>
 
-          <div className="mt-3 flex items-center justify-between">
-            <span
-              className={`text-[11px] font-semibold ${
-                status.tone === "ok"
-                  ? "text-emerald-600"
-                  : status.tone === "warn"
-                    ? "text-amber-600"
-                    : "text-rose-600"
-              }`}
-            >
-              {status.label}
-            </span>
-            {!eu && (
+          {!eu && (
+            <div className="mt-3 flex justify-end">
               <ChevronDown
                 className={`h-4 w-4 text-foreground/60 transition ${isOpen ? "rotate-180" : ""}`}
               />
-            )}
-          </div>
+            </div>
+          )}
         </button>
 
         {!eu && isOpen && (
