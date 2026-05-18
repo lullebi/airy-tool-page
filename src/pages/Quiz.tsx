@@ -1445,7 +1445,15 @@ const Step5Measurement = ({
           {kanda.length > 0 ? (
             kanda.map(renderCard)
           ) : (
-            <p className="text-xs text-foreground/55">Inga leverantörer i denna lane.</p>
+            <div className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-foreground/20 bg-white/50 px-4 py-8 text-center">
+              <Inbox className="h-6 w-6 text-foreground/40" aria-hidden="true" />
+              <p className="text-sm font-semibold text-foreground/70">
+                Inga kända leverantörer ännu
+              </p>
+              <p className="text-xs text-foreground/55">
+                Lägg till leverantörer från snabbvalet för att se dem här.
+              </p>
+            </div>
           )}
         </div>
       </div>
