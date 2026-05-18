@@ -240,21 +240,28 @@ const Index = () => {
                   "Rekommendation: behåll, reducera eller byt",
                 ],
               },
-            ].map((step, i) => {
+            }].map((step, i) => {
               const Icon = step.icon;
-              // Arrow connectors: between 1→2, 2→3 (row 1) and 4→5 (row 2) at lg.
-              const showArrow = i === 0 || i === 1 || i === 3;
+              const [num, ...rest] = step.title.split(". ");
+              const titleText = rest.join(". ");
               return (
                 <div key={i} className="relative">
                   <div className="glass group h-full rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-deep)]">
-                    <div
-                      className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-[var(--shadow-soft)]"
-                      style={{ background: "var(--gradient-cta)" }}
-                    >
-                      <Icon className="h-5 w-5" />
+                    <div className="mb-4 flex items-center gap-3">
+                      <span
+                        className="bg-gradient-to-r from-blue-600 to-sky-400 bg-clip-text text-4xl font-bold leading-none text-transparent md:text-5xl"
+                      >
+                        {num}
+                      </span>
+                      <div
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-[var(--shadow-soft)]"
+                        style={{ background: "var(--gradient-cta)" }}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </div>
                     </div>
                     <h3 className="text-base font-bold leading-snug text-foreground">
-                      {step.title}
+                      {titleText}
                     </h3>
                     <ul className="mt-3 space-y-1.5 text-sm leading-relaxed text-foreground/70">
                       {step.bullets.map((b, bi) => (
@@ -265,16 +272,6 @@ const Index = () => {
                       ))}
                     </ul>
                   </div>
-                  {showArrow && (
-                    <div className="pointer-events-none absolute right-[-14px] top-1/2 z-10 hidden -translate-y-1/2 lg:block">
-                      <div
-                        className="grid h-7 w-7 place-items-center rounded-full text-white shadow-[var(--shadow-soft)]"
-                        style={{ background: "var(--gradient-cta)" }}
-                      >
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })}
