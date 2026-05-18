@@ -154,10 +154,10 @@ const Index = () => {
                     size="lg"
                     className="group rounded-xl bg-white px-6 py-6 text-base font-bold text-primary shadow-[var(--shadow-glow)] hover:bg-sky-50"
                   >
-                    <a href="/quiz">
+                    <Link to="/registrera-leverantorer">
                       Starta din analys
                       <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
-                    </a>
+                    </Link>
                   </Button>
                   <Button
                     asChild
