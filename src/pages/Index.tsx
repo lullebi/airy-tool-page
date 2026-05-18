@@ -207,12 +207,12 @@ const Index = () => {
               },
               {
                 icon: ScanSearch,
-                title: "3. Quick Scan",
+                title: "3. Snabbanalys",
                 desc: "Systemet gör en snabb bedömning av alla leverantörer. Här kontrolleras exempelvis känslig data, certifieringar, affärskritikalitet och antal användare. Detta ger en första riskbild.",
               },
               {
                 icon: ShieldCheck,
-                title: "4. Deep Dive",
+                title: "4. Fördjupad analys",
                 desc: "För kritiska leverantörer eller där information saknas ställer systemet följdfrågor. Frågorna kan handla om säkerhetsnivå, incidenthantering, dataplats, jurisdiktion, ägarskap och regelverk.",
               },
               {
@@ -285,7 +285,7 @@ const Index = () => {
                   Datasetet samlar information om kända leverantörer. Det används för att besvara
                   frågor som redan finns dokumenterade, exempelvis land, dataplats, certifieringar
                   och kända regelverksrisker. Om information saknas skickas frågan vidare till
-                  Deep Dive.
+                  Fördjupad analys.
                 </p>
               </div>
             </div>
