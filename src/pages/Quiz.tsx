@@ -59,9 +59,9 @@ const STEP1_SECTORS = [
 ];
 
 const STEP1_READINESS: Option[] = [
-  { label: "Låg", scoreValue: 0 },
-  { label: "Medel", scoreValue: 50 },
-  { label: "Hög", scoreValue: 100 },
+  { label: "Inom 24h", scoreValue: 100 },
+  { label: "Inom en vecka", scoreValue: 50 },
+  { label: "Ej tidskritiskt", scoreValue: 0 },
 ];
 
 const QUICK_SCAN: Question[] = [
@@ -248,7 +248,7 @@ const Quiz = () => {
     priorities: [],
     sector: "",
     euDataWeight: 3,
-    readiness: "Medel",
+    readiness: "Inom en vecka",
   });
   const [quickAnswers, setQuickAnswers] = useState<Answers>({});
   // Per-vendor deep dive answers, keyed by vendor id.
@@ -324,7 +324,7 @@ const Quiz = () => {
       priorities: ["Säkerhet", "Efterlevnad"],
       sector: "Finans",
       euDataWeight: 4,
-      readiness: "Medel",
+      readiness: "Inom en vecka",
     });
     const mockQuick: Answers = {};
     QUICK_SCAN.forEach((q) => {
@@ -623,7 +623,7 @@ const Step1Konfig = ({
       </Field>
 
       {/* Readiness */}
-      <Field label="Beredskap vid avstängning av utländska tjänster">
+      <Field label="Hur snabbt behöver ni kunna byta ut en kritisk tjänst vid ett avbrott?">
         <div className="grid grid-cols-3 gap-2">
           {STEP1_READINESS.map((r) => {
             const active = state.readiness === r.label;
