@@ -643,8 +643,8 @@ const Step1Konfig = ({
       </Field>
 
       {/* Readiness */}
-      <Field label="Hur snabbt behöver ni kunna byta ut en kritisk tjänst vid ett avbrott?">
-        <div className="grid grid-cols-3 gap-2">
+      <Field label="Hur bedömer ni er förmåga att upprätthålla verksamheten vid ett plötsligt avbrott i leverantörens tjänster?">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {STEP1_READINESS.map((r) => {
             const active = state.readiness === r.label;
             return (
@@ -652,13 +652,16 @@ const Step1Konfig = ({
                 key={r.label}
                 type="button"
                 onClick={() => setState((s) => ({ ...s, readiness: r.label }))}
-                className={`rounded-xl px-4 py-3 text-sm font-semibold transition ring-1 ${
+                className={`rounded-xl px-4 py-3 text-left transition ring-1 ${
                   active
                     ? "bg-foreground text-background ring-foreground"
                     : "bg-white/70 text-foreground/80 ring-white/70 hover:bg-white"
                 }`}
               >
-                {r.label}
+                <div className="text-base font-semibold">{r.label}</div>
+                <div className={`mt-1 text-xs ${active ? "text-background/80" : "text-foreground/60"}`}>
+                  {r.description}
+                </div>
               </button>
             );
           })}
