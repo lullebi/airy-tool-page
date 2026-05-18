@@ -1,6 +1,14 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, ShieldAlert, ChevronDown, Download, Repeat } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, ShieldAlert, ChevronDown, Download, Repeat, ShieldCheck } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -234,6 +242,8 @@ const Quiz = () => {
   const vendors = stateVendors && stateVendors.length > 0 ? stateVendors : DEFAULT_VENDORS;
 
   const [stepIndex, setStepIndex] = useState(0);
+  const [completionOpen, setCompletionOpen] = useState(false);
+  const navigate = useNavigate();
   const [step1, setStep1] = useState<Step1State>({
     priorities: [],
     sector: "",
@@ -472,15 +482,48 @@ const Quiz = () => {
           ) : (
             <Button
               size="lg"
-              asChild
+              onClick={() => setCompletionOpen(true)}
               className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
               style={{ background: "var(--gradient-cta)" }}
             >
-              <Link to="/">Klar</Link>
+              Klar
             </Button>
           )}
         </div>
       </main>
+
+      <Dialog open={completionOpen} onOpenChange={setCompletionOpen}>
+        <DialogContent className="rounded-2xl shadow-xl sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <ShieldCheck className="h-6 w-6 text-primary" />
+            </div>
+            <DialogTitle className="text-center text-xl">Analysen är slutförd</DialogTitle>
+            <DialogDescription className="text-center">
+              Riskbedömningen har sammanställts och leverantörsanalysen är nu klar. Resultatet kan användas som beslutsunderlag för vidare utvärdering.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-center text-xs text-muted-foreground">
+            Tack för att ni använder Eurostack.
+          </p>
+          <DialogFooter className="mt-2 gap-2 sm:justify-center">
+            <Button
+              variant="outline"
+              onClick={() => setCompletionOpen(false)}
+              className="rounded-xl"
+            >
+              Stäng
+            </Button>
+            <Button
+              onClick={() => { setCompletionOpen(false); navigate("/"); }}
+              className="rounded-xl text-white"
+              style={{ background: "var(--gradient-cta)" }}
+            >
+              Till startsidan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dev shortcut — testing only */}
       <button
