@@ -59,9 +59,9 @@ const STEP1_SECTORS = [
 ];
 
 const STEP1_READINESS: Option[] = [
-  { label: "Låg", scoreValue: 0 },
-  { label: "Medel", scoreValue: 50 },
-  { label: "Hög", scoreValue: 100 },
+  { label: "Inom 24h", scoreValue: 100 },
+  { label: "Inom en vecka", scoreValue: 50 },
+  { label: "Ej tidskritiskt", scoreValue: 0 },
 ];
 
 const QUICK_SCAN: Question[] = [
