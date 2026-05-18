@@ -109,33 +109,33 @@ const QUICK_SCAN: Question[] = [
 
 const DEEP_DIVE: Question[] = [
   // Security Level
-  { id: "dd_sec_encryption", kategori: "Security Level", text: "Krypteras data både i vila och under transport?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja, alltid",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_sec_access", kategori: "Security Level", text: "Används MFA och rollbaserad åtkomst?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_sec_audit", kategori: "Security Level", text: "Genomförs regelbundna säkerhetsrevisioner?", viktning: 0.16, type: "single", svarsalternativ: [{label:"Årligen",scoreValue:100},{label:"Sällan",scoreValue:50},{label:"Aldrig",scoreValue:0}] },
-  { id: "dd_sec_pen", kategori: "Security Level", text: "Genomförs penetrationstester av tredje part?", viktning: 0.14, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_sec_keys", kategori: "Security Level", text: "Kontrollerar ni krypteringsnycklarna (BYOK/HYOK)?", viktning: 0.16, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_sec_zero", kategori: "Security Level", text: "Tillämpar leverantören zero-trust-arkitektur?", viktning: 0.16, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_sec_encryption", kategori: "Säkerhetsnivå", text: "Krypteras data både i vila och under transport?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja, alltid",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_sec_access", kategori: "Säkerhetsnivå", text: "Används MFA och rollbaserad åtkomst?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_sec_audit", kategori: "Säkerhetsnivå", text: "Genomförs regelbundna säkerhetsrevisioner?", viktning: 0.16, type: "single", svarsalternativ: [{label:"Årligen",scoreValue:100},{label:"Sällan",scoreValue:50},{label:"Aldrig",scoreValue:0}] },
+  { id: "dd_sec_pen", kategori: "Säkerhetsnivå", text: "Genomförs penetrationstester av tredje part?", viktning: 0.14, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_sec_keys", kategori: "Säkerhetsnivå", text: "Kontrollerar ni krypteringsnycklarna (BYOK/HYOK)?", viktning: 0.16, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_sec_zero", kategori: "Säkerhetsnivå", text: "Tillämpar leverantören zero-trust-arkitektur?", viktning: 0.16, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
 
   // Incident Management
-  { id: "dd_inc_plan", kategori: "Incident Management", text: "Finns en dokumenterad incidenthanteringsplan?", viktning: 0.22, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_inc_sla", kategori: "Incident Management", text: "Finns SLA för svarstid vid säkerhetsincidenter?", viktning: 0.2, type: "single", svarsalternativ: [{label:"< 4h",scoreValue:100},{label:"< 24h",scoreValue:60},{label:"Ingen SLA",scoreValue:0}] },
-  { id: "dd_inc_notif", kategori: "Incident Management", text: "Notifieras kund inom 72h vid databreach?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_inc_drills", kategori: "Incident Management", text: "Genomförs regelbundna incidentövningar?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Sällan",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_inc_log", kategori: "Incident Management", text: "Finns fullständiga loggar tillgängliga för forensik?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_inc_plan", kategori: "Incidenthantering", text: "Finns en dokumenterad incidenthanteringsplan?", viktning: 0.22, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_inc_sla", kategori: "Incidenthantering", text: "Finns SLA för svarstid vid säkerhetsincidenter?", viktning: 0.2, type: "single", svarsalternativ: [{label:"< 4h",scoreValue:100},{label:"< 24h",scoreValue:60},{label:"Ingen SLA",scoreValue:0}] },
+  { id: "dd_inc_notif", kategori: "Incidenthantering", text: "Notifieras kund inom 72h vid databreach?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_inc_drills", kategori: "Incidenthantering", text: "Genomförs regelbundna incidentövningar?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Sällan",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_inc_log", kategori: "Incidenthantering", text: "Finns fullständiga loggar tillgängliga för forensik?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
 
   // Data Location / Jurisdiction
-  { id: "dd_loc_eu", kategori: "Data Location/Jurisdiction", text: "Lagras all data inom EU/EES?", viktning: 0.25, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:40},{label:"Nej",scoreValue:0}] },
-  { id: "dd_loc_transfer", kategori: "Data Location/Jurisdiction", text: "Sker dataöverföring till tredje land?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Aldrig",scoreValue:100},{label:"Sällan",scoreValue:50},{label:"Ofta",scoreValue:0}] },
-  { id: "dd_loc_scc", kategori: "Data Location/Jurisdiction", text: "Används SCC eller godkända överföringsmekanismer?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_loc_residency", kategori: "Data Location/Jurisdiction", text: "Garanterar leverantören data residency på begäran?", viktning: 0.17, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_loc_sub", kategori: "Data Location/Jurisdiction", text: "Är alla underleverantörer EU-baserade?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_loc_eu", kategori: "Datalagring och jurisdiktion", text: "Lagras all data inom EU/EES?", viktning: 0.25, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:40},{label:"Nej",scoreValue:0}] },
+  { id: "dd_loc_transfer", kategori: "Datalagring och jurisdiktion", text: "Sker dataöverföring till tredje land?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Aldrig",scoreValue:100},{label:"Sällan",scoreValue:50},{label:"Ofta",scoreValue:0}] },
+  { id: "dd_loc_scc", kategori: "Datalagring och jurisdiktion", text: "Används SCC eller godkända överföringsmekanismer?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_loc_residency", kategori: "Datalagring och jurisdiktion", text: "Garanterar leverantören data residency på begäran?", viktning: 0.17, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_loc_sub", kategori: "Datalagring och jurisdiktion", text: "Är alla underleverantörer EU-baserade?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
 
   // Ownership / Lagar & Regelverk
-  { id: "dd_own_hq", kategori: "Ownership/Lagar & Regelverk", text: "Har leverantören huvudkontor i EU?", viktning: 0.22, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Nej",scoreValue:0}] },
-  { id: "dd_own_cloud_act", kategori: "Ownership/Lagar & Regelverk", text: "Omfattas leverantören av US CLOUD Act eller liknande?", viktning: 0.22, type: "single", svarsalternativ: [{label:"Nej",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Ja",scoreValue:0}] },
-  { id: "dd_own_owner", kategori: "Ownership/Lagar & Regelverk", text: "Är ägarstrukturen transparent och EU-kontrollerad?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_own_gdpr", kategori: "Ownership/Lagar & Regelverk", text: "Är leverantören fullt GDPR-compliant?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_own_dora", kategori: "Ownership/Lagar & Regelverk", text: "Möter leverantören DORA / NIS2-krav där tillämpligt?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_own_hq", kategori: "Ägarskap och regelverk", text: "Har leverantören huvudkontor i EU?", viktning: 0.22, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Nej",scoreValue:0}] },
+  { id: "dd_own_cloud_act", kategori: "Ägarskap och regelverk", text: "Omfattas leverantören av US CLOUD Act eller liknande?", viktning: 0.22, type: "single", svarsalternativ: [{label:"Nej",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Ja",scoreValue:0}] },
+  { id: "dd_own_owner", kategori: "Ägarskap och regelverk", text: "Är ägarstrukturen transparent och EU-kontrollerad?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_own_gdpr", kategori: "Ägarskap och regelverk", text: "Är leverantören fullt GDPR-compliant?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_own_dora", kategori: "Ägarskap och regelverk", text: "Möter leverantören DORA / NIS2-krav där tillämpligt?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
 ];
 
 /* =========================================================================
@@ -972,7 +972,7 @@ const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean): ScoreBadg
   const base: ScoreBadge[] = [
     {
       key: "data_residency",
-      label: "Data Residency",
+      label: "Datalagring",
       value: hasDeep ? score("dd_loc_eu") : score("qs_sensitive_data"),
       evidence: hasDeep
         ? `Mätt mot: "${findQ("dd_loc_eu")?.text}" → ${ans("dd_loc_eu")}`
@@ -980,7 +980,7 @@ const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean): ScoreBadg
     },
     {
       key: "nis2",
-      label: "NIS2 Readiness",
+      label: "NIS2-beredskap",
       value: hasDeep ? score("dd_inc_plan") : score("qs_business_critical"),
       evidence: hasDeep
         ? `Mätt mot: "${findQ("dd_inc_plan")?.text}" → ${ans("dd_inc_plan")}`
@@ -988,7 +988,7 @@ const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean): ScoreBadg
     },
     {
       key: "dora",
-      label: "DORA Resilience",
+      label: "DORA-motståndskraft",
       value: hasDeep ? score("dd_own_dora") : score("qs_legal_agreements"),
       evidence: hasDeep
         ? `Mätt mot: "${findQ("dd_own_dora")?.text}" → ${ans("dd_own_dora")}`
@@ -996,7 +996,7 @@ const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean): ScoreBadg
     },
     {
       key: "gdpr",
-      label: "GDPR Assurance",
+      label: "GDPR-garanti",
       value: hasDeep ? score("dd_own_gdpr") : score("qs_certifications"),
       evidence: hasDeep
         ? `Mätt mot: "${findQ("dd_own_gdpr")?.text}" → ${ans("dd_own_gdpr")}`
@@ -1178,7 +1178,7 @@ const Step5Measurement = ({
                   : "bg-rose-100 text-rose-700"
               }`}
             >
-              {eu ? "EU" : "Non-EU"}
+              {eu ? "EU" : "Icke-EU"}
             </span>
           </div>
 
@@ -1290,7 +1290,7 @@ const Step5Measurement = ({
 
         <div className="flex-1">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/55">
-            Compliance Status
+            Efterlevnadsstatus
           </p>
           <p className="mt-1 text-lg font-bold text-foreground">{complianceText}</p>
           <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium text-foreground/70">
@@ -1300,7 +1300,7 @@ const Step5Measurement = ({
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-              Non-EU: {nonEuCount} ({nonEuPct}%)
+              Icke-EU: {nonEuCount} ({nonEuPct}%)
             </span>
           </div>
         </div>
@@ -1310,7 +1310,7 @@ const Step5Measurement = ({
       <div className="mb-6">
         <div className="mb-2 flex items-baseline justify-between">
           <h3 className="text-sm font-bold text-foreground">
-            Kända leverantörer <span className="text-foreground/50">· General</span>
+            Kända leverantörer <span className="text-foreground/50">· Generellt</span>
           </h3>
           <span className="text-[11px] font-medium text-foreground/55">
             Quick Scan tillämpad
@@ -1329,7 +1329,7 @@ const Step5Measurement = ({
       <div className="mb-6">
         <div className="mb-2 flex items-baseline justify-between">
           <h3 className="text-sm font-bold text-foreground">
-            Nischade leverantörer <span className="text-foreground/50">· Deep-Dive</span>
+            Nischade leverantörer <span className="text-foreground/50">· Djupanalys</span>
           </h3>
           <span className="text-[11px] font-medium text-foreground/55">
             Detaljerad teknisk analys
