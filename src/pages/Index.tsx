@@ -1,4 +1,5 @@
-import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp, ClipboardList, SlidersHorizontal, ScanSearch, ShieldCheck, LineChart, Database, Network, Lock, Landmark, FileText, BadgeCheck } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp, ClipboardList, SlidersHorizontal, ScanSearch, ShieldCheck, LineChart, Database, Network, Lock, Landmark, FileText, BadgeCheck, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -27,6 +28,7 @@ const newsItems = [
 ];
 
 const Index = () => {
+  const [datasetExpanded, setDatasetExpanded] = useState(false);
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Ambient depth */}
@@ -322,6 +324,59 @@ const Index = () => {
                   och kända regelverksrisker. Om information saknas skickas frågan vidare till
                   Fördjupad analys.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setDatasetExpanded((v) => !v)}
+                  aria-expanded={datasetExpanded}
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-foreground/70 hover:text-foreground focus:outline-none"
+                >
+                  {datasetExpanded ? "Visa mindre" : "Teknisk beskrivning"}
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform ${datasetExpanded ? "rotate-180" : ""}`}
+                  />
+                </button>
+                <div
+                  className={`grid transition-all duration-300 ease-out ${
+                    datasetExpanded ? "mt-3 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="space-y-3 border-t border-white/50 pt-3 text-xs leading-relaxed text-foreground/65">
+                      <div>
+                        <p className="font-semibold text-foreground/80">Datakällor</p>
+                        <p>
+                          Kuraterat dataset över EU- och globala tech-leverantörer, kompletterat med
+                          öppna register, leverantörers transparensrapporter, ISO/SOC2/C5-certifikat
+                          samt EU-kommissionens publikationer om adekvansbeslut och SCC.
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground/80">API och uppslag</p>
+                        <p>
+                          Varje leverantör matchas via ett uppslag i datasetet. Saknad metadata
+                          (land, jurisdiktion, certifieringar) faller tillbaka till Fördjupad analys
+                          där svaren samlas in via quizet.
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground/80">Riskpoäng och viktning</p>
+                        <p>
+                          Sammanvägd poäng (0–100) beräknas som Snabbanalys 35 %, Fördjupad analys
+                          35 %, EU-vikt 15 % och Beredskap 15 %. Varje fråga har en intern viktning
+                          (0–1) baserad på regulatorisk tyngd.
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground/80">Compliance och jurisdiktion</p>
+                        <p>
+                          Analysen mappas mot DORA, NIS2, GDPR, Data Act och EU-suveränitet. Vid
+                          tredjelandsöverföring kontrolleras CLOUD Act-exponering, SCC och
+                          data residency för att flagga juridiska risker.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
