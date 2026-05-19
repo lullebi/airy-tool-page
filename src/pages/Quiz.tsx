@@ -316,8 +316,8 @@ const Quiz = () => {
   const [step1, setStep1] = useState<Step1State>({
     priorities: [],
     sector: "",
-    euDataWeight: 3,
-    readiness: "God",
+    euDataWeight: null,
+    readiness: "",
   });
   const [quickAnswers, setQuickAnswers] = useState<Answers>({});
   // Per-vendor deep dive answers, keyed by vendor id.
