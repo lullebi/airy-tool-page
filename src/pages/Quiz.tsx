@@ -302,10 +302,15 @@ const DEFAULT_VENDORS: VendorLike[] = [
 
 const Quiz = () => {
   const location = useLocation();
-  const stateVendors = (location.state as { vendors?: VendorLike[] } | null)?.vendors;
+  const navState = (location.state as { vendors?: VendorLike[]; stepIndex?: number } | null);
+  const stateVendors = navState?.vendors;
   const vendors = stateVendors && stateVendors.length > 0 ? stateVendors : DEFAULT_VENDORS;
 
-  const [stepIndex, setStepIndex] = useState(0);
+  const [stepIndex, setStepIndex] = useState(
+    typeof navState?.stepIndex === "number"
+      ? Math.max(0, Math.min(STEPS.length - 1, navState.stepIndex))
+      : 0,
+  );
   const [completionOpen, setCompletionOpen] = useState(false);
   const navigate = useNavigate();
   const [step1, setStep1] = useState<Step1State>({
