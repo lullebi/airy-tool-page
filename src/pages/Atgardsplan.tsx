@@ -231,7 +231,7 @@ const Atgardsplan = () => {
         </section>
 
         <div className="flex justify-center pt-2">
-          <Button variant="outline" onClick={() => navigate(-1)} className="rounded-xl">
+          <Button variant="outline" onClick={() => navigate("/quiz", { state: { vendors: state.vendors, stepIndex: 4 } })} className="rounded-xl">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Tillbaka till mätning
           </Button>
