@@ -408,12 +408,13 @@ const Quiz = () => {
   };
 
   const togglePriority = (label: string) =>
-    setStep1((s) => ({
-      ...s,
-      priorities: s.priorities.includes(label)
-        ? s.priorities.filter((p) => p !== label)
-        : [...s.priorities, label],
-    }));
+    setStep1((s) => {
+      if (s.priorities.includes(label)) {
+        return { ...s, priorities: s.priorities.filter((p) => p !== label) };
+      }
+      if (s.priorities.length >= 3) return s;
+      return { ...s, priorities: [...s.priorities, label] };
+    });
 
   return (
     <div className="relative min-h-screen overflow-hidden">
