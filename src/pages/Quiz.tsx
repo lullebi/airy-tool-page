@@ -21,6 +21,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
+const QUESTION_HELP: Record<string, string> = {
+  qs_sensitive_data: "Känslig data omfattar personuppgifter, finansiell, hälso- eller affärskritisk information som skyddas av GDPR eller branschregler.",
+  qs_certifications: "ISO 27001 (informationssäkerhet), SOC 2 (driftkontroller) och C5 (tysk molnsäkerhet) bekräftar att leverantören följer erkända säkerhetsstandarder.",
+  qs_business_critical: "En affärskritisk leverantör är en vars avbrott direkt skulle stoppa eller skada er verksamhet.",
+  qs_legal_agreements: "DPA = Data Processing Agreement (GDPR-krav vid personuppgifter). SLA = Service Level Agreement som reglerar drift, support och svarstider.",
+  dd_sec_encryption: "Kryptering i vila skyddar lagrad data; kryptering under transport skyddar data som rör sig mellan system.",
+  dd_sec_access: "MFA = flerfaktorsautentisering. Rollbaserad åtkomst säkerställer att användare endast ser det deras roll kräver.",
+  dd_sec_keys: "BYOK/HYOK innebär att ni själva äger och kontrollerar krypteringsnycklarna, inte leverantören.",
+  dd_sec_zero: "Zero-trust innebär att inget förlitas på som standard – varje åtkomst verifieras kontinuerligt.",
+  dd_inc_plan: "En incidenthanteringsplan beskriver hur leverantören upptäcker, hanterar och kommunicerar säkerhetsincidenter.",
+  dd_inc_sla: "SLA för incidenter anger garanterad svarstid vid säkerhetshändelser – avgörande för affärskritiska tjänster.",
+  dd_inc_notif: "GDPR kräver att personuppgiftsincidenter rapporteras till tillsynsmyndighet inom 72 timmar.",
+  dd_loc_eu: "EU/EES-lagring säkerställer att data omfattas av europeisk lagstiftning och inte av tredjelandsregler som US CLOUD Act.",
+  dd_loc_transfer: "Överföring till tredje land (utanför EU/EES) kräver särskilda skyddsåtgärder enligt GDPR.",
+  dd_loc_scc: "SCC = Standard Contractual Clauses, EU-kommissionens godkända avtalsmallar för laglig dataöverföring utanför EU.",
+  dd_loc_residency: "Data residency innebär att data garanterat stannar i ett valt geografiskt område.",
+  dd_own_hq: "Huvudkontorets jurisdiktion avgör vilka lagar leverantören måste följa, oavsett var data lagras.",
+  dd_own_cloud_act: "US CLOUD Act tillåter amerikanska myndigheter att begära ut data från amerikanska leverantörer även om data lagras i EU.",
+  dd_own_gdpr: "GDPR-compliance innebär att leverantören uppfyller alla krav i EU:s dataskyddsförordning.",
+  dd_own_dora: "DORA (digital motståndskraft i finanssektorn) och NIS2 (cybersäkerhet för kritiska sektorer) är EU-regelverk med särskilda leverantörskrav.",
+};
+
+const QuestionHelp = ({ id }: { id: string }) => {
+  const text = QUESTION_HELP[id];
+  if (!text) return null;
+  return (
+    <Tooltip delayDuration={150}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          aria-label="Mer information"
+          className="inline-flex h-5 w-5 items-center justify-center rounded-full text-foreground/40 transition hover:bg-white hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs rounded-lg bg-foreground px-3 py-2 text-xs font-medium leading-relaxed text-background shadow-lg">
+        {text}
+      </TooltipContent>
+    </Tooltip>
+  );
+};
 
 /* =========================================================================
    QUIZ DATA MODEL
