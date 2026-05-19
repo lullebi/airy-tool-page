@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, ShieldAlert, ChevronDown, Download, Repeat, ShieldCheck, Inbox, Sparkles, Database, Network, Lock, FileText } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, ShieldAlert, ChevronDown, Download, Repeat, ShieldCheck, Inbox, Sparkles, Database, Network, Lock, FileText, Info } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Dialog,
