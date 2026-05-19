@@ -250,10 +250,7 @@ const Index = () => {
               Process
             </p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-5xl">
-              Så fungerar{" "}
-              <span className="bg-gradient-to-r from-blue-600 to-sky-400 bg-clip-text text-transparent">
-                det
-              </span>
+              Så fungerar det
             </h2>
             <p className="mt-5 text-base leading-relaxed text-foreground/70 md:text-lg">
               Få en tydlig översikt över hur analysen fungerar. Processen guidar er steg för steg
