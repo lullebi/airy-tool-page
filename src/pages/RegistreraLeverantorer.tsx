@@ -49,13 +49,13 @@ const emptyVendor = (): Vendor => ({
 });
 
 const RegistreraLeverantorer = () => {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([emptyVendor()]);
 
   const updateVendor = (id: string, patch: Partial<Vendor>) =>
     setVendors((vs) => vs.map((v) => (v.id === id ? { ...v, ...patch } : v)));
 
   const removeVendor = (id: string) =>
-    setVendors((vs) => vs.filter((v) => v.id !== id));
+    setVendors((vs) => (vs.length === 1 ? [emptyVendor()] : vs.filter((v) => v.id !== id)));
 
   const addVendor = () => setVendors((vs) => [...vs, emptyVendor()]);
 
