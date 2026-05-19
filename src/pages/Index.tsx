@@ -95,6 +95,8 @@ const Index = () => {
       cancelled = true;
     };
   }, []);
+
+  return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Ambient depth */}
       <div className="pointer-events-none absolute -top-32 -left-32 h-[520px] w-[520px] rounded-full bg-blue-300/30 blur-3xl" />
