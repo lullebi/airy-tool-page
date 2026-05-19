@@ -143,7 +143,7 @@ const RegistreraLeverantorer = () => {
 
         {/* SNABBVAL */}
         <section className="mb-8">
-          <div className="glass rounded-2xl p-6 shadow-[var(--shadow-soft)] md:p-7">
+          <div className="rounded-2xl border border-primary/10 bg-primary/[0.04] p-6 md:p-7">
             <div className="mb-4 flex items-baseline justify-between">
               <h2 className="text-lg font-bold tracking-tight text-foreground">Snabbval</h2>
               <span className="text-xs font-medium text-foreground/55">
