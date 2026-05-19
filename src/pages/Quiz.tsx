@@ -937,8 +937,8 @@ const Step4Result = ({
     >
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Sektor" value={step1.sector || "—"} />
-        <Stat label="EU-datalagring" value={`${step1.euDataWeight}/5`} />
-        <Stat label="Beredskap" value={step1.readiness} />
+        <Stat label="EU-datalagring" value={`${step1.euDataWeight ?? "-"}/5`} />
+        <Stat label="Beredskap" value={step1.readiness || "-"} />
         <Stat label="Prioriteter" value={`${step1.priorities.length}`} />
       </div>
 
