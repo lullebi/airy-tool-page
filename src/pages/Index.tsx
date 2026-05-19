@@ -1,34 +1,101 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp, ClipboardList, SlidersHorizontal, ScanSearch, ShieldCheck, LineChart, Database, Network, Lock, Landmark, FileText, BadgeCheck, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
-const newsItems = [
+type NewsItem = {
+  icon: typeof Sparkles;
+  title: string;
+  desc: string;
+  tag: string;
+  href: string;
+};
+
+const fallbackNews: NewsItem[] = [
   {
-    icon: Sparkles,
-    title: "Ny analysmotor live",
-    desc: "Realtidsjämförelser av leverantörer med 4× snabbare prestanda.",
-    tag: "Produkt",
-    href: "https://www.reuters.com/technology/",
+    icon: ShieldCheck,
+    title: "EU stärker digital suveränitet",
+    desc: "Nya initiativ för att minska beroendet av icke-europeiska molnleverantörer.",
+    tag: "EU Tech",
+    href: "https://digital-strategy.ec.europa.eu/en/policies/cloud-computing",
   },
   {
-    icon: BarChart3,
-    title: "Marknadsrapport Q2",
-    desc: "Datadriven översikt över prisrörelser och leverantörstrender.",
-    tag: "Insikt",
-    href: "https://www.reuters.com/technology/cybersecurity/",
+    icon: Lock,
+    title: "GDPR och dataintegritet i fokus",
+    desc: "Skärpta krav på hantering av personuppgifter hos molntjänster.",
+    tag: "Integritet",
+    href: "https://edpb.europa.eu/news/news_en",
   },
   {
-    icon: Zap,
-    title: "API för konsulter",
-    desc: "Integrera leverantörsdata direkt i era egna system och rapporter.",
-    tag: "Integration",
-    href: "https://www.reuters.com/technology/artificial-intelligence/",
+    icon: Network,
+    title: "Cybersäkerhet enligt NIS2",
+    desc: "EU:s nya direktiv höjer ribban för IT-säkerhet inom kritisk infrastruktur.",
+    tag: "Säkerhet",
+    href: "https://www.enisa.europa.eu/news",
   },
 ];
 
+const ICONS = [ShieldCheck, Lock, Network, Database, Landmark, BarChart3];
+
+function stripHtml(html: string): string {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  return (tmp.textContent || tmp.innerText || "").trim();
+}
+
+function truncate(s: string, n: number): string {
+  if (s.length <= n) return s;
+  return s.slice(0, n).trimEnd() + "…";
+}
+
+async function fetchNews(): Promise<NewsItem[] | null> {
+  const feeds = [
+    "https://www.euractiv.com/sections/digital/feed/",
+    "https://www.enisa.europa.eu/news/enisa-news/RSS",
+    "https://digital-strategy.ec.europa.eu/en/news/rss.xml",
+  ];
+  try {
+    const results = await Promise.all(
+      feeds.map((url) =>
+        fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`)
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null)
+      )
+    );
+    const picks: NewsItem[] = [];
+    results.forEach((res, idx) => {
+      if (res?.items?.length) {
+        const first = res.items[0];
+        picks.push({
+          icon: ICONS[idx % ICONS.length],
+          title: truncate(stripHtml(first.title || ""), 70),
+          desc: truncate(stripHtml(first.description || first.content || ""), 110),
+          tag: truncate(stripHtml(res.feed?.title || "Nyheter"), 18),
+          href: first.link || first.guid || "#",
+        });
+      }
+    });
+    if (picks.length >= 3) return picks.slice(0, 3);
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 const Index = () => {
   const [datasetExpanded, setDatasetExpanded] = useState(false);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>(fallbackNews);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchNews().then((items) => {
+      if (!cancelled && items) setNewsItems(items);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Ambient depth */}
