@@ -509,6 +509,7 @@ const Quiz = () => {
               quick={quickAnswers}
               deepByVendor={deepAnswersByVendor}
               hasDeep={deepDiveEnabled}
+              onCompareAlternatives={() => setStepIndex(4)}
             />
           )}
           {stepIndex === 4 && (
