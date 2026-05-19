@@ -1,4 +1,4 @@
-import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp, ClipboardList, SlidersHorizontal, ScanSearch, ShieldCheck, LineChart, Database } from "lucide-react";
+import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp, ClipboardList, SlidersHorizontal, ScanSearch, ShieldCheck, LineChart, Database, Network, Lock, Landmark, FileText, BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -290,19 +290,19 @@ const Index = () => {
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {[
-                "DORA – hög vikt för kritiska system",
-                "NIS2 – leverantörskedja och incidentrisk",
-                "GDPR – persondata och överföring",
-                "Suveränitet – jurisdiktion och ägarskap",
-                "Data Act – kontroll och portabilitet",
-                "EU-certifiering – bevisbar efterlevnad",
-              ].map((item, i) => (
+                { label: "DORA – hög vikt för kritiska system", Icon: ShieldCheck },
+                { label: "NIS2 – leverantörskedja och incidentrisk", Icon: Network },
+                { label: "GDPR – persondata och överföring", Icon: Lock },
+                { label: "Suveränitet – jurisdiktion och ägarskap", Icon: Landmark },
+                { label: "Data Act – kontroll och portabilitet", Icon: FileText },
+                { label: "EU-certifiering – bevisbar efterlevnad", Icon: BadgeCheck },
+              ].map(({ label, Icon }, i) => (
                 <div
                   key={i}
                   className="flex items-center gap-3 rounded-xl border border-white/60 bg-white/50 px-4 py-3 text-sm font-medium text-foreground/85 backdrop-blur-sm"
                 >
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500 shadow-[0_0_8px_hsl(var(--blue-500))]" />
-                  {item}
+                  <Icon className="h-4 w-4 shrink-0 text-blue-500" aria-hidden="true" />
+                  {label}
                 </div>
               ))}
             </div>

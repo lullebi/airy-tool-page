@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, ShieldAlert, ChevronDown, Download, Repeat, ShieldCheck, Inbox, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, ShieldAlert, ChevronDown, Download, Repeat, ShieldCheck, Inbox, Sparkles, Database, Network, Lock, FileText } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -942,15 +942,16 @@ const Step4Result = ({
 
               {(() => {
                 const contribs = [
-                  { key: "quick", value: quickScore, reg: "Data Act" },
-                  { key: "deep", value: deepScore, reg: "DORA" },
-                  { key: "eu", value: euWeight, reg: "GDPR & EU-suveränitet" },
-                  { key: "readiness", value: readinessScore, reg: "NIS2" },
+                  { key: "quick", value: quickScore, reg: "Data Act", Icon: FileText },
+                  { key: "deep", value: deepScore, reg: "DORA", Icon: ShieldCheck },
+                  { key: "eu", value: euWeight, reg: "GDPR & EU-suveränitet", Icon: Lock },
+                  { key: "readiness", value: readinessScore, reg: "NIS2", Icon: Network },
                 ];
                 const weakest = contribs.reduce((a, b) => (a.value <= b.value ? a : b));
+                const WeakIcon = weakest.Icon;
                 return (
                   <div className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2 ring-1 ring-amber-200">
-                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                    <WeakIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
                     <p className="text-xs font-medium text-amber-900">
                       Poängen påverkas främst av brister i enlighet med{" "}
                       <span className="font-bold underline decoration-amber-600 decoration-2 underline-offset-2">
@@ -1319,18 +1320,29 @@ const Step5Measurement = ({
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-1.5">
-            {badges.map((b) => (
-              <div
-                key={b.key}
-                title={b.evidence}
-                className="rounded-lg bg-white/80 px-2 py-1.5 ring-1 ring-white/70"
-              >
-                <p className="text-[9px] font-bold uppercase tracking-wider text-foreground/55">
-                  {b.label}
-                </p>
-                <p className="mt-0.5 text-xs font-bold text-foreground">{b.value}</p>
-              </div>
-            ))}
+            {badges.map((b) => {
+              const BadgeIcon =
+                b.key === "datalagring"
+                  ? Database
+                  : b.key === "nis2"
+                    ? Network
+                    : b.key === "dora"
+                      ? ShieldCheck
+                      : Lock;
+              return (
+                <div
+                  key={b.key}
+                  title={b.evidence}
+                  className="rounded-lg bg-white/80 px-2 py-1.5 ring-1 ring-white/70"
+                >
+                  <p className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-foreground/55">
+                    <BadgeIcon className="h-3 w-3 text-blue-500" aria-hidden="true" />
+                    {b.label}
+                  </p>
+                  <p className="mt-0.5 text-xs font-bold text-foreground">{b.value}</p>
+                </div>
+              );
+            })}
           </div>
 
           {!eu && (
