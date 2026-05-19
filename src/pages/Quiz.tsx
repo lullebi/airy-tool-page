@@ -217,7 +217,7 @@ const DEEP_DIVE: Question[] = [
 type Step1State = {
   priorities: string[]; // multi select
   sector: string;
-  euDataWeight: number; // 1..5
+  euDataWeight: number | null; // 1..5, null = unanswered
   readiness: string; // label
 };
 
@@ -274,7 +274,7 @@ const computeVendorScore = (
 ) => {
   const quickScore = weightedAverage(QUICK_SCAN, quick);
   const deepScore = hasDeep ? weightedAverage(DEEP_DIVE, deep) : quickScore;
-  const euWeight = ((step1.euDataWeight - 1) / 4) * 100;
+  const euWeight = (((step1.euDataWeight ?? 3) - 1) / 4) * 100;
   const readinessOpt = STEP1_READINESS.find((r) => r.label === step1.readiness);
   const readinessScore = readinessOpt?.scoreValue ?? 50;
 
@@ -316,8 +316,8 @@ const Quiz = () => {
   const [step1, setStep1] = useState<Step1State>({
     priorities: [],
     sector: "",
-    euDataWeight: 3,
-    readiness: "God",
+    euDataWeight: null,
+    readiness: "",
   });
   const [quickAnswers, setQuickAnswers] = useState<Answers>({});
   // Per-vendor deep dive answers, keyed by vendor id.
@@ -356,7 +356,7 @@ const Quiz = () => {
 
   const canNext = useMemo(() => {
     if (stepIndex === 0)
-      return step1.priorities.length > 0 && step1.sector !== "" && step1.readiness !== "";
+      return step1.priorities.length > 0 && step1.sector !== "" && step1.euDataWeight !== null && step1.readiness !== "";
     if (stepIndex === 1) return QUICK_SCAN.every((q) => quickAnswers[q.id]);
     if (stepIndex === 2) {
       if (!deepDiveEnabled || deepVendors.length === 0) return true;
@@ -678,10 +678,10 @@ const Step1Konfig = ({
       {/* EU data weight */}
       <Field
         label="Hur viktig är EU-datalagring för er?"
-        hint={({2:"Lite viktigt",3:"Ganska viktigt",4:"Mycket viktigt"} as Record<number,string>)[state.euDataWeight] ?? ""}
+        hint={state.euDataWeight === null ? "" : (({2:"Lite viktigt",3:"Ganska viktigt",4:"Mycket viktigt"} as Record<number,string>)[state.euDataWeight] ?? "")}
       >
         <Slider
-          value={[state.euDataWeight]}
+          value={[state.euDataWeight ?? 3]}
           min={1}
           max={5}
           step={1}
@@ -937,8 +937,8 @@ const Step4Result = ({
     >
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Sektor" value={step1.sector || "—"} />
-        <Stat label="EU-datalagring" value={`${step1.euDataWeight}/5`} />
-        <Stat label="Beredskap" value={step1.readiness} />
+        <Stat label="EU-datalagring" value={`${step1.euDataWeight ?? "-"}/5`} />
+        <Stat label="Beredskap" value={step1.readiness || "-"} />
         <Stat label="Prioriteter" value={`${step1.priorities.length}`} />
       </div>
 
