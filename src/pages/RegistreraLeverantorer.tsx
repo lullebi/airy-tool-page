@@ -49,13 +49,13 @@ const emptyVendor = (): Vendor => ({
 });
 
 const RegistreraLeverantorer = () => {
-  const [vendors, setVendors] = useState<Vendor[]>([emptyVendor()]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
 
   const updateVendor = (id: string, patch: Partial<Vendor>) =>
     setVendors((vs) => vs.map((v) => (v.id === id ? { ...v, ...patch } : v)));
 
   const removeVendor = (id: string) =>
-    setVendors((vs) => (vs.length === 1 ? [emptyVendor()] : vs.filter((v) => v.id !== id)));
+    setVendors((vs) => vs.filter((v) => v.id !== id));
 
   const addVendor = () => setVendors((vs) => [...vs, emptyVendor()]);
 
@@ -71,7 +71,7 @@ const RegistreraLeverantorer = () => {
         const idx = vs.findIndex((v) => v.name.trim().toLowerCase() === key);
         if (idx === -1) return vs;
         const next = vs.filter((_, i) => i !== idx);
-        return next.length === 0 ? [emptyVendor()] : next;
+        return next;
       });
       return;
     }
