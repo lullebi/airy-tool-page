@@ -28,6 +28,7 @@ const newsItems = [
 ];
 
 const Index = () => {
+  const [datasetExpanded, setDatasetExpanded] = useState(false);
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Ambient depth */}
