@@ -678,10 +678,10 @@ const Step1Konfig = ({
       {/* EU data weight */}
       <Field
         label="Hur viktig är EU-datalagring för er?"
-        hint={({2:"Lite viktigt",3:"Ganska viktigt",4:"Mycket viktigt"} as Record<number,string>)[state.euDataWeight] ?? ""}
+        hint={state.euDataWeight === null ? "" : (({2:"Lite viktigt",3:"Ganska viktigt",4:"Mycket viktigt"} as Record<number,string>)[state.euDataWeight] ?? "")}
       >
         <Slider
-          value={[state.euDataWeight]}
+          value={[state.euDataWeight ?? 3]}
           min={1}
           max={5}
           step={1}
