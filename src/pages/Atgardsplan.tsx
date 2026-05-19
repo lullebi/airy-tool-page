@@ -83,7 +83,7 @@ const Atgardsplan = () => {
     <div className="min-h-screen bg-background">
       <div className="mx-auto w-full max-w-5xl px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-foreground/70">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/quiz", { state: { vendors: state.vendors, stepIndex: 4 } })} className="text-foreground/70">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Tillbaka
           </Button>
