@@ -942,15 +942,16 @@ const Step4Result = ({
 
               {(() => {
                 const contribs = [
-                  { key: "quick", value: quickScore, reg: "Data Act" },
-                  { key: "deep", value: deepScore, reg: "DORA" },
-                  { key: "eu", value: euWeight, reg: "GDPR & EU-suveränitet" },
-                  { key: "readiness", value: readinessScore, reg: "NIS2" },
+                  { key: "quick", value: quickScore, reg: "Data Act", Icon: FileText },
+                  { key: "deep", value: deepScore, reg: "DORA", Icon: ShieldCheck },
+                  { key: "eu", value: euWeight, reg: "GDPR & EU-suveränitet", Icon: Lock },
+                  { key: "readiness", value: readinessScore, reg: "NIS2", Icon: Network },
                 ];
                 const weakest = contribs.reduce((a, b) => (a.value <= b.value ? a : b));
+                const WeakIcon = weakest.Icon;
                 return (
                   <div className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2 ring-1 ring-amber-200">
-                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                    <WeakIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
                     <p className="text-xs font-medium text-amber-900">
                       Poängen påverkas främst av brister i enlighet med{" "}
                       <span className="font-bold underline decoration-amber-600 decoration-2 underline-offset-2">
