@@ -676,22 +676,32 @@ const Step1Konfig = ({
       </Field>
 
       {/* EU data weight */}
-      <Field
-        label="Hur viktig är EU-datalagring för er?"
-        hint={state.euDataWeight === null ? "" : (({2:"Lite viktigt",3:"Ganska viktigt",4:"Mycket viktigt"} as Record<number,string>)[state.euDataWeight] ?? "")}
-      >
-        <Slider
-          value={[state.euDataWeight ?? 3]}
-          min={1}
-          max={5}
-          step={1}
-          onValueChange={(v) =>
-            setState((s) => ({ ...s, euDataWeight: v[0] ?? 3 }))
-          }
-        />
-        <div className="mt-2 flex justify-between text-[11px] font-medium text-foreground/55">
-          <span>Inte viktigt</span>
-          <span>Avgörande</span>
+      <Field label="Hur viktig är EU-datalagring för er?">
+        <div className="flex flex-wrap gap-2">
+          {[
+            { label: "Inte viktigt", value: 1 },
+            { label: "Lite viktigt", value: 2 },
+            { label: "Ganska viktigt", value: 3 },
+            { label: "Mycket viktigt", value: 4 },
+            { label: "Avgörande", value: 5 },
+          ].map((opt) => {
+            const active = state.euDataWeight === opt.value;
+            return (
+              <button
+                key={opt.label}
+                type="button"
+                onClick={() => setState((s) => ({ ...s, euDataWeight: opt.value }))}
+                aria-pressed={active}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition ring-1 ${
+                  active
+                    ? "bg-foreground text-background ring-foreground"
+                    : "bg-white/70 text-foreground/80 ring-white/70 hover:bg-white"
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
       </Field>
 
