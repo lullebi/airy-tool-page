@@ -738,7 +738,7 @@ const StepQuestions = ({
           <p className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
             {q.kategori} · Fråga {i + 1}
           </p>
-          <p className="mt-1 text-base font-semibold text-foreground">{q.text}</p>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-base font-semibold text-foreground">{q.text}<QuestionHelp id={q.id} /></p>
           <div className="mt-3 flex flex-wrap gap-2">
             {q.svarsalternativ.map((opt) => {
               const active = answers[q.id] === opt.label;
