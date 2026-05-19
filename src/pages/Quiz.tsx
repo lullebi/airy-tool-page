@@ -920,14 +920,10 @@ const Step4Result = ({
                     <StatusIcon className="h-4 w-4" />
                     {status.label}
                   </div>
-                  <ScoreBreakdownDialog
-                    vendorName={vendor.name}
-                    total={total}
-                    quickScore={quickScore}
-                    deepScore={deepScore}
-                    euWeight={euWeight}
-                    readinessScore={readinessScore}
-                  />
+                  <div className="rounded-xl bg-foreground px-4 py-2 text-lg font-bold text-background">
+                    {total}
+                  </div>
+
 
                 </div>
               </div>
@@ -1051,98 +1047,6 @@ const Contribution = ({ label, value }: { label: string; value: number }) => {
   );
 };
 
-const ScoreBreakdownDialog = ({
-  vendorName,
-  total,
-  quickScore,
-  deepScore,
-  euWeight,
-  readinessScore,
-}: {
-  vendorName: string;
-  total: number;
-  quickScore: number;
-  deepScore: number;
-  euWeight: number;
-  readinessScore: number;
-}) => {
-  const [open, setOpen] = useState(false);
-  const rows = [
-    {
-      label: "Snabbanalys",
-      value: quickScore,
-      weight: "35%",
-      desc: "Övergripande svar från snabbskanningen av leverantören.",
-    },
-    {
-      label: "Fördjupad analys",
-      value: deepScore,
-      weight: "35%",
-      desc: "Detaljerade svar kring certifieringar, drift och säkerhet.",
-    },
-    {
-      label: "EU-vikt",
-      value: euWeight,
-      weight: "15%",
-      desc: "Hur högt ni prioriterar EU-datalagring och suveränitet.",
-    },
-    {
-      label: "Beredskap",
-      value: readinessScore,
-      weight: "15%",
-      desc: "Er förmåga att hantera avbrott och byta leverantör.",
-    },
-  ];
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Visa poängberäkning"
-        className="rounded-xl bg-foreground px-4 py-2 text-lg font-bold text-background transition hover:shadow-lg hover:ring-2 hover:ring-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
-      >
-        {total}
-      </button>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Så räknades poängen fram</DialogTitle>
-          <DialogDescription>
-            Poängen baseras på svaren i quizet och vägs samman utifrån klientens prioriteringar.
-            {vendorName ? ` Nedbrytning för ${vendorName}.` : ""}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-2">
-          {rows.map((r) => (
-            <div
-              key={r.label}
-              className="rounded-lg bg-muted/40 px-3 py-2 ring-1 ring-border/60"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-foreground">{r.label}</p>
-                <p className="text-sm font-bold text-foreground">
-                  {Math.round(r.value)}
-                  <span className="ml-1 text-[10px] font-medium text-foreground/50">
-                    · vikt {r.weight}
-                  </span>
-                </p>
-              </div>
-              <p className="mt-0.5 text-xs text-foreground/60">{r.desc}</p>
-            </div>
-          ))}
-          <div className="mt-1 flex items-center justify-between rounded-lg bg-foreground px-3 py-2 text-background">
-            <p className="text-sm font-semibold">Totalpoäng</p>
-            <p className="text-lg font-bold">{total}</p>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="secondary" onClick={() => setOpen(false)}>
-            Stäng
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 
 
@@ -1214,6 +1118,18 @@ const Step5Measurement = ({
 }) => {
   const deepFor = (v: VendorLike) => deepByVendor[v.id] ?? {};
   const [openId, setOpenId] = useState<string | null>(null);
+  const [scoreBreakdownOpen, setScoreBreakdownOpen] = useState(false);
+
+  const vendorScores = vendors.map((v) => computeVendorScore(step1, quick, deepFor(v), hasDeep));
+  const avg = (key: "quickScore" | "deepScore" | "euWeight" | "readinessScore" | "total") =>
+    vendorScores.length
+      ? Math.round(vendorScores.reduce((a, s) => a + (s[key] as number), 0) / vendorScores.length)
+      : 0;
+  const aggQuick = avg("quickScore");
+  const aggDeep = avg("deepScore");
+  const aggEu = avg("euWeight");
+  const aggReadiness = avg("readinessScore");
+  const aggTotal = avg("total");
 
   const euCount = vendors.filter(isEU).length;
   const nonEuCount = vendors.length - euCount;
@@ -1515,7 +1431,12 @@ const Step5Measurement = ({
     >
       {/* HEADER: Donut + summary */}
       <div className="mb-8 flex flex-col items-center gap-6 rounded-2xl bg-white/60 p-5 ring-1 ring-white/70 md:flex-row md:items-center md:gap-8">
-        <div className="relative h-36 w-36 flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => setScoreBreakdownOpen(true)}
+          aria-label="Visa poängberäkning"
+          className="relative h-36 w-36 flex-shrink-0 rounded-full transition hover:shadow-[0_0_0_6px_hsl(var(--primary)/0.12)] hover:ring-2 hover:ring-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
+        >
           <svg viewBox="0 0 140 140" className="h-full w-full -rotate-90">
             <circle cx="70" cy="70" r={r} fill="none" stroke="hsl(0 80% 60%)" strokeWidth="16" />
             <circle
@@ -1535,7 +1456,8 @@ const Step5Measurement = ({
               EU
             </span>
           </div>
-        </div>
+        </button>
+
 
         <div className="flex-1">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/55">
@@ -1615,6 +1537,45 @@ const Step5Measurement = ({
           Exportera rapport
         </Button>
       </div>
+
+      <Dialog open={scoreBreakdownOpen} onOpenChange={setScoreBreakdownOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Så räknades poängen fram</DialogTitle>
+            <DialogDescription>
+              Poängen baseras på svaren i quizet och vägs samman utifrån klientens prioriteringar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            {[
+              { label: "Snabbanalys", value: aggQuick, weight: "35%", desc: "Övergripande svar från snabbskanningen av leverantören." },
+              { label: "Fördjupad analys", value: aggDeep, weight: "35%", desc: "Detaljerade svar kring certifieringar, drift och säkerhet." },
+              { label: "EU-vikt", value: aggEu, weight: "15%", desc: "Hur högt ni prioriterar EU-datalagring och suveränitet." },
+              { label: "Beredskap", value: aggReadiness, weight: "15%", desc: "Er förmåga att hantera avbrott och byta leverantör." },
+            ].map((r) => (
+              <div key={r.label} className="rounded-lg bg-muted/40 px-3 py-2 ring-1 ring-border/60">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-foreground">{r.label}</p>
+                  <p className="text-sm font-bold text-foreground">
+                    {Math.round(r.value)}
+                    <span className="ml-1 text-[10px] font-medium text-foreground/50">· vikt {r.weight}</span>
+                  </p>
+                </div>
+                <p className="mt-0.5 text-xs text-foreground/60">{r.desc}</p>
+              </div>
+            ))}
+            <div className="mt-1 flex items-center justify-between rounded-lg bg-foreground px-3 py-2 text-background">
+              <p className="text-sm font-semibold">Totalpoäng</p>
+              <p className="text-lg font-bold">{aggTotal}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setScoreBreakdownOpen(false)}>
+              Stäng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
