@@ -84,7 +84,17 @@ async function fetchNews(): Promise<NewsItem[] | null> {
 
 const Index = () => {
   const [datasetExpanded, setDatasetExpanded] = useState(false);
-  return (
+  const [newsItems, setNewsItems] = useState<NewsItem[]>(fallbackNews);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchNews().then((items) => {
+      if (!cancelled && items) setNewsItems(items);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
     <div className="relative min-h-screen overflow-hidden">
       {/* Ambient depth */}
       <div className="pointer-events-none absolute -top-32 -left-32 h-[520px] w-[520px] rounded-full bg-blue-300/30 blur-3xl" />
