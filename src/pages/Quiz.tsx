@@ -920,9 +920,15 @@ const Step4Result = ({
                     <StatusIcon className="h-4 w-4" />
                     {status.label}
                   </div>
-                  <div className="rounded-xl bg-foreground px-4 py-2 text-lg font-bold text-background">
-                    {total}
-                  </div>
+                  <ScoreBreakdownDialog
+                    vendorName={vendor.name}
+                    total={total}
+                    quickScore={quickScore}
+                    deepScore={deepScore}
+                    euWeight={euWeight}
+                    readinessScore={readinessScore}
+                  />
+
                 </div>
               </div>
 
