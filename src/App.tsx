@@ -7,6 +7,7 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import RegistreraLeverantorer from "./pages/RegistreraLeverantorer.tsx";
 import Quiz from "./pages/Quiz.tsx";
+import Atgardsplan from "./pages/Atgardsplan.tsx";
 
 const queryClient = new QueryClient();
 
