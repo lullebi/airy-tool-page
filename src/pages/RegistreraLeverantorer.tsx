@@ -281,11 +281,15 @@ const RegistreraLeverantorer = () => {
             type="button"
             variant="outline"
             onClick={addVendor}
-            className="w-full rounded-xl border-dashed border-foreground/20 bg-white/40 py-6 text-sm font-semibold text-foreground/75 hover:bg-white/70"
+            className="group w-full rounded-xl border-2 border-dashed border-primary/40 bg-primary/[0.06] py-7 text-base font-bold text-primary shadow-sm transition hover:border-primary/60 hover:bg-primary/[0.1] hover:shadow-md"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-5 w-5 transition-transform group-hover:scale-110" />
             Lägg till leverantör
           </Button>
+          <p className="mt-2 text-center text-xs font-medium text-foreground/55">
+            Lägg till flera leverantörer för en mer träffsäker analys
+          </p>
+
         </section>
 
         {/* CTA */}
