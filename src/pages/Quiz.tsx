@@ -274,7 +274,7 @@ const computeVendorScore = (
 ) => {
   const quickScore = weightedAverage(QUICK_SCAN, quick);
   const deepScore = hasDeep ? weightedAverage(DEEP_DIVE, deep) : quickScore;
-  const euWeight = ((step1.euDataWeight - 1) / 4) * 100;
+  const euWeight = (((step1.euDataWeight ?? 3) - 1) / 4) * 100;
   const readinessOpt = STEP1_READINESS.find((r) => r.label === step1.readiness);
   const readinessScore = readinessOpt?.scoreValue ?? 50;
 
