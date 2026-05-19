@@ -1319,18 +1319,29 @@ const Step5Measurement = ({
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-1.5">
-            {badges.map((b) => (
-              <div
-                key={b.key}
-                title={b.evidence}
-                className="rounded-lg bg-white/80 px-2 py-1.5 ring-1 ring-white/70"
-              >
-                <p className="text-[9px] font-bold uppercase tracking-wider text-foreground/55">
-                  {b.label}
-                </p>
-                <p className="mt-0.5 text-xs font-bold text-foreground">{b.value}</p>
-              </div>
-            ))}
+            {badges.map((b) => {
+              const BadgeIcon =
+                b.key === "datalagring"
+                  ? Database
+                  : b.key === "nis2"
+                    ? Network
+                    : b.key === "dora"
+                      ? ShieldCheck
+                      : Lock;
+              return (
+                <div
+                  key={b.key}
+                  title={b.evidence}
+                  className="rounded-lg bg-white/80 px-2 py-1.5 ring-1 ring-white/70"
+                >
+                  <p className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-foreground/55">
+                    <BadgeIcon className="h-3 w-3 text-blue-500" aria-hidden="true" />
+                    {b.label}
+                  </p>
+                  <p className="mt-0.5 text-xs font-bold text-foreground">{b.value}</p>
+                </div>
+              );
+            })}
           </div>
 
           {!eu && (
