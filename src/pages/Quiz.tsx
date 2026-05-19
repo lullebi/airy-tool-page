@@ -1574,11 +1574,13 @@ const Step5Measurement = ({
       {/* Sticky Actions */}
       <div className="sticky bottom-4 mt-4 flex flex-col items-center gap-2">
         <Button
-          onClick={() =>
-            navigate("/atgardsplan", {
-              state: { vendors, step1, quick, deepByVendor, hasDeep },
-            })
-          }
+          onClick={() => {
+            const scores: Record<string, number> = {};
+            vendors.forEach((v) => {
+              scores[v.id] = computeVendorScore(step1, quick, deepFor(v), hasDeep).total;
+            });
+            navigate("/atgardsplan", { state: { vendors, scores } });
+          }}
           size="lg"
           className="group w-full max-w-md rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
           style={{ background: "var(--gradient-cta)" }}
