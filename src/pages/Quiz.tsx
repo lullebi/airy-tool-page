@@ -910,12 +910,14 @@ const Step4Result = ({
   quick,
   deepByVendor,
   hasDeep,
+  onCompareAlternatives,
 }: {
   vendors: VendorLike[];
   step1: Step1State;
   quick: Answers;
   deepByVendor: Record<string, Answers>;
   hasDeep: boolean;
+  onCompareAlternatives: () => void;
 }) => {
   const scores = vendors.map((v) => ({
     vendor: v,
