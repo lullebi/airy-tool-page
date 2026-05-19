@@ -71,7 +71,7 @@ const RegistreraLeverantorer = () => {
         const idx = vs.findIndex((v) => v.name.trim().toLowerCase() === key);
         if (idx === -1) return vs;
         const next = vs.filter((_, i) => i !== idx);
-        return next.length === 0 ? [emptyVendor()] : next;
+        return next;
       });
       return;
     }
