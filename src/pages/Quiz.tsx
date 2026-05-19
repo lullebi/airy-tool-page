@@ -1164,6 +1164,7 @@ const Step5Measurement = ({
   const deepFor = (v: VendorLike) => deepByVendor[v.id] ?? {};
   const [openId, setOpenId] = useState<string | null>(null);
   const [scoreBreakdownOpen, setScoreBreakdownOpen] = useState(false);
+  const navigate = useNavigate();
 
   const vendorScores = vendors.map((v) => computeVendorScore(step1, quick, deepFor(v), hasDeep));
   const avg = (key: "quickScore" | "deepScore" | "euWeight" | "readinessScore" | "total") =>
@@ -1570,15 +1571,30 @@ const Step5Measurement = ({
         </div>
       </div>
 
-      {/* Sticky Export */}
-      <div className="sticky bottom-4 mt-4 flex justify-center">
+      {/* Sticky Actions */}
+      <div className="sticky bottom-4 mt-4 flex flex-col items-center gap-2">
         <Button
-          onClick={handleExport}
+          onClick={() => {
+            const scores: Record<string, number> = {};
+            vendors.forEach((v) => {
+              scores[v.id] = computeVendorScore(step1, quick, deepFor(v), hasDeep).total;
+            });
+            navigate("/atgardsplan", { state: { vendors, scores } });
+          }}
           size="lg"
           className="group w-full max-w-md rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
           style={{ background: "var(--gradient-cta)" }}
         >
-          <Download className="mr-2 h-5 w-5" />
+          <Sparkles className="mr-2 h-5 w-5" />
+          Se åtgärdsplan
+        </Button>
+        <Button
+          onClick={handleExport}
+          size="sm"
+          variant="outline"
+          className="w-full max-w-md rounded-xl border-primary/30 text-primary hover:bg-primary/5"
+        >
+          <Download className="mr-2 h-4 w-4" />
           Exportera rapport
         </Button>
       </div>

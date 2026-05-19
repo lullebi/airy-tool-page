@@ -7,6 +7,7 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import RegistreraLeverantorer from "./pages/RegistreraLeverantorer.tsx";
 import Quiz from "./pages/Quiz.tsx";
+import Atgardsplan from "./pages/Atgardsplan.tsx";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/registrera-leverantorer" element={<RegistreraLeverantorer />} />
           <Route path="/quiz" element={<Quiz />} />
+          <Route path="/atgardsplan" element={<Atgardsplan />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
