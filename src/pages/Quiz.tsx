@@ -217,7 +217,7 @@ const DEEP_DIVE: Question[] = [
 type Step1State = {
   priorities: string[]; // multi select
   sector: string;
-  euDataWeight: number; // 1..5
+  euDataWeight: number | null; // 1..5, null = unanswered
   readiness: string; // label
 };
 
