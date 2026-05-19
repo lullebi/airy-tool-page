@@ -509,6 +509,7 @@ const Quiz = () => {
               quick={quickAnswers}
               deepByVendor={deepAnswersByVendor}
               hasDeep={deepDiveEnabled}
+              onCompareAlternatives={() => setStepIndex(4)}
             />
           )}
           {stepIndex === 4 && (
@@ -909,12 +910,14 @@ const Step4Result = ({
   quick,
   deepByVendor,
   hasDeep,
+  onCompareAlternatives,
 }: {
   vendors: VendorLike[];
   step1: Step1State;
   quick: Answers;
   deepByVendor: Record<string, Answers>;
   hasDeep: boolean;
+  onCompareAlternatives: () => void;
 }) => {
   const scores = vendors.map((v) => ({
     vendor: v,
@@ -1018,6 +1021,18 @@ const Step4Result = ({
         Mätning sker mot Eurostack-standard (DORA, NIS2, GDPR, Data Act, EU-suveränitet).
         All insamlad data kan användas för att generera en rekommendationsrapport.
       </p>
+
+      <div className="mt-6 flex justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCompareAlternatives}
+          className="rounded-xl border-primary/30 bg-primary/[0.06] px-5 py-5 text-sm font-bold text-primary shadow-sm transition hover:border-primary/50 hover:bg-primary/[0.1] hover:shadow-md"
+        >
+          Jämför med alternativ
+          <ArrowRight className="ml-1.5 h-4 w-4" />
+        </Button>
+      </div>
     </Card>
   );
 };
