@@ -45,18 +45,47 @@ const Atgardsplan = () => {
   const state = (location.state ?? {}) as {
     vendors?: VendorLike[];
     scores?: Record<string, number>;
+    scored?: RescoredVendor[];
   };
 
-  const vendors: VendorLike[] = state.vendors ?? [
-    { id: "v1", name: "Microsoft 365", type: "SaaS", country: "USA" },
-    { id: "v2", name: "AWS", type: "Infrastruktur", country: "USA" },
-  ];
+  const vendors: VendorLike[] = state.vendors ?? [];
+
+  // Fetch EU alternatives per category once.
+  const [altsByCategory, setAltsByCategory] = useState<Record<string, AltState>>({});
+
+  useEffect(() => {
+    const categories = Array.from(
+      new Set(vendors.map((v) => v.type).filter((t): t is string => !!t)),
+    );
+    categories.forEach((cat) => {
+      setAltsByCategory((prev) =>
+        prev[cat] ? prev : { ...prev, [cat]: { loading: true, eu: [] } },
+      );
+      fetchAlternatives(cat)
+        .then((r) =>
+          setAltsByCategory((prev) => ({
+            ...prev,
+            [cat]: { loading: false, eu: r.eu_alternatives },
+          })),
+        )
+        .catch((e: unknown) =>
+          setAltsByCategory((prev) => ({
+            ...prev,
+            [cat]: {
+              loading: false,
+              eu: [],
+              error: e instanceof Error ? e.message : "Kunde inte hämta alternativ",
+            },
+          })),
+        );
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendors.map((v) => v.type).join("|")]);
 
   const rows: VendorRow[] = useMemo(
     () =>
       vendors.map((v) => {
         const eu = isEU(v);
-        // Heuristic score when not provided: EU = 75, non-EU = 38
         const score = state.scores?.[v.id] ?? (eu ? 75 : 38);
         const risks: string[] = [];
         if (!eu) {
@@ -66,10 +95,12 @@ const Atgardsplan = () => {
         if (score < 70) risks.push("Otillräcklig dokumenterad NIS2/DORA-beredskap");
         if (score < 45) risks.push("Begränsade kontraktsmässiga skyddsåtgärder (DPA/SLA)");
         if (risks.length === 0) risks.push("Inga väsentliga risker identifierade");
-        const alt = eu ? defaultAlternative : EU_ALTERNATIVES[v.name] ?? defaultAlternative;
+        const alt: AltState = v.type
+          ? altsByCategory[v.type] ?? { loading: true, eu: [] }
+          : { loading: false, eu: [] };
         return { vendor: v, score, risks, alt };
       }),
-    [vendors, state.scores],
+    [vendors, state.scores, altsByCategory],
   );
 
   const high = rows.filter((r) => r.score < 45);
