@@ -230,28 +230,10 @@ type Answers = Record<string, string>; // questionId -> option label
 
 const STEPS = ["Konfiguration", "Snabbanalys", "Fördjupad analys", "Resultat", "Mätning"] as const;
 
-const EU_COUNTRIES = new Set([
-  "Sverige","Tyskland","Frankrike","Nederländerna","Spanien","Italien","Polen",
-  "Danmark","Finland","Norge","Belgien","Österrike","Irland","Portugal","Estland",
-  "Lettland","Litauen","Tjeckien","Slovakien","Ungern","Grekland","Rumänien",
-  "Bulgarien","Kroatien","Slovenien","Luxemburg","Malta","Cypern","EU","EES",
-]);
-
-const isEU = (v: VendorLike) => !!v.country && EU_COUNTRIES.has(v.country);
-
-// Mapping: non-EU vendor → matching EU alternative
-const EU_ALTERNATIVES: Record<string, { name: string; country: string; reason: string }> = {
-  "Microsoft 365": { name: "OnlyOffice DocSpace", country: "EU", reason: "EU-baserad kontorssvit utan CLOUD Act-exponering." },
-  "AWS": { name: "OVHcloud", country: "Frankrike", reason: "EU-suverän infrastruktur, GDPR/SecNumCloud-certifierad." },
-  "Google Workspace": { name: "Infomaniak kSuite", country: "Schweiz/EU", reason: "Privacy-by-design, datalagring i EU." },
-  "Azure": { name: "Scaleway", country: "Frankrike", reason: "Europeisk hyperscaler med full datasuveränitet." },
-  "Slack": { name: "Element / Matrix", country: "EU", reason: "Federerad EU-baserad kommunikation." },
-  "Zoom": { name: "Whereby", country: "Norge", reason: "Europeiskt videomöte, GDPR-compliant." },
-  "Salesforce": { name: "SuperOffice", country: "Norge", reason: "Nordiskt CRM med full EU-datalagring." },
-  "Dropbox": { name: "Tresorit", country: "Schweiz/EU", reason: "End-to-end-krypterad EU-fillagring." },
-};
-
-const defaultAlternative = { name: "EU-alternativ tillgängligt", country: "EU", reason: "Motsvarande tjänst med EU-suveränitet och GDPR-efterlevnad." };
+// Canonical "European" check: hq_in_eu === true from GET /vendors.
+// No hardcoded country allowlists, no name-based heuristics.
+import { isEuropean as isEU } from "@/lib/vendorMapper";
+import { fetchAlternatives } from "@/lib/api";
 
 /* =========================================================================
    SCORING
