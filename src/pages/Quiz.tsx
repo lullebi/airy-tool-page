@@ -1435,8 +1435,8 @@ const Step5Measurement = ({
   const renderCard = (v: VendorLike) => {
     const eu = isEU(v);
     const deep = deepFor(v);
-    const { total: tot } = computeVendorScore(step1, quick, deep, hasDeep);
-    const status = statusFromScore(tot);
+    const { total: tot } = computeVendorScore(v, scoredMap);
+    const status = statusFromVendor(v, scoredMap);
     const badges = buildBadges(quick, deep, hasDeep);
     const isOpen = !eu ? true : openId === v.id;
     const alt = EU_ALTERNATIVES[v.name] ?? defaultAlternative;
