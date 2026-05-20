@@ -38,6 +38,27 @@ const emptyVendor = (): Vendor => ({
 
 const RegistreraLeverantorer = () => {
   const [vendors, setVendors] = useState<Vendor[]>([emptyVendor()]);
+  const [apiVendors, setApiVendors] = useState<ApiVendorListItem[]>([]);
+  const [loadingApi, setLoadingApi] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    fetchVendors()
+      .then((list) => {
+        if (!active) return;
+        setApiVendors(list);
+      })
+      .catch(() => {
+        if (!active) return;
+        toast.error("Kunde inte ladda leverantörer — försök igen");
+      })
+      .finally(() => {
+        if (active) setLoadingApi(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const updateVendor = (id: string, patch: Partial<Vendor>) =>
     setVendors((vs) => vs.map((v) => (v.id === id ? { ...v, ...patch } : v)));
@@ -51,10 +72,11 @@ const RegistreraLeverantorer = () => {
     vendors.map((v) => v.name.trim().toLowerCase()).filter(Boolean),
   );
 
-  const handleQuickPick = (pick: typeof QUICK_PICKS[number]) => {
+  const quickPickList = apiVendors.slice(0, 12);
+
+  const handleQuickPick = (pick: ApiVendorListItem) => {
     const key = pick.name.toLowerCase();
     if (selectedQuickPicks.has(key)) {
-      // toggle off: remove first matching
       setVendors((vs) => {
         const idx = vs.findIndex((v) => v.name.trim().toLowerCase() === key);
         if (idx === -1) return vs;
@@ -64,22 +86,22 @@ const RegistreraLeverantorer = () => {
       return;
     }
     setVendors((vs) => {
-      // fill first empty card, otherwise append
       const emptyIdx = vs.findIndex((v) => !v.name && !v.type && !v.country && !v.system);
       const filled: Vendor = {
         id: emptyIdx === -1 ? crypto.randomUUID() : vs[emptyIdx].id,
         name: pick.name,
-        type: pick.type,
-        country: pick.country,
+        type: pick.category ?? "",
+        country: "",
         system: "",
         mustKeep: false,
+        apiId: pick.id,
       };
       if (emptyIdx === -1) return [...vs, filled];
       return vs.map((v, i) => (i === emptyIdx ? filled : v));
     });
   };
 
-  const knownNames = new Set(QUICK_PICKS.map((p) => p.name.toLowerCase()));
+  const knownNames = new Set(apiVendors.map((p) => p.name.toLowerCase()));
   const namedVendors = vendors.filter((v) => v.name.trim().length > 0);
   const hasAnyVendor = namedVendors.length > 0;
   const incompleteCustomVendors = namedVendors.filter(
