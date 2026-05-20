@@ -1376,13 +1376,13 @@ const Step5Measurement = ({
     const { total: tot } = computeVendorScore(step1, quick, deep, hasDeep);
     const status = statusFromScore(tot);
     const badges = buildBadges(quick, deep, hasDeep);
-    const isOpen = openId === v.id;
+    const isOpen = !eu ? true : openId === v.id;
     const alt = EU_ALTERNATIVES[v.name] ?? defaultAlternative;
 
     return (
       <div
         key={v.id}
-        className={`min-w-[280px] flex-shrink-0 rounded-2xl bg-white/75 p-4 ring-1 transition ${
+        className={`w-full rounded-2xl bg-white/75 p-4 ring-1 transition ${
           eu ? "ring-emerald-200" : "ring-rose-200"
         }`}
       >
