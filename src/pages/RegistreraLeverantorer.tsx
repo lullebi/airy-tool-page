@@ -271,6 +271,9 @@ const RegistreraLeverantorer = () => {
         system: "",
         mustKeep: false,
         apiId: pick.id,
+        hq_in_eu: pick.hq_in_eu,
+        storage_in_eu: pick.storage_in_eu,
+        cloud_act_exposure: pick.cloud_act_exposure,
       };
       if (emptyIdx === -1) return [...vs, filled];
       return vs.map((v, i) => (i === emptyIdx ? filled : v));
