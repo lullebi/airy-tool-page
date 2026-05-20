@@ -1456,7 +1456,7 @@ const Step5Measurement = ({
     const status = statusFromVendor(v, scoredMap);
     const badges = buildBadges(quick, deep, hasDeep);
     const isOpen = !eu ? true : openId === v.id;
-    const alt = EU_ALTERNATIVES[v.name] ?? defaultAlternative;
+    const alt = altFor(v);
 
     return (
       <div
