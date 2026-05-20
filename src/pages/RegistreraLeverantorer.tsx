@@ -196,6 +196,9 @@ type Vendor = {
   system: string;
   mustKeep: boolean;
   apiId?: string;
+  hq_in_eu?: boolean;
+  storage_in_eu?: boolean;
+  cloud_act_exposure?: boolean;
 };
 
 const VENDOR_TYPES = ["SaaS", "Infrastruktur", "Plattform", "Kommunikation", "Annat"];
@@ -268,6 +271,9 @@ const RegistreraLeverantorer = () => {
         system: "",
         mustKeep: false,
         apiId: pick.id,
+        hq_in_eu: pick.hq_in_eu,
+        storage_in_eu: pick.storage_in_eu,
+        cloud_act_exposure: pick.cloud_act_exposure,
       };
       if (emptyIdx === -1) return [...vs, filled];
       return vs.map((v, i) => (i === emptyIdx ? filled : v));
@@ -415,13 +421,29 @@ const RegistreraLeverantorer = () => {
                         name: pick.name,
                         type: pick.category ?? "",
                         apiId: pick.id,
+                        hq_in_eu: pick.hq_in_eu,
+                        storage_in_eu: pick.storage_in_eu,
+                        cloud_act_exposure: pick.cloud_act_exposure,
                       })
                     }
                     onPickCustom={(name) =>
-                      updateVendor(v.id, { name, apiId: undefined })
+                      updateVendor(v.id, {
+                        name,
+                        apiId: undefined,
+                        hq_in_eu: undefined,
+                        storage_in_eu: undefined,
+                        cloud_act_exposure: undefined,
+                      })
                     }
                     onClear={() =>
-                      updateVendor(v.id, { name: "", type: "", apiId: undefined })
+                      updateVendor(v.id, {
+                        name: "",
+                        type: "",
+                        apiId: undefined,
+                        hq_in_eu: undefined,
+                        storage_in_eu: undefined,
+                        cloud_act_exposure: undefined,
+                      })
                     }
                   />
                 </div>

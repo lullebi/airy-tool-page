@@ -7,13 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { fetchAlternatives, type RescoredVendor } from "@/lib/api";
 import type { VendorLike } from "@/lib/vendorMapper";
 
-const EU_COUNTRIES = new Set([
-  "Sverige","Tyskland","Frankrike","Nederländerna","Spanien","Italien","Polen",
-  "Danmark","Finland","Norge","Belgien","Österrike","Irland","Portugal","Estland",
-  "Lettland","Litauen","Tjeckien","Slovakien","Ungern","Grekland","Rumänien",
-  "Bulgarien","Kroatien","Slovenien","Luxemburg","Malta","Cypern","EU","EES",
-]);
-const isEU = (v: VendorLike) => !!v.country && EU_COUNTRIES.has(v.country);
+import { isEuropean as isEU } from "@/lib/vendorMapper";
 
 const NO_ALT_MESSAGE = "Inga EU-alternativ taggade för denna kategori";
 
