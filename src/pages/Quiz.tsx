@@ -552,6 +552,9 @@ const Quiz = () => {
               quick={quickAnswers}
               deepByVendor={deepAnswersByVendor}
               hasDeep={deepDiveEnabled}
+              scoredMap={scoredMap}
+              scoring={scoring}
+              scoreError={scoreError}
             />
           )}
           {stepIndex === 4 && (
