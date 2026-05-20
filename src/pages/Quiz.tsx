@@ -935,10 +935,21 @@ const Step4Result = ({
   deepByVendor: Record<string, Answers>;
   hasDeep: boolean;
 }) => {
+  const [scoreBreakdownOpen, setScoreBreakdownOpen] = useState(false);
   const scores = vendors.map((v) => ({
     vendor: v,
     ...computeVendorScore(step1, quick, deepByVendor[v.id] ?? {}, hasDeep),
   }));
+  const avg = (key: "quickScore" | "deepScore" | "euWeight" | "readinessScore" | "total") =>
+    scores.length
+      ? Math.round(scores.reduce((a, s) => a + (s[key] as number), 0) / scores.length)
+      : 0;
+  const aggQuick = avg("quickScore");
+  const aggDeep = avg("deepScore");
+  const aggEu = avg("euWeight");
+  const aggReadiness = avg("readinessScore");
+  const aggTotal = avg("total");
+
 
   return (
     <Card
