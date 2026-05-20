@@ -1501,28 +1501,14 @@ const Step5Measurement = ({
         </button>
 
         {!eu && isOpen && (
-          <div className="mt-4 rounded-xl bg-rose-50/70 p-3 ring-1 ring-rose-200/70 animate-in fade-in slide-in-from-top-1 duration-200">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">
-              Riskanalys
-            </p>
-            <ul className="mt-1 space-y-1 text-[11px] font-medium text-foreground/75">
-              {badges
-                .filter((b) => b.value < 70)
-                .map((b) => (
-                  <li key={b.key}>
-                    • <span className="font-semibold">{b.label}:</span> {b.evidence}
-                  </li>
-                ))}
-              <li>• Jurisdiktion utanför EU – ev. CLOUD Act-exponering.</li>
-            </ul>
-
-            <div className="mt-3 rounded-lg bg-green-600 p-3 ring-1 ring-green-700">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">
+          <div className="mt-4 animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="rounded-lg bg-emerald-200/40 p-3 ring-1 ring-emerald-300/50">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-900/70">
                 Matchande EU-alternativ
               </p>
-              <p className="mt-0.5 text-sm font-bold text-white">{alt.name}</p>
-              <p className="text-[11px] font-medium text-white/75">{alt.country}</p>
-              <p className="mt-1 text-[11px] text-white/85">{alt.reason}</p>
+              <p className="mt-0.5 text-sm font-bold text-emerald-950">{alt.name}</p>
+              <p className="text-[11px] font-medium text-emerald-900/75">{alt.country}</p>
+              <p className="mt-1 text-[11px] text-emerald-900/85">{alt.reason}</p>
             </div>
           </div>
         )}
