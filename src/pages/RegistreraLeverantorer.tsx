@@ -196,6 +196,9 @@ type Vendor = {
   system: string;
   mustKeep: boolean;
   apiId?: string;
+  hq_in_eu?: boolean;
+  storage_in_eu?: boolean;
+  cloud_act_exposure?: boolean;
 };
 
 const VENDOR_TYPES = ["SaaS", "Infrastruktur", "Plattform", "Kommunikation", "Annat"];
