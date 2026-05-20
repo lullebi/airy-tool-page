@@ -995,9 +995,22 @@ const Step4Result = ({
                     <StatusIcon className="h-4 w-4" />
                     {status.label}
                   </div>
-                  <div className="rounded-xl bg-foreground px-4 py-2 text-lg font-bold text-background">
-                    {total}
-                  </div>
+                  <Tooltip delayDuration={150}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => setScoreBreakdownOpen(true)}
+                        aria-label="Visa poängberäkning"
+                        className="rounded-xl bg-foreground px-4 py-2 text-lg font-bold text-background cursor-pointer transition hover:ring-2 hover:ring-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      >
+                        {total}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background shadow-lg">
+                      Klicka för detaljer
+                    </TooltipContent>
+                  </Tooltip>
+
 
 
                 </div>
