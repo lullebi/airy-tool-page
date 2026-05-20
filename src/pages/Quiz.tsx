@@ -968,20 +968,23 @@ const Step3DeepDive = ({
 const Step4Result = ({
   vendors,
   step1,
-  quick,
-  deepByVendor,
-  hasDeep,
+  scoredMap,
+  scoring,
+  scoreError,
 }: {
   vendors: VendorLike[];
   step1: Step1State;
   quick: Answers;
   deepByVendor: Record<string, Answers>;
   hasDeep: boolean;
+  scoredMap: ScoredMap;
+  scoring: boolean;
+  scoreError: string | null;
 }) => {
   const [scoreBreakdownOpen, setScoreBreakdownOpen] = useState(false);
   const scores = vendors.map((v) => ({
     vendor: v,
-    ...computeVendorScore(step1, quick, deepByVendor[v.id] ?? {}, hasDeep),
+    ...computeVendorScore(v, scoredMap),
   }));
   const avg = (key: "quickScore" | "deepScore" | "euWeight" | "readinessScore" | "total") =>
     scores.length
@@ -999,6 +1002,16 @@ const Step4Result = ({
       title="Resultat"
       subtitle="Sammanvägd poäng per leverantör mätt mot Eurostack-standard."
     >
+      {scoring && (
+        <div className="mb-4 flex items-center gap-2 text-sm text-foreground/70">
+          <Loader2 className="h-4 w-4 animate-spin" /> Beräknar score från Eurostack-modellen…
+        </div>
+      )}
+      {scoreError && (
+        <div className="mb-4 rounded-xl bg-rose-50 px-4 py-2 text-sm text-rose-700 ring-1 ring-rose-200">
+          {scoreError}
+        </div>
+      )}
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Sektor" value={step1.sector || "—"} />
         <Stat label="EU-datalagring" value={`${step1.euDataWeight ?? "-"}/5`} />
@@ -1007,8 +1020,8 @@ const Step4Result = ({
       </div>
 
       <div className="grid gap-4">
-        {scores.map(({ vendor, total, quickScore, deepScore, euWeight, readinessScore }) => {
-          const status = statusFromScore(total);
+        {scores.map(({ vendor, total, quickScore, deepScore, euWeight, readinessScore, rec }) => {
+          const status = statusFromVendor(vendor, scoredMap);
           const StatusIcon =
             status.tone === "ok"
               ? CheckCircle2
