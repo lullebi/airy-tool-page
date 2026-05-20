@@ -1516,25 +1516,13 @@ const Step5Measurement = ({
               <li>• Jurisdiktion utanför EU – ev. CLOUD Act-exponering.</li>
             </ul>
 
-            <div className="mt-3 rounded-lg bg-white/80 p-3 ring-1 ring-white/70">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-foreground/55">
+            <div className="mt-3 rounded-lg bg-green-600 p-3 ring-1 ring-green-700">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">
                 Matchande EU-alternativ
               </p>
-              <p className="mt-0.5 text-sm font-bold text-foreground">{alt.name}</p>
-              <p className="text-[11px] font-medium text-foreground/65">{alt.country}</p>
-              <p className="mt-1 text-[11px] text-foreground/70">{alt.reason}</p>
-              <Button
-                onClick={() =>
-                  toast.success(`${v.name} markerad för ersättning`, {
-                    description: `Simulerad swap till ${alt.name}.`,
-                  })
-                }
-                className="mt-3 h-8 w-full rounded-lg text-[11px] font-bold text-white"
-                style={{ background: "var(--gradient-cta)" }}
-              >
-                <Repeat className="mr-1 h-3 w-3" />
-                Ersätt med detta alternativ
-              </Button>
+              <p className="mt-0.5 text-sm font-bold text-white">{alt.name}</p>
+              <p className="text-[11px] font-medium text-white/75">{alt.country}</p>
+              <p className="mt-1 text-[11px] text-white/85">{alt.reason}</p>
             </div>
           </div>
         )}
