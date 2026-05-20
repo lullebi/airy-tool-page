@@ -335,6 +335,36 @@ const Quiz = () => {
   // Index för vilken leverantör i Fördjupad analys-loopen som granskas just nu.
   const [deepVendorIndex, setDeepVendorIndex] = useState(0);
 
+  // API scoring state — POST /score result keyed by apiId.
+  const [scoredMap, setScoredMap] = useState<ScoredMap>(new Map());
+  const [scoring, setScoring] = useState(false);
+  const [scoreError, setScoreError] = useState<string | null>(null);
+
+  // Trigger rescore when entering Resultat (step 3). Re-run if priorities change while on/after Resultat.
+  useEffect(() => {
+    if (stepIndex < 3) return;
+    const apiIds = vendors.map((v) => v.apiId).filter((id): id is string => !!id);
+    if (apiIds.length === 0) {
+      setScoredMap(new Map());
+      return;
+    }
+    const weights = prioritiesToWeights(step1.priorities);
+    setScoring(true);
+    setScoreError(null);
+    rescore(apiIds, weights)
+      .then((list) => {
+        const m: ScoredMap = new Map();
+        list.forEach((r) => m.set(r.id, r));
+        setScoredMap(m);
+      })
+      .catch((e: unknown) => {
+        setScoreError(e instanceof Error ? e.message : "Kunde inte hämta score");
+      })
+      .finally(() => setScoring(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepIndex, step1.priorities.join("|")]);
+
+
   // Vendors that get a deep dive (when enabled, all of them — kan filtreras vid datasetkoppling)
   const deepVendors = deepDiveEnabled ? vendors : [];
   const currentDeepVendor = deepVendors[deepVendorIndex];
