@@ -398,12 +398,31 @@ const RegistreraLeverantorer = () => {
                   <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
                     Leverantörsnamn
                   </Label>
-                  <Input
+                  <VendorNameCombobox
                     value={v.name}
-                    onChange={(e) => updateVendor(v.id, { name: e.target.value })}
-                    placeholder="t.ex. Microsoft 365"
-                    className="bg-white/70"
-                    maxLength={120}
+                    apiVendors={apiVendors}
+                    loading={loadingApi}
+                    disabledNames={
+                      new Set(
+                        vendors
+                          .filter((x) => x.id !== v.id)
+                          .map((x) => x.name.trim().toLowerCase())
+                          .filter(Boolean),
+                      )
+                    }
+                    onPickApi={(pick) =>
+                      updateVendor(v.id, {
+                        name: pick.name,
+                        type: pick.category ?? "",
+                        apiId: pick.id,
+                      })
+                    }
+                    onPickCustom={(name) =>
+                      updateVendor(v.id, { name, apiId: undefined })
+                    }
+                    onClear={() =>
+                      updateVendor(v.id, { name: "", type: "", apiId: undefined })
+                    }
                   />
                 </div>
 
