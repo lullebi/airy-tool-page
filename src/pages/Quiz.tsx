@@ -1485,11 +1485,8 @@ const Step5Measurement = ({
     >
       {/* HEADER: Donut + summary */}
       <div className="mb-8 flex flex-col items-center gap-6 rounded-2xl bg-white/60 p-5 ring-1 ring-white/70 md:flex-row md:items-center md:gap-8">
-        <button
-          type="button"
-          onClick={() => setScoreBreakdownOpen(true)}
-          aria-label="Visa poängberäkning"
-          className="relative h-36 w-36 flex-shrink-0 rounded-full transition hover:shadow-[0_0_0_6px_hsl(var(--primary)/0.12)] hover:ring-2 hover:ring-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
+        <div
+          className="relative h-36 w-36 flex-shrink-0"
         >
           <svg viewBox="0 0 140 140" className="h-full w-full -rotate-90">
             <circle cx="70" cy="70" r={r} fill="none" stroke="hsl(0 80% 60%)" strokeWidth="16" />
@@ -1510,7 +1507,8 @@ const Step5Measurement = ({
               EU
             </span>
           </div>
-        </button>
+        </div>
+
 
 
         <div className="flex-1">
