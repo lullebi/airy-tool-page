@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { ArrowLeft, ArrowRight, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { fetchVendors, type ApiVendorListItem } from "@/lib/api";
 
 type Vendor = {
   id: string;
@@ -20,24 +22,10 @@ type Vendor = {
   country: string;
   system: string;
   mustKeep: boolean;
+  apiId?: string;
 };
 
 const VENDOR_TYPES = ["SaaS", "Infrastruktur", "Plattform", "Kommunikation", "Annat"];
-
-const QUICK_PICKS: { name: string; type: string; country: string }[] = [
-  { name: "Microsoft", type: "SaaS", country: "USA" },
-  { name: "Google", type: "SaaS", country: "USA" },
-  { name: "AWS", type: "Infrastruktur", country: "USA" },
-  { name: "Azure", type: "Infrastruktur", country: "USA" },
-  { name: "ChatGPT", type: "SaaS", country: "USA" },
-  { name: "Slack", type: "Kommunikation", country: "USA" },
-  { name: "Dropbox", type: "SaaS", country: "USA" },
-  { name: "Zoom", type: "Kommunikation", country: "USA" },
-  { name: "Salesforce", type: "SaaS", country: "USA" },
-  { name: "Notion", type: "SaaS", country: "USA" },
-  { name: "Nextcloud", type: "SaaS", country: "Tyskland" },
-  { name: "OVHcloud", type: "Infrastruktur", country: "Frankrike" },
-];
 
 const emptyVendor = (): Vendor => ({
   id: crypto.randomUUID(),
@@ -50,6 +38,27 @@ const emptyVendor = (): Vendor => ({
 
 const RegistreraLeverantorer = () => {
   const [vendors, setVendors] = useState<Vendor[]>([emptyVendor()]);
+  const [apiVendors, setApiVendors] = useState<ApiVendorListItem[]>([]);
+  const [loadingApi, setLoadingApi] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    fetchVendors()
+      .then((list) => {
+        if (!active) return;
+        setApiVendors(list);
+      })
+      .catch(() => {
+        if (!active) return;
+        toast.error("Kunde inte ladda leverantörer — försök igen");
+      })
+      .finally(() => {
+        if (active) setLoadingApi(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const updateVendor = (id: string, patch: Partial<Vendor>) =>
     setVendors((vs) => vs.map((v) => (v.id === id ? { ...v, ...patch } : v)));
@@ -63,10 +72,11 @@ const RegistreraLeverantorer = () => {
     vendors.map((v) => v.name.trim().toLowerCase()).filter(Boolean),
   );
 
-  const handleQuickPick = (pick: typeof QUICK_PICKS[number]) => {
+  const quickPickList = apiVendors.slice(0, 12);
+
+  const handleQuickPick = (pick: ApiVendorListItem) => {
     const key = pick.name.toLowerCase();
     if (selectedQuickPicks.has(key)) {
-      // toggle off: remove first matching
       setVendors((vs) => {
         const idx = vs.findIndex((v) => v.name.trim().toLowerCase() === key);
         if (idx === -1) return vs;
@@ -76,22 +86,22 @@ const RegistreraLeverantorer = () => {
       return;
     }
     setVendors((vs) => {
-      // fill first empty card, otherwise append
       const emptyIdx = vs.findIndex((v) => !v.name && !v.type && !v.country && !v.system);
       const filled: Vendor = {
         id: emptyIdx === -1 ? crypto.randomUUID() : vs[emptyIdx].id,
         name: pick.name,
-        type: pick.type,
-        country: pick.country,
+        type: pick.category ?? "",
+        country: "",
         system: "",
         mustKeep: false,
+        apiId: pick.id,
       };
       if (emptyIdx === -1) return [...vs, filled];
       return vs.map((v, i) => (i === emptyIdx ? filled : v));
     });
   };
 
-  const knownNames = new Set(QUICK_PICKS.map((p) => p.name.toLowerCase()));
+  const knownNames = new Set(apiVendors.map((p) => p.name.toLowerCase()));
   const namedVendors = vendors.filter((v) => v.name.trim().length > 0);
   const hasAnyVendor = namedVendors.length > 0;
   const incompleteCustomVendors = namedVendors.filter(
@@ -150,31 +160,40 @@ const RegistreraLeverantorer = () => {
                 Klicka för att lägga till
               </span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {QUICK_PICKS.map((pick) => {
-                const active = selectedQuickPicks.has(pick.name.toLowerCase());
-                return (
-                  <button
-                    key={pick.name}
-                    type="button"
-                    onClick={() => handleQuickPick(pick)}
-                    className={
-                      "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition " +
-                      (active
-                        ? "border-primary bg-primary text-primary-foreground shadow-[var(--shadow-soft)]"
-                        : "border-white/60 bg-white/60 text-foreground/80 hover:bg-white hover:text-foreground")
-                    }
-                  >
-                    <Plus
+            {loadingApi ? (
+              <div className="flex items-center gap-2 text-sm text-foreground/60">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Hämtar leverantörer…
+              </div>
+            ) : quickPickList.length === 0 ? (
+              <p className="text-sm text-foreground/60">
+                Inga leverantörer tillgängliga just nu. Lägg till manuellt nedan.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {quickPickList.map((pick) => {
+                  const active = selectedQuickPicks.has(pick.name.toLowerCase());
+                  return (
+                    <button
+                      key={pick.id}
+                      type="button"
+                      onClick={() => handleQuickPick(pick)}
                       className={
-                        "h-3.5 w-3.5 transition " + (active ? "rotate-45" : "")
+                        "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition " +
+                        (active
+                          ? "border-primary bg-primary text-primary-foreground shadow-[var(--shadow-soft)]"
+                          : "border-white/60 bg-white/60 text-foreground/80 hover:bg-white hover:text-foreground")
                       }
-                    />
-                    {pick.name}
-                  </button>
-                );
-              })}
-            </div>
+                    >
+                      <Plus
+                        className={"h-3.5 w-3.5 transition " + (active ? "rotate-45" : "")}
+                      />
+                      {pick.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
 

@@ -1,6 +1,9 @@
-import { useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, ShieldAlert, ChevronDown, Download, Repeat, ShieldCheck, Inbox, Sparkles, Database, Network, Lock, FileText, Info } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, ShieldAlert, ChevronDown, Download, Repeat, ShieldCheck, Inbox, Sparkles, Database, Network, Lock, FileText, Info, Loader2 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { rescore, type RescoredVendor, type VendorClass } from "@/lib/api";
+import { CLASS_LABELS, CLASS_TAILWIND, RISK_DRIVER_SV, SCORE_CAP, SCORE_TOOLTIP, prioritiesToWeights } from "@/lib/scoringConstants";
+import type { VendorLike } from "@/lib/vendorMapper";
 import {
   Dialog,
   DialogContent,
@@ -223,7 +226,7 @@ type Step1State = {
 
 type Answers = Record<string, string>; // questionId -> option label
 
-type VendorLike = { id: string; name: string; type?: string; country?: string; mustKeep?: boolean };
+// VendorLike imported from "@/lib/vendorMapper"
 
 const STEPS = ["Konfiguration", "Snabbanalys", "Fördjupad analys", "Resultat", "Mätning"] as const;
 
@@ -266,45 +269,49 @@ const weightedAverage = (qs: Question[], ans: Answers) => {
   return Math.round(sum / totalW);
 };
 
-const computeVendorScore = (
-  step1: Step1State,
-  quick: Answers,
-  deep: Answers,
-  hasDeep: boolean
-) => {
-  const quickScore = weightedAverage(QUICK_SCAN, quick);
-  const deepScore = hasDeep ? weightedAverage(DEEP_DIVE, deep) : quickScore;
-  const euWeight = (((step1.euDataWeight ?? 3) - 1) / 4) * 100;
-  const readinessOpt = STEP1_READINESS.find((r) => r.label === step1.readiness);
-  const readinessScore = readinessOpt?.scoreValue ?? 50;
+/**
+ * Source of truth: rescored map from POST /score.
+ * total = contextual_score (0..SCORE_CAP). Sub-components map onto the legacy
+ * UI buckets (quickScore=säkerhet, deepScore=compliance, euWeight=flexibilitet)
+ * so the existing UI breakdown stays meaningful without any local formula.
+ */
+type ScoredMap = Map<string, RescoredVendor>;
 
-  // Composite — quick 35%, deep 35%, euWeight 15%, readiness 15%
-  const total = Math.round(
-    quickScore * 0.35 + deepScore * 0.35 + euWeight * 0.15 + readinessScore * 0.15
-  );
-  return { quickScore, deepScore, euWeight, readinessScore, total };
+const computeVendorScore = (vendor: VendorLike, scored: ScoredMap) => {
+  const rec = vendor.apiId ? scored.get(vendor.apiId) : undefined;
+  const total = rec?.contextual_score ?? 0;
+  return {
+    total,
+    quickScore: rec?.components.säkerhet ?? 0,
+    deepScore: rec?.components.compliance ?? 0,
+    euWeight: rec?.components.flexibilitet ?? 0,
+    readinessScore: 0,
+    rec,
+  };
 };
 
-const statusFromScore = (s: number) => {
-  if (s >= 70) return { label: "Låg risk", tone: "ok" as const };
-  if (s >= 45) return { label: "Medel risk", tone: "warn" as const };
-  return { label: "Hög risk – ersättning rekommenderas", tone: "bad" as const };
+const classToTone = (c: VendorClass | undefined): "ok" | "warn" | "bad" => {
+  if (c === "låg") return "ok";
+  if (c === "medel") return "warn";
+  return "bad";
+};
+
+const statusFromVendor = (vendor: VendorLike, scored: ScoredMap) => {
+  const rec = vendor.apiId ? scored.get(vendor.apiId) : undefined;
+  const tone = classToTone(rec?.class);
+  return { label: rec ? CLASS_LABELS[rec.class] : "Ej analyserad", tone };
 };
 
 /* =========================================================================
    COMPONENT
    ========================================================================= */
 
-const DEFAULT_VENDORS: VendorLike[] = [
-  { id: "v1", name: "Microsoft 365", type: "SaaS", country: "USA" },
-  { id: "v2", name: "AWS", type: "Infrastruktur", country: "USA" },
-];
 
 const Quiz = () => {
   const location = useLocation();
   const navState = (location.state as { vendors?: VendorLike[]; stepIndex?: number } | null);
   const stateVendors = navState?.vendors;
-  const vendors = stateVendors && stateVendors.length > 0 ? stateVendors : DEFAULT_VENDORS;
+  const vendors: VendorLike[] = stateVendors && stateVendors.length > 0 ? stateVendors : [];
 
   const [stepIndex, setStepIndex] = useState(
     typeof navState?.stepIndex === "number"
@@ -327,6 +334,36 @@ const Quiz = () => {
   const [deepDiveEnabled, setDeepDiveEnabled] = useState(true);
   // Index för vilken leverantör i Fördjupad analys-loopen som granskas just nu.
   const [deepVendorIndex, setDeepVendorIndex] = useState(0);
+
+  // API scoring state — POST /score result keyed by apiId.
+  const [scoredMap, setScoredMap] = useState<ScoredMap>(new Map());
+  const [scoring, setScoring] = useState(false);
+  const [scoreError, setScoreError] = useState<string | null>(null);
+
+  // Trigger rescore when entering Resultat (step 3). Re-run if priorities change while on/after Resultat.
+  useEffect(() => {
+    if (stepIndex < 3) return;
+    const apiIds = vendors.map((v) => v.apiId).filter((id): id is string => !!id);
+    if (apiIds.length === 0) {
+      setScoredMap(new Map());
+      return;
+    }
+    const weights = prioritiesToWeights(step1.priorities);
+    setScoring(true);
+    setScoreError(null);
+    rescore(apiIds, weights)
+      .then((list) => {
+        const m: ScoredMap = new Map();
+        list.forEach((r) => m.set(r.id, r));
+        setScoredMap(m);
+      })
+      .catch((e: unknown) => {
+        setScoreError(e instanceof Error ? e.message : "Kunde inte hämta score");
+      })
+      .finally(() => setScoring(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepIndex, step1.priorities.join("|")]);
+
 
   // Vendors that get a deep dive (when enabled, all of them — kan filtreras vid datasetkoppling)
   const deepVendors = deepDiveEnabled ? vendors : [];
@@ -515,6 +552,9 @@ const Quiz = () => {
               quick={quickAnswers}
               deepByVendor={deepAnswersByVendor}
               hasDeep={deepDiveEnabled}
+              scoredMap={scoredMap}
+              scoring={scoring}
+              scoreError={scoreError}
             />
           )}
           {stepIndex === 4 && (
@@ -524,6 +564,9 @@ const Quiz = () => {
               quick={quickAnswers}
               deepByVendor={deepAnswersByVendor}
               hasDeep={deepDiveEnabled}
+              scoredMap={scoredMap}
+              scoring={scoring}
+              scoreError={scoreError}
             />
           )}
         </div>
@@ -635,14 +678,16 @@ const Step1Konfig = ({
         <div className="flex flex-wrap gap-2">
           {STEP1_PRIORITIES.map((p) => {
             const active = state.priorities.includes(p.label);
-            const disabled = !active && state.priorities.length >= 3;
+            const unsupported = p.label === "Kostnad";
+            const disabled = unsupported || (!active && state.priorities.length >= 3);
             return (
               <button
                 key={p.label}
                 type="button"
-                onClick={() => togglePriority(p.label)}
+                onClick={() => !unsupported && togglePriority(p.label)}
                 disabled={disabled}
                 aria-pressed={active}
+                title={unsupported ? "Saknas i modellen — kommer i framtida version" : undefined}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ring-1 ${
                   active
                     ? "bg-foreground text-background ring-foreground"
@@ -650,6 +695,7 @@ const Step1Konfig = ({
                 } ${disabled ? "opacity-40 cursor-not-allowed hover:bg-white/70" : ""}`}
               >
                 {p.label}
+                {unsupported && <span className="ml-1 text-xs">(ej i modell)</span>}
               </button>
             );
           })}
@@ -925,20 +971,23 @@ const Step3DeepDive = ({
 const Step4Result = ({
   vendors,
   step1,
-  quick,
-  deepByVendor,
-  hasDeep,
+  scoredMap,
+  scoring,
+  scoreError,
 }: {
   vendors: VendorLike[];
   step1: Step1State;
   quick: Answers;
   deepByVendor: Record<string, Answers>;
   hasDeep: boolean;
+  scoredMap: ScoredMap;
+  scoring: boolean;
+  scoreError: string | null;
 }) => {
   const [scoreBreakdownOpen, setScoreBreakdownOpen] = useState(false);
   const scores = vendors.map((v) => ({
     vendor: v,
-    ...computeVendorScore(step1, quick, deepByVendor[v.id] ?? {}, hasDeep),
+    ...computeVendorScore(v, scoredMap),
   }));
   const avg = (key: "quickScore" | "deepScore" | "euWeight" | "readinessScore" | "total") =>
     scores.length
@@ -956,6 +1005,16 @@ const Step4Result = ({
       title="Resultat"
       subtitle="Sammanvägd poäng per leverantör mätt mot Eurostack-standard."
     >
+      {scoring && (
+        <div className="mb-4 flex items-center gap-2 text-sm text-foreground/70">
+          <Loader2 className="h-4 w-4 animate-spin" /> Beräknar score från Eurostack-modellen…
+        </div>
+      )}
+      {scoreError && (
+        <div className="mb-4 rounded-xl bg-rose-50 px-4 py-2 text-sm text-rose-700 ring-1 ring-rose-200">
+          {scoreError}
+        </div>
+      )}
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Sektor" value={step1.sector || "—"} />
         <Stat label="EU-datalagring" value={`${step1.euDataWeight ?? "-"}/5`} />
@@ -964,8 +1023,8 @@ const Step4Result = ({
       </div>
 
       <div className="grid gap-4">
-        {scores.map(({ vendor, total, quickScore, deepScore, euWeight, readinessScore }) => {
-          const status = statusFromScore(total);
+        {scores.map(({ vendor, total, quickScore, deepScore, euWeight, readinessScore, rec }) => {
+          const status = statusFromVendor(vendor, scoredMap);
           const StatusIcon =
             status.tone === "ok"
               ? CheckCircle2
@@ -1237,12 +1296,18 @@ const Step5Measurement = ({
   quick,
   deepByVendor,
   hasDeep,
+  scoredMap,
+  scoring,
+  scoreError,
 }: {
   vendors: VendorLike[];
   step1: Step1State;
   quick: Answers;
   deepByVendor: Record<string, Answers>;
   hasDeep: boolean;
+  scoredMap: ScoredMap;
+  scoring: boolean;
+  scoreError: string | null;
 }) => {
   const deepFor = (v: VendorLike) => deepByVendor[v.id] ?? {};
   const [openId, setOpenId] = useState<string | null>(null);
@@ -1286,7 +1351,7 @@ const Step5Measurement = ({
       const margin = 48;
       let y = margin;
 
-      const perVendorTotals = vendors.map((v) => computeVendorScore(step1, quick, deepFor(v), hasDeep).total);
+      const perVendorTotals = vendors.map((v) => computeVendorScore(v, scoredMap).total);
       const total = perVendorTotals.length ? Math.round(perVendorTotals.reduce((a, b) => a + b, 0) / perVendorTotals.length) : 0;
       const euCount = vendors.filter(isEU).length;
       const nonEuCount = vendors.length - euCount;
@@ -1332,7 +1397,7 @@ const Step5Measurement = ({
           y = margin;
         }
         const eu = isEU(v);
-        const status = statusFromScore(total);
+        const status = statusFromVendor(v, scoredMap);
         doc.setFont("helvetica", "bold");
         doc.text(`${i + 1}. ${v.name}`, margin, y);
         doc.setFont("helvetica", "normal");
@@ -1373,8 +1438,8 @@ const Step5Measurement = ({
   const renderCard = (v: VendorLike) => {
     const eu = isEU(v);
     const deep = deepFor(v);
-    const { total: tot } = computeVendorScore(step1, quick, deep, hasDeep);
-    const status = statusFromScore(tot);
+    const { total: tot } = computeVendorScore(v, scoredMap);
+    const status = statusFromVendor(v, scoredMap);
     const badges = buildBadges(quick, deep, hasDeep);
     const isOpen = !eu ? true : openId === v.id;
     const alt = EU_ALTERNATIVES[v.name] ?? defaultAlternative;
@@ -1650,10 +1715,13 @@ const Step5Measurement = ({
         <Button
           onClick={() => {
             const scores: Record<string, number> = {};
+            const scoredArr: RescoredVendor[] = [];
             vendors.forEach((v) => {
-              scores[v.id] = computeVendorScore(step1, quick, deepFor(v), hasDeep).total;
+              const r = computeVendorScore(v, scoredMap);
+              scores[v.id] = r.total;
+              if (r.rec) scoredArr.push(r.rec);
             });
-            navigate("/atgardsplan", { state: { vendors, scores } });
+            navigate("/atgardsplan", { state: { vendors, scores, scored: scoredArr } });
           }}
           size="lg"
           className="group w-full max-w-md rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"

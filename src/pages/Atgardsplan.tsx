@@ -1,11 +1,11 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldAlert, CheckCircle2, AlertTriangle, Sparkles, ArrowRight } from "lucide-react";
+import { ArrowLeft, ShieldAlert, CheckCircle2, AlertTriangle, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-
-type VendorLike = { id: string; name: string; type?: string; country?: string; mustKeep?: boolean };
+import { fetchAlternatives, type RescoredVendor } from "@/lib/api";
+import type { VendorLike } from "@/lib/vendorMapper";
 
 const EU_COUNTRIES = new Set([
   "Sverige","Tyskland","Frankrike","Nederländerna","Spanien","Italien","Polen",
@@ -15,19 +15,16 @@ const EU_COUNTRIES = new Set([
 ]);
 const isEU = (v: VendorLike) => !!v.country && EU_COUNTRIES.has(v.country);
 
-const EU_ALTERNATIVES: Record<string, { name: string; country: string; reason: string }> = {
-  "Microsoft 365": { name: "OnlyOffice DocSpace", country: "EU", reason: "EU-baserad kontorssvit utan CLOUD Act-exponering." },
-  "AWS": { name: "OVHcloud", country: "Frankrike", reason: "EU-suverän infrastruktur, GDPR/SecNumCloud-certifierad." },
-  "Google Workspace": { name: "Infomaniak kSuite", country: "Schweiz/EU", reason: "Privacy-by-design, datalagring i EU." },
-  "Azure": { name: "Scaleway", country: "Frankrike", reason: "Europeisk hyperscaler med full datasuveränitet." },
-  "Slack": { name: "Element / Matrix", country: "EU", reason: "Federerad EU-baserad kommunikation." },
-  "Zoom": { name: "Whereby", country: "Norge", reason: "Europeiskt videomöte, GDPR-compliant." },
-  "Salesforce": { name: "SuperOffice", country: "Norge", reason: "Nordiskt CRM med full EU-datalagring." },
-  "Dropbox": { name: "Tresorit", country: "Schweiz/EU", reason: "End-to-end-krypterad EU-fillagring." },
-};
-const defaultAlternative = { name: "EU-alternativ tillgängligt", country: "EU", reason: "Motsvarande tjänst med EU-suveränitet och GDPR-efterlevnad." };
+const NO_ALT_MESSAGE = "Inga EU-alternativ taggade för denna kategori";
 
-type VendorRow = { vendor: VendorLike; score: number; risks: string[]; alt: { name: string; country: string; reason: string } };
+type AltState = { loading: boolean; eu: string[]; error?: string };
+
+type VendorRow = {
+  vendor: VendorLike;
+  score: number;
+  risks: string[];
+  alt: AltState;
+};
 
 const riskLabel = (score: number) => {
   if (score >= 70) return { label: "Låg risk", tone: "ok" as const };
@@ -48,18 +45,47 @@ const Atgardsplan = () => {
   const state = (location.state ?? {}) as {
     vendors?: VendorLike[];
     scores?: Record<string, number>;
+    scored?: RescoredVendor[];
   };
 
-  const vendors: VendorLike[] = state.vendors ?? [
-    { id: "v1", name: "Microsoft 365", type: "SaaS", country: "USA" },
-    { id: "v2", name: "AWS", type: "Infrastruktur", country: "USA" },
-  ];
+  const vendors: VendorLike[] = state.vendors ?? [];
+
+  // Fetch EU alternatives per category once.
+  const [altsByCategory, setAltsByCategory] = useState<Record<string, AltState>>({});
+
+  useEffect(() => {
+    const categories = Array.from(
+      new Set(vendors.map((v) => v.type).filter((t): t is string => !!t)),
+    );
+    categories.forEach((cat) => {
+      setAltsByCategory((prev) =>
+        prev[cat] ? prev : { ...prev, [cat]: { loading: true, eu: [] } },
+      );
+      fetchAlternatives(cat)
+        .then((r) =>
+          setAltsByCategory((prev) => ({
+            ...prev,
+            [cat]: { loading: false, eu: r.eu_alternatives },
+          })),
+        )
+        .catch((e: unknown) =>
+          setAltsByCategory((prev) => ({
+            ...prev,
+            [cat]: {
+              loading: false,
+              eu: [],
+              error: e instanceof Error ? e.message : "Kunde inte hämta alternativ",
+            },
+          })),
+        );
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendors.map((v) => v.type).join("|")]);
 
   const rows: VendorRow[] = useMemo(
     () =>
       vendors.map((v) => {
         const eu = isEU(v);
-        // Heuristic score when not provided: EU = 75, non-EU = 38
         const score = state.scores?.[v.id] ?? (eu ? 75 : 38);
         const risks: string[] = [];
         if (!eu) {
@@ -69,10 +95,12 @@ const Atgardsplan = () => {
         if (score < 70) risks.push("Otillräcklig dokumenterad NIS2/DORA-beredskap");
         if (score < 45) risks.push("Begränsade kontraktsmässiga skyddsåtgärder (DPA/SLA)");
         if (risks.length === 0) risks.push("Inga väsentliga risker identifierade");
-        const alt = eu ? defaultAlternative : EU_ALTERNATIVES[v.name] ?? defaultAlternative;
+        const alt: AltState = v.type
+          ? altsByCategory[v.type] ?? { loading: true, eu: [] }
+          : { loading: false, eu: [] };
         return { vendor: v, score, risks, alt };
       }),
-    [vendors, state.scores],
+    [vendors, state.scores, altsByCategory],
   );
 
   const high = rows.filter((r) => r.score < 45);
@@ -151,11 +179,24 @@ const Atgardsplan = () => {
                           Rekommenderat EU-alternativ
                         </p>
                       </div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {r.alt.name}{" "}
-                        <span className="text-xs font-normal text-foreground/55">· {r.alt.country}</span>
-                      </p>
-                      <p className="mt-1 text-xs text-foreground/65">{r.alt.reason}</p>
+                      {r.alt.loading ? (
+                        <p className="inline-flex items-center gap-2 text-xs text-foreground/60">
+                          <Loader2 className="h-3 w-3 animate-spin" /> Hämtar alternativ…
+                        </p>
+                      ) : r.alt.eu.length === 0 ? (
+                        <p className="text-xs text-foreground/60">{NO_ALT_MESSAGE}</p>
+                      ) : (
+                        <ul className="flex flex-wrap gap-1.5">
+                          {r.alt.eu.map((name) => (
+                            <li
+                              key={name}
+                              className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-foreground ring-1 ring-primary/20"
+                            >
+                              {name}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -176,7 +217,7 @@ const Atgardsplan = () => {
               icon={<ShieldAlert className="h-4 w-4" />}
               items={
                 high.length > 0
-                  ? high.map((r) => `Ersätt eller migrera ${r.vendor.name} till ${r.alt.name}`)
+                  ? high.map((r) => `Ersätt eller migrera ${r.vendor.name}${r.alt.eu[0] ? ` till ${r.alt.eu[0]}` : ""}`)
                   : ["Inga akuta åtgärder identifierade."]
               }
             />
