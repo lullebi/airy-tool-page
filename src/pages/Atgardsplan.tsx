@@ -179,11 +179,24 @@ const Atgardsplan = () => {
                           Rekommenderat EU-alternativ
                         </p>
                       </div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {r.alt.name}{" "}
-                        <span className="text-xs font-normal text-foreground/55">· {r.alt.country}</span>
-                      </p>
-                      <p className="mt-1 text-xs text-foreground/65">{r.alt.reason}</p>
+                      {r.alt.loading ? (
+                        <p className="inline-flex items-center gap-2 text-xs text-foreground/60">
+                          <Loader2 className="h-3 w-3 animate-spin" /> Hämtar alternativ…
+                        </p>
+                      ) : r.alt.eu.length === 0 ? (
+                        <p className="text-xs text-foreground/60">{NO_ALT_MESSAGE}</p>
+                      ) : (
+                        <ul className="flex flex-wrap gap-1.5">
+                          {r.alt.eu.map((name) => (
+                            <li
+                              key={name}
+                              className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-foreground ring-1 ring-primary/20"
+                            >
+                              {name}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
