@@ -202,9 +202,7 @@ const Index = () => {
                 </h1>
 
                 <p className="mt-6 max-w-xl text-base font-medium leading-relaxed text-white/75 md:text-lg">
-                  En analytisk plattform för konsulter — stärk era leveranser,
-                  motivera era rekommendationer med data och sälj tjänster
-                  byggda på fakta, inte mellanhänder.
+                  En analytisk plattform för konsulter på Aixia
                 </p>
 
                 <div className="mt-9 flex flex-wrap items-center gap-3">
