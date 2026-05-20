@@ -226,7 +226,7 @@ type Step1State = {
 
 type Answers = Record<string, string>; // questionId -> option label
 
-type VendorLike = { id: string; name: string; type?: string; country?: string; mustKeep?: boolean };
+// VendorLike imported from "@/lib/vendorMapper"
 
 const STEPS = ["Konfiguration", "Snabbanalys", "Fördjupad analys", "Resultat", "Mätning"] as const;
 
