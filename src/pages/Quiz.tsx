@@ -1394,7 +1394,7 @@ const Step5Measurement = ({
           y = margin;
         }
         const eu = isEU(v);
-        const status = statusFromScore(total);
+        const status = statusFromVendor(v, scoredMap);
         doc.setFont("helvetica", "bold");
         doc.text(`${i + 1}. ${v.name}`, margin, y);
         doc.setFont("helvetica", "normal");
