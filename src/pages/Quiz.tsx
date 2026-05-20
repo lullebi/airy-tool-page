@@ -1529,6 +1529,43 @@ const Step5Measurement = ({
             Efterlevnadsstatus
           </p>
           <p className="mt-1 text-lg font-bold text-foreground">{complianceText}</p>
+          {(() => {
+            const rating =
+              euPct >= 90
+                ? { label: "Utmärkt", tone: "text-emerald-700 bg-emerald-100" }
+                : euPct >= 80
+                  ? { label: "Bra", tone: "text-emerald-700 bg-emerald-100" }
+                  : euPct >= 60
+                    ? { label: "Acceptabelt", tone: "text-amber-700 bg-amber-100" }
+                    : { label: "Otillräckligt", tone: "text-rose-700 bg-rose-100" };
+            const meets = euPct >= 80;
+            return (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${rating.tone}`}>
+                  {rating.label} enligt Eurostack-standard
+                </span>
+                <span className="text-[11px] font-medium text-foreground/60">
+                  {meets
+                    ? `Tröskeln på 80 % är uppnådd (+${euPct - 80} p över gränsen).`
+                    : `${80 - euPct} p kvar till Eurostack-tröskeln på 80 %.`}
+                </span>
+                <Tooltip delayDuration={150}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Vad krävs för 100 %?"
+                      className="inline-flex h-5 w-5 items-center justify-center rounded-full text-foreground/40 transition hover:bg-white hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    >
+                      <Info className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs rounded-lg bg-foreground px-3 py-2 text-xs font-medium leading-relaxed text-background shadow-lg">
+                    För att nå 100 % krävs att samtliga leverantörer har huvudkontor och datalagring inom EU/EES, omfattas av EU-jurisdiktion (utan CLOUD Act-exponering) och uppfyller fullständig efterlevnad av GDPR, NIS2 och DORA. Eurostack-tröskeln går vid 80 %.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            );
+          })()}
           <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium text-foreground/70">
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
