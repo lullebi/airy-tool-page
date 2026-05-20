@@ -678,14 +678,16 @@ const Step1Konfig = ({
         <div className="flex flex-wrap gap-2">
           {STEP1_PRIORITIES.map((p) => {
             const active = state.priorities.includes(p.label);
-            const disabled = !active && state.priorities.length >= 3;
+            const unsupported = p.label === "Kostnad";
+            const disabled = unsupported || (!active && state.priorities.length >= 3);
             return (
               <button
                 key={p.label}
                 type="button"
-                onClick={() => togglePriority(p.label)}
+                onClick={() => !unsupported && togglePriority(p.label)}
                 disabled={disabled}
                 aria-pressed={active}
+                title={unsupported ? "Saknas i modellen — kommer i framtida version" : undefined}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ring-1 ${
                   active
                     ? "bg-foreground text-background ring-foreground"
@@ -693,6 +695,7 @@ const Step1Konfig = ({
                 } ${disabled ? "opacity-40 cursor-not-allowed hover:bg-white/70" : ""}`}
               >
                 {p.label}
+                {unsupported && <span className="ml-1 text-xs">(ej i modell)</span>}
               </button>
             );
           })}
