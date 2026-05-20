@@ -160,31 +160,40 @@ const RegistreraLeverantorer = () => {
                 Klicka för att lägga till
               </span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {QUICK_PICKS.map((pick) => {
-                const active = selectedQuickPicks.has(pick.name.toLowerCase());
-                return (
-                  <button
-                    key={pick.name}
-                    type="button"
-                    onClick={() => handleQuickPick(pick)}
-                    className={
-                      "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition " +
-                      (active
-                        ? "border-primary bg-primary text-primary-foreground shadow-[var(--shadow-soft)]"
-                        : "border-white/60 bg-white/60 text-foreground/80 hover:bg-white hover:text-foreground")
-                    }
-                  >
-                    <Plus
+            {loadingApi ? (
+              <div className="flex items-center gap-2 text-sm text-foreground/60">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Hämtar leverantörer…
+              </div>
+            ) : quickPickList.length === 0 ? (
+              <p className="text-sm text-foreground/60">
+                Inga leverantörer tillgängliga just nu. Lägg till manuellt nedan.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {quickPickList.map((pick) => {
+                  const active = selectedQuickPicks.has(pick.name.toLowerCase());
+                  return (
+                    <button
+                      key={pick.id}
+                      type="button"
+                      onClick={() => handleQuickPick(pick)}
                       className={
-                        "h-3.5 w-3.5 transition " + (active ? "rotate-45" : "")
+                        "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition " +
+                        (active
+                          ? "border-primary bg-primary text-primary-foreground shadow-[var(--shadow-soft)]"
+                          : "border-white/60 bg-white/60 text-foreground/80 hover:bg-white hover:text-foreground")
                       }
-                    />
-                    {pick.name}
-                  </button>
-                );
-              })}
-            </div>
+                    >
+                      <Plus
+                        className={"h-3.5 w-3.5 transition " + (active ? "rotate-45" : "")}
+                      />
+                      {pick.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
 
