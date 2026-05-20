@@ -1491,13 +1491,6 @@ const Step5Measurement = ({
             })}
           </div>
 
-          {!eu && (
-            <div className="mt-3 flex justify-end">
-              <ChevronDown
-                className={`h-4 w-4 text-foreground/60 transition ${isOpen ? "rotate-180" : ""}`}
-              />
-            </div>
-          )}
         </button>
 
         {!eu && isOpen && (
