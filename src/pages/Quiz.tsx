@@ -1641,7 +1641,7 @@ const Step5Measurement = ({
             Detaljerad teknisk analys
           </span>
         </div>
-        <div className="flex gap-3 overflow-x-auto pb-3">
+        <div className="flex flex-col gap-3 pb-3">
           {nischade.length > 0 ? (
             nischade.map(renderCard)
           ) : (
