@@ -1712,10 +1712,13 @@ const Step5Measurement = ({
         <Button
           onClick={() => {
             const scores: Record<string, number> = {};
+            const scoredArr: RescoredVendor[] = [];
             vendors.forEach((v) => {
-              scores[v.id] = computeVendorScore(step1, quick, deepFor(v), hasDeep).total;
+              const r = computeVendorScore(v, scoredMap);
+              scores[v.id] = r.total;
+              if (r.rec) scoredArr.push(r.rec);
             });
-            navigate("/atgardsplan", { state: { vendors, scores } });
+            navigate("/atgardsplan", { state: { vendors, scores, scored: scoredArr } });
           }}
           size="lg"
           className="group w-full max-w-md rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
