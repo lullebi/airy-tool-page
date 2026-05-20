@@ -1614,7 +1614,7 @@ const Step5Measurement = ({
             Snabbanalys tillämpad
           </span>
         </div>
-        <div className="flex gap-3 overflow-x-auto pb-3">
+        <div className="flex flex-col gap-3 pb-3">
           {kanda.length > 0 ? (
             kanda.map(renderCard)
           ) : (
