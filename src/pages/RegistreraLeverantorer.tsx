@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { ArrowLeft, ArrowRight, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { fetchVendors, type ApiVendorListItem } from "@/lib/api";
 
 type Vendor = {
   id: string;
@@ -20,24 +22,10 @@ type Vendor = {
   country: string;
   system: string;
   mustKeep: boolean;
+  apiId?: string;
 };
 
 const VENDOR_TYPES = ["SaaS", "Infrastruktur", "Plattform", "Kommunikation", "Annat"];
-
-const QUICK_PICKS: { name: string; type: string; country: string }[] = [
-  { name: "Microsoft", type: "SaaS", country: "USA" },
-  { name: "Google", type: "SaaS", country: "USA" },
-  { name: "AWS", type: "Infrastruktur", country: "USA" },
-  { name: "Azure", type: "Infrastruktur", country: "USA" },
-  { name: "ChatGPT", type: "SaaS", country: "USA" },
-  { name: "Slack", type: "Kommunikation", country: "USA" },
-  { name: "Dropbox", type: "SaaS", country: "USA" },
-  { name: "Zoom", type: "Kommunikation", country: "USA" },
-  { name: "Salesforce", type: "SaaS", country: "USA" },
-  { name: "Notion", type: "SaaS", country: "USA" },
-  { name: "Nextcloud", type: "SaaS", country: "Tyskland" },
-  { name: "OVHcloud", type: "Infrastruktur", country: "Frankrike" },
-];
 
 const emptyVendor = (): Vendor => ({
   id: crypto.randomUUID(),
