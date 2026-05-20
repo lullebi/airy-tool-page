@@ -311,7 +311,7 @@ const Quiz = () => {
   const location = useLocation();
   const navState = (location.state as { vendors?: VendorLike[]; stepIndex?: number } | null);
   const stateVendors = navState?.vendors;
-  const vendors = stateVendors && stateVendors.length > 0 ? stateVendors : DEFAULT_VENDORS;
+  const vendors: VendorLike[] = stateVendors && stateVendors.length > 0 ? stateVendors : [];
 
   const [stepIndex, setStepIndex] = useState(
     typeof navState?.stepIndex === "number"
