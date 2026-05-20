@@ -1422,7 +1422,7 @@ const Step5Measurement = ({
           y + 14,
         );
         if (!eu) {
-          const alt = EU_ALTERNATIVES[v.name] ?? defaultAlternative;
+          const alt = altFor(v);
           doc.setTextColor(20);
           doc.text(`EU-alternativ: ${alt.name} (${alt.country})`, margin, y + 28);
           y += 44;
