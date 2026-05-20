@@ -106,18 +106,8 @@ const Index = () => {
       {/* NAV */}
       <header className="relative z-20 px-4 pt-4 md:px-8 md:pt-6">
         <nav className="glass-nav mx-auto flex max-w-7xl items-center justify-between rounded-2xl px-5 py-3 md:px-7 md:py-4">
-          <a href="#" className="flex items-center gap-2.5">
-            <div
-              className="grid h-8 w-8 place-items-center rounded-lg text-white"
-              style={{ background: "var(--gradient-cta)" }}
-            >
-              <span className="text-sm font-bold">L</span>
-            </div>
-            <span className="text-base font-bold tracking-tight">Lumen</span>
-            <span className="ml-2 hidden rounded-md bg-foreground/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70 md:inline-block">
-              B2B
-            </span>
-          </a>
+          <div />
+
           <div className="flex items-center gap-1 md:gap-2">
             <a
               href="#how-it-works"
