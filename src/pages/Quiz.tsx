@@ -1295,6 +1295,38 @@ const Step5Measurement = ({
   const [openId, setOpenId] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Fetch EU alternatives per unique vendor category from API.
+  const [altsByCategory, setAltsByCategory] = useState<Record<string, string[]>>({});
+  const categoriesKey = vendors.map((v) => v.type ?? "").filter(Boolean).join("|");
+  useEffect(() => {
+    const cats = Array.from(new Set(vendors.map((v) => v.type).filter((t): t is string => !!t)));
+    cats.forEach((cat) => {
+      setAltsByCategory((prev) => (prev[cat] ? prev : { ...prev, [cat]: [] }));
+      fetchAlternatives(cat)
+        .then((r) => setAltsByCategory((prev) => ({ ...prev, [cat]: r.eu_alternatives })))
+        .catch(() => {});
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoriesKey]);
+
+  const altFor = (v: VendorLike): { name: string; country: string; reason: string } => {
+    const list = v.type ? altsByCategory[v.type] ?? [] : [];
+    const name = list[0];
+    if (name) {
+      return {
+        name,
+        country: "EU",
+        reason: "EU-baserat alternativ från Eurostack-datasetet.",
+      };
+    }
+    return {
+      name: "Inga EU-alternativ taggade för denna kategori",
+      country: "—",
+      reason: "Saknas i modellen — granska manuellt.",
+    };
+  };
+
+
 
   const euCount = vendors.filter(isEU).length;
   const nonEuCount = vendors.length - euCount;
