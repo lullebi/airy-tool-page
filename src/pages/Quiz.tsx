@@ -1061,7 +1061,47 @@ const Step4Result = ({
         Mätning sker mot Eurostack-standard (DORA, NIS2, GDPR, Data Act, EU-suveränitet).
         All insamlad data kan användas för att generera en rekommendationsrapport.
       </p>
+
+      <Dialog open={scoreBreakdownOpen} onOpenChange={setScoreBreakdownOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Så räknades poängen fram</DialogTitle>
+            <DialogDescription>
+              Poängen baseras på svaren i quizet och vägs samman utifrån klientens prioriteringar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            {[
+              { label: "Snabbanalys", value: aggQuick, weight: "35%", desc: "Övergripande svar från snabbskanningen av leverantören." },
+              { label: "Fördjupad analys", value: aggDeep, weight: "35%", desc: "Detaljerade svar kring certifieringar, drift och säkerhet." },
+              { label: "EU-vikt", value: aggEu, weight: "15%", desc: "Hur högt ni prioriterar EU-datalagring och suveränitet." },
+              { label: "Beredskap", value: aggReadiness, weight: "15%", desc: "Er förmåga att hantera avbrott och byta leverantör." },
+            ].map((r) => (
+              <div key={r.label} className="rounded-lg bg-muted/40 px-3 py-2 ring-1 ring-border/60">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-foreground">{r.label}</p>
+                  <p className="text-sm font-bold text-foreground">
+                    {Math.round(r.value)}
+                    <span className="ml-1 text-[10px] font-medium text-foreground/50">· vikt {r.weight}</span>
+                  </p>
+                </div>
+                <p className="mt-0.5 text-xs text-foreground/60">{r.desc}</p>
+              </div>
+            ))}
+            <div className="mt-1 flex items-center justify-between rounded-lg bg-foreground px-3 py-2 text-background">
+              <p className="text-sm font-semibold">Totalpoäng</p>
+              <p className="text-lg font-bold">{aggTotal}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setScoreBreakdownOpen(false)}>
+              Stäng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
+
   );
 };
 
