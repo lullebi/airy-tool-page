@@ -1,11 +1,11 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldAlert, CheckCircle2, AlertTriangle, Sparkles, ArrowRight } from "lucide-react";
+import { ArrowLeft, ShieldAlert, CheckCircle2, AlertTriangle, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-
-type VendorLike = { id: string; name: string; type?: string; country?: string; mustKeep?: boolean };
+import { fetchAlternatives, type RescoredVendor } from "@/lib/api";
+import type { VendorLike } from "@/lib/vendorMapper";
 
 const EU_COUNTRIES = new Set([
   "Sverige","Tyskland","Frankrike","Nederländerna","Spanien","Italien","Polen",
@@ -15,19 +15,16 @@ const EU_COUNTRIES = new Set([
 ]);
 const isEU = (v: VendorLike) => !!v.country && EU_COUNTRIES.has(v.country);
 
-const EU_ALTERNATIVES: Record<string, { name: string; country: string; reason: string }> = {
-  "Microsoft 365": { name: "OnlyOffice DocSpace", country: "EU", reason: "EU-baserad kontorssvit utan CLOUD Act-exponering." },
-  "AWS": { name: "OVHcloud", country: "Frankrike", reason: "EU-suverän infrastruktur, GDPR/SecNumCloud-certifierad." },
-  "Google Workspace": { name: "Infomaniak kSuite", country: "Schweiz/EU", reason: "Privacy-by-design, datalagring i EU." },
-  "Azure": { name: "Scaleway", country: "Frankrike", reason: "Europeisk hyperscaler med full datasuveränitet." },
-  "Slack": { name: "Element / Matrix", country: "EU", reason: "Federerad EU-baserad kommunikation." },
-  "Zoom": { name: "Whereby", country: "Norge", reason: "Europeiskt videomöte, GDPR-compliant." },
-  "Salesforce": { name: "SuperOffice", country: "Norge", reason: "Nordiskt CRM med full EU-datalagring." },
-  "Dropbox": { name: "Tresorit", country: "Schweiz/EU", reason: "End-to-end-krypterad EU-fillagring." },
-};
-const defaultAlternative = { name: "EU-alternativ tillgängligt", country: "EU", reason: "Motsvarande tjänst med EU-suveränitet och GDPR-efterlevnad." };
+const NO_ALT_MESSAGE = "Inga EU-alternativ taggade för denna kategori";
 
-type VendorRow = { vendor: VendorLike; score: number; risks: string[]; alt: { name: string; country: string; reason: string } };
+type AltState = { loading: boolean; eu: string[]; error?: string };
+
+type VendorRow = {
+  vendor: VendorLike;
+  score: number;
+  risks: string[];
+  alt: AltState;
+};
 
 const riskLabel = (score: number) => {
   if (score >= 70) return { label: "Låg risk", tone: "ok" as const };
