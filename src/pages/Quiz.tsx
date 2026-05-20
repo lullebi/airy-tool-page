@@ -935,10 +935,21 @@ const Step4Result = ({
   deepByVendor: Record<string, Answers>;
   hasDeep: boolean;
 }) => {
+  const [scoreBreakdownOpen, setScoreBreakdownOpen] = useState(false);
   const scores = vendors.map((v) => ({
     vendor: v,
     ...computeVendorScore(step1, quick, deepByVendor[v.id] ?? {}, hasDeep),
   }));
+  const avg = (key: "quickScore" | "deepScore" | "euWeight" | "readinessScore" | "total") =>
+    scores.length
+      ? Math.round(scores.reduce((a, s) => a + (s[key] as number), 0) / scores.length)
+      : 0;
+  const aggQuick = avg("quickScore");
+  const aggDeep = avg("deepScore");
+  const aggEu = avg("euWeight");
+  const aggReadiness = avg("readinessScore");
+  const aggTotal = avg("total");
+
 
   return (
     <Card
@@ -984,9 +995,22 @@ const Step4Result = ({
                     <StatusIcon className="h-4 w-4" />
                     {status.label}
                   </div>
-                  <div className="rounded-xl bg-foreground px-4 py-2 text-lg font-bold text-background">
-                    {total}
-                  </div>
+                  <Tooltip delayDuration={150}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => setScoreBreakdownOpen(true)}
+                        aria-label="Visa poängberäkning"
+                        className="rounded-xl bg-foreground px-4 py-2 text-lg font-bold text-background cursor-pointer transition hover:ring-2 hover:ring-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      >
+                        {total}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background shadow-lg">
+                      Klicka för detaljer
+                    </TooltipContent>
+                  </Tooltip>
+
 
 
                 </div>
@@ -1037,7 +1061,47 @@ const Step4Result = ({
         Mätning sker mot Eurostack-standard (DORA, NIS2, GDPR, Data Act, EU-suveränitet).
         All insamlad data kan användas för att generera en rekommendationsrapport.
       </p>
+
+      <Dialog open={scoreBreakdownOpen} onOpenChange={setScoreBreakdownOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Så räknades poängen fram</DialogTitle>
+            <DialogDescription>
+              Poängen baseras på svaren i quizet och vägs samman utifrån klientens prioriteringar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            {[
+              { label: "Snabbanalys", value: aggQuick, weight: "35%", desc: "Övergripande svar från snabbskanningen av leverantören." },
+              { label: "Fördjupad analys", value: aggDeep, weight: "35%", desc: "Detaljerade svar kring certifieringar, drift och säkerhet." },
+              { label: "EU-vikt", value: aggEu, weight: "15%", desc: "Hur högt ni prioriterar EU-datalagring och suveränitet." },
+              { label: "Beredskap", value: aggReadiness, weight: "15%", desc: "Er förmåga att hantera avbrott och byta leverantör." },
+            ].map((r) => (
+              <div key={r.label} className="rounded-lg bg-muted/40 px-3 py-2 ring-1 ring-border/60">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-foreground">{r.label}</p>
+                  <p className="text-sm font-bold text-foreground">
+                    {Math.round(r.value)}
+                    <span className="ml-1 text-[10px] font-medium text-foreground/50">· vikt {r.weight}</span>
+                  </p>
+                </div>
+                <p className="mt-0.5 text-xs text-foreground/60">{r.desc}</p>
+              </div>
+            ))}
+            <div className="mt-1 flex items-center justify-between rounded-lg bg-foreground px-3 py-2 text-background">
+              <p className="text-sm font-semibold">Totalpoäng</p>
+              <p className="text-lg font-bold">{aggTotal}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setScoreBreakdownOpen(false)}>
+              Stäng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
+
   );
 };
 
@@ -1182,19 +1246,8 @@ const Step5Measurement = ({
 }) => {
   const deepFor = (v: VendorLike) => deepByVendor[v.id] ?? {};
   const [openId, setOpenId] = useState<string | null>(null);
-  const [scoreBreakdownOpen, setScoreBreakdownOpen] = useState(false);
   const navigate = useNavigate();
 
-  const vendorScores = vendors.map((v) => computeVendorScore(step1, quick, deepFor(v), hasDeep));
-  const avg = (key: "quickScore" | "deepScore" | "euWeight" | "readinessScore" | "total") =>
-    vendorScores.length
-      ? Math.round(vendorScores.reduce((a, s) => a + (s[key] as number), 0) / vendorScores.length)
-      : 0;
-  const aggQuick = avg("quickScore");
-  const aggDeep = avg("deepScore");
-  const aggEu = avg("euWeight");
-  const aggReadiness = avg("readinessScore");
-  const aggTotal = avg("total");
 
   const euCount = vendors.filter(isEU).length;
   const nonEuCount = vendors.length - euCount;
@@ -1496,11 +1549,8 @@ const Step5Measurement = ({
     >
       {/* HEADER: Donut + summary */}
       <div className="mb-8 flex flex-col items-center gap-6 rounded-2xl bg-white/60 p-5 ring-1 ring-white/70 md:flex-row md:items-center md:gap-8">
-        <button
-          type="button"
-          onClick={() => setScoreBreakdownOpen(true)}
-          aria-label="Visa poängberäkning"
-          className="relative h-36 w-36 flex-shrink-0 rounded-full transition hover:shadow-[0_0_0_6px_hsl(var(--primary)/0.12)] hover:ring-2 hover:ring-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
+        <div
+          className="relative h-36 w-36 flex-shrink-0"
         >
           <svg viewBox="0 0 140 140" className="h-full w-full -rotate-90">
             <circle cx="70" cy="70" r={r} fill="none" stroke="hsl(0 80% 60%)" strokeWidth="16" />
@@ -1521,7 +1571,8 @@ const Step5Measurement = ({
               EU
             </span>
           </div>
-        </button>
+        </div>
+
 
 
         <div className="flex-1">
@@ -1655,44 +1706,6 @@ const Step5Measurement = ({
         </Button>
       </div>
 
-      <Dialog open={scoreBreakdownOpen} onOpenChange={setScoreBreakdownOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Så räknades poängen fram</DialogTitle>
-            <DialogDescription>
-              Poängen baseras på svaren i quizet och vägs samman utifrån klientens prioriteringar.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            {[
-              { label: "Snabbanalys", value: aggQuick, weight: "35%", desc: "Övergripande svar från snabbskanningen av leverantören." },
-              { label: "Fördjupad analys", value: aggDeep, weight: "35%", desc: "Detaljerade svar kring certifieringar, drift och säkerhet." },
-              { label: "EU-vikt", value: aggEu, weight: "15%", desc: "Hur högt ni prioriterar EU-datalagring och suveränitet." },
-              { label: "Beredskap", value: aggReadiness, weight: "15%", desc: "Er förmåga att hantera avbrott och byta leverantör." },
-            ].map((r) => (
-              <div key={r.label} className="rounded-lg bg-muted/40 px-3 py-2 ring-1 ring-border/60">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-foreground">{r.label}</p>
-                  <p className="text-sm font-bold text-foreground">
-                    {Math.round(r.value)}
-                    <span className="ml-1 text-[10px] font-medium text-foreground/50">· vikt {r.weight}</span>
-                  </p>
-                </div>
-                <p className="mt-0.5 text-xs text-foreground/60">{r.desc}</p>
-              </div>
-            ))}
-            <div className="mt-1 flex items-center justify-between rounded-lg bg-foreground px-3 py-2 text-background">
-              <p className="text-sm font-semibold">Totalpoäng</p>
-              <p className="text-lg font-bold">{aggTotal}</p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setScoreBreakdownOpen(false)}>
-              Stäng
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 };
