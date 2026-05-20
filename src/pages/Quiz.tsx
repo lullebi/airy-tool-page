@@ -269,39 +269,43 @@ const weightedAverage = (qs: Question[], ans: Answers) => {
   return Math.round(sum / totalW);
 };
 
-const computeVendorScore = (
-  step1: Step1State,
-  quick: Answers,
-  deep: Answers,
-  hasDeep: boolean
-) => {
-  const quickScore = weightedAverage(QUICK_SCAN, quick);
-  const deepScore = hasDeep ? weightedAverage(DEEP_DIVE, deep) : quickScore;
-  const euWeight = (((step1.euDataWeight ?? 3) - 1) / 4) * 100;
-  const readinessOpt = STEP1_READINESS.find((r) => r.label === step1.readiness);
-  const readinessScore = readinessOpt?.scoreValue ?? 50;
+/**
+ * Source of truth: rescored map from POST /score.
+ * total = contextual_score (0..SCORE_CAP). Sub-components map onto the legacy
+ * UI buckets (quickScore=säkerhet, deepScore=compliance, euWeight=flexibilitet)
+ * so the existing UI breakdown stays meaningful without any local formula.
+ */
+type ScoredMap = Map<string, RescoredVendor>;
 
-  // Composite — quick 35%, deep 35%, euWeight 15%, readiness 15%
-  const total = Math.round(
-    quickScore * 0.35 + deepScore * 0.35 + euWeight * 0.15 + readinessScore * 0.15
-  );
-  return { quickScore, deepScore, euWeight, readinessScore, total };
+const computeVendorScore = (vendor: VendorLike, scored: ScoredMap) => {
+  const rec = vendor.apiId ? scored.get(vendor.apiId) : undefined;
+  const total = rec?.contextual_score ?? 0;
+  return {
+    total,
+    quickScore: rec?.components.säkerhet ?? 0,
+    deepScore: rec?.components.compliance ?? 0,
+    euWeight: rec?.components.flexibilitet ?? 0,
+    readinessScore: 0,
+    rec,
+  };
 };
 
-const statusFromScore = (s: number) => {
-  if (s >= 70) return { label: "Låg risk", tone: "ok" as const };
-  if (s >= 45) return { label: "Medel risk", tone: "warn" as const };
-  return { label: "Hög risk – ersättning rekommenderas", tone: "bad" as const };
+const classToTone = (c: VendorClass | undefined): "ok" | "warn" | "bad" => {
+  if (c === "låg") return "ok";
+  if (c === "medel") return "warn";
+  return "bad";
+};
+
+const statusFromVendor = (vendor: VendorLike, scored: ScoredMap) => {
+  const rec = vendor.apiId ? scored.get(vendor.apiId) : undefined;
+  const tone = classToTone(rec?.class);
+  return { label: rec ? CLASS_LABELS[rec.class] : "Ej analyserad", tone };
 };
 
 /* =========================================================================
    COMPONENT
    ========================================================================= */
 
-const DEFAULT_VENDORS: VendorLike[] = [
-  { id: "v1", name: "Microsoft 365", type: "SaaS", country: "USA" },
-  { id: "v2", name: "AWS", type: "Infrastruktur", country: "USA" },
-];
 
 const Quiz = () => {
   const location = useLocation();
