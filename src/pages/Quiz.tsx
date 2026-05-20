@@ -1348,7 +1348,7 @@ const Step5Measurement = ({
       const margin = 48;
       let y = margin;
 
-      const perVendorTotals = vendors.map((v) => computeVendorScore(step1, quick, deepFor(v), hasDeep).total);
+      const perVendorTotals = vendors.map((v) => computeVendorScore(v, scoredMap).total);
       const total = perVendorTotals.length ? Math.round(perVendorTotals.reduce((a, b) => a + b, 0) / perVendorTotals.length) : 0;
       const euCount = vendors.filter(isEU).length;
       const nonEuCount = vendors.length - euCount;
