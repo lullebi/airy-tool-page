@@ -1182,19 +1182,8 @@ const Step5Measurement = ({
 }) => {
   const deepFor = (v: VendorLike) => deepByVendor[v.id] ?? {};
   const [openId, setOpenId] = useState<string | null>(null);
-  const [scoreBreakdownOpen, setScoreBreakdownOpen] = useState(false);
   const navigate = useNavigate();
 
-  const vendorScores = vendors.map((v) => computeVendorScore(step1, quick, deepFor(v), hasDeep));
-  const avg = (key: "quickScore" | "deepScore" | "euWeight" | "readinessScore" | "total") =>
-    vendorScores.length
-      ? Math.round(vendorScores.reduce((a, s) => a + (s[key] as number), 0) / vendorScores.length)
-      : 0;
-  const aggQuick = avg("quickScore");
-  const aggDeep = avg("deepScore");
-  const aggEu = avg("euWeight");
-  const aggReadiness = avg("readinessScore");
-  const aggTotal = avg("total");
 
   const euCount = vendors.filter(isEU).length;
   const nonEuCount = vendors.length - euCount;
