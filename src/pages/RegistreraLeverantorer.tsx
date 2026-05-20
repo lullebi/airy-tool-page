@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Loader2, ChevronsUpDown, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,180 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { fetchVendors, type ApiVendorListItem } from "@/lib/api";
+
+type VendorNameComboboxProps = {
+  value: string;
+  apiVendors: ApiVendorListItem[];
+  loading: boolean;
+  disabledNames: Set<string>;
+  onPickApi: (pick: ApiVendorListItem) => void;
+  onPickCustom: (name: string) => void;
+  onClear: () => void;
+};
+
+const VendorNameCombobox = ({
+  value,
+  apiVendors,
+  loading,
+  disabledNames,
+  onPickApi,
+  onPickCustom,
+  onClear,
+}: VendorNameComboboxProps) => {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const sorted = useMemo(
+    () => [...apiVendors].sort((a, b) => a.name.localeCompare(b.name, "sv")),
+    [apiVendors],
+  );
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? sorted.filter(
+        (v) =>
+          v.name.toLowerCase().includes(q) ||
+          (v.category ?? "").toLowerCase().includes(q),
+      )
+    : sorted;
+
+  const exactMatch = filtered.some((v) => v.name.toLowerCase() === q);
+  const valueLower = value.trim().toLowerCase();
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          role="combobox"
+          aria-expanded={open}
+          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-white/70 px-3 py-2 text-sm font-normal ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loading ? (
+            <span className="flex items-center gap-2 text-foreground/55">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Hämtar leverantörer…
+            </span>
+          ) : value ? (
+            <span className="truncate text-foreground">{value}</span>
+          ) : (
+            <span className="text-muted-foreground">Välj eller sök leverantör…</span>
+          )}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Sök leverantör…"
+            value={query}
+            onValueChange={setQuery}
+          />
+          <CommandList>
+            <CommandEmpty>
+              {q ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onPickCustom(query.trim());
+                    setQuery("");
+                    setOpen(false);
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+                >
+                  Lägg till "{query.trim()}" manuellt
+                </button>
+              ) : (
+                <span className="block px-3 py-2 text-sm text-muted-foreground">
+                  Inga leverantörer
+                </span>
+              )}
+            </CommandEmpty>
+            {filtered.length > 0 && (
+              <CommandGroup>
+                {filtered.map((v) => {
+                  const nameLower = v.name.toLowerCase();
+                  const isSelected = nameLower === valueLower;
+                  const isTaken = !isSelected && disabledNames.has(nameLower);
+                  return (
+                    <CommandItem
+                      key={v.id}
+                      value={v.name}
+                      disabled={isTaken}
+                      onSelect={() => {
+                        if (isTaken) return;
+                        onPickApi(v);
+                        setQuery("");
+                        setOpen(false);
+                      }}
+                      className={cn("flex items-center justify-between gap-2", isTaken && "opacity-50")}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Check
+                          className={cn(
+                            "h-4 w-4",
+                            isSelected ? "opacity-100" : "opacity-0",
+                          )}
+                        />
+                        <span className="truncate">{v.name}</span>
+                        {v.category && (
+                          <span className="text-xs text-foreground/50">· {v.category}</span>
+                        )}
+                      </span>
+                      {isTaken && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/50">
+                          redan vald
+                        </span>
+                      )}
+                    </CommandItem>
+                  );
+                })}
+                {q && !exactMatch && (
+                  <CommandItem
+                    value={`__custom__${query}`}
+                    onSelect={() => {
+                      onPickCustom(query.trim());
+                      setQuery("");
+                      setOpen(false);
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Lägg till "{query.trim()}" manuellt
+                  </CommandItem>
+                )}
+                {value && (
+                  <CommandItem
+                    value="__clear__"
+                    onSelect={() => {
+                      onClear();
+                      setQuery("");
+                      setOpen(false);
+                    }}
+                    className="text-foreground/60"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Rensa val
+                  </CommandItem>
+                )}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 type Vendor = {
   id: string;
