@@ -217,7 +217,7 @@ const Atgardsplan = () => {
               icon={<ShieldAlert className="h-4 w-4" />}
               items={
                 high.length > 0
-                  ? high.map((r) => `Ersätt eller migrera ${r.vendor.name} till ${r.alt.name}`)
+                  ? high.map((r) => `Ersätt eller migrera ${r.vendor.name}${r.alt.eu[0] ? ` till ${r.alt.eu[0]}` : ""}`)
                   : ["Inga akuta åtgärder identifierade."]
               }
             />
