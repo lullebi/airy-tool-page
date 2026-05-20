@@ -1293,12 +1293,18 @@ const Step5Measurement = ({
   quick,
   deepByVendor,
   hasDeep,
+  scoredMap,
+  scoring,
+  scoreError,
 }: {
   vendors: VendorLike[];
   step1: Step1State;
   quick: Answers;
   deepByVendor: Record<string, Answers>;
   hasDeep: boolean;
+  scoredMap: ScoredMap;
+  scoring: boolean;
+  scoreError: string | null;
 }) => {
   const deepFor = (v: VendorLike) => deepByVendor[v.id] ?? {};
   const [openId, setOpenId] = useState<string | null>(null);
