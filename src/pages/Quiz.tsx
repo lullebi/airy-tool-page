@@ -943,6 +943,39 @@ const Step3DeepDive = ({
             )}
           </div>
 
+          <div className="mb-5 flex flex-wrap items-center gap-2 rounded-xl bg-amber-50/70 px-4 py-3 ring-1 ring-amber-200">
+            <span className="text-xs font-semibold text-amber-900">Snabbifyll:</span>
+            <button
+              type="button"
+              onClick={() => {
+                const next: Answers = {};
+                activeQuestions.forEach((q) => {
+                  const best = [...q.svarsalternativ].sort((a, b) => b.scoreValue - a.scoreValue)[0];
+                  if (best) next[q.id] = best.label;
+                });
+                setAnswers((a) => ({ ...a, ...next }));
+              }}
+              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
+            >
+              Optimistisk (bästa svar)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const next: Answers = {};
+                activeQuestions.forEach((q) => {
+                  const worst = [...q.svarsalternativ].sort((a, b) => a.scoreValue - b.scoreValue)[0];
+                  if (worst) next[q.id] = worst.label;
+                });
+                setAnswers((a) => ({ ...a, ...next }));
+              }}
+              className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700"
+            >
+              Pessimistisk (sämsta svar)
+            </button>
+            <span className="text-[11px] text-amber-800/80">Fyller i alla frågor för {vendor.name}.</span>
+          </div>
+
           {skippedCertNotice && (
             <p className="mb-4 rounded-xl bg-emerald-50/80 px-4 py-2 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200">
               Certifieringsfrågor hoppas över eftersom Snabbanalys bekräftade befintliga certifieringar.
