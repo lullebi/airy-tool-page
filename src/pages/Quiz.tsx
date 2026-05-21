@@ -387,7 +387,34 @@ const Quiz = () => {
     return true;
   }, [stepIndex, step1, quickAnswers, currentDeepAnswers, deepDiveEnabled, deepVendors.length, activeDeepQuestions]);
 
+  const missingQuickIds = useMemo(
+    () => QUICK_SCAN.filter((q) => !quickAnswers[q.id]).map((q) => q.id),
+    [quickAnswers],
+  );
+  const missingDeepIds = useMemo(
+    () => activeDeepQuestions.filter((q) => !currentDeepAnswers[q.id]).map((q) => q.id),
+    [activeDeepQuestions, currentDeepAnswers],
+  );
+  const step1Missing = {
+    priorities: step1.priorities.length === 0,
+    sector: step1.sector === "",
+    euDataWeight: step1.euDataWeight === null,
+    readiness: step1.readiness === "",
+  };
+
   const goNext = () => {
+    if (!canNext) {
+      setShowErrors(true);
+      toast.error("Fyll i alla obligatoriska fält", {
+        description: "De som saknas är markerade i rött.",
+      });
+      // Scrolla till första röda fält
+      requestAnimationFrame(() => {
+        const el = document.querySelector("[data-missing='true']");
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      return;
+    }
     // Loop through vendors inside the Fördjupad analys step.
     if (stepIndex === 2 && deepDiveEnabled && deepVendors.length > 0) {
       const isLast = deepVendorIndex >= deepVendors.length - 1;
