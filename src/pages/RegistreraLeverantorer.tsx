@@ -268,6 +268,7 @@ const RegistreraLeverantorer = () => {
         id: emptyIdx === -1 ? crypto.randomUUID() : vs[emptyIdx].id,
         name: pick.name,
         type: pick.category ?? "",
+        apiCategory: pick.category ?? undefined,
         country: "",
         system: "",
         mustKeep: false,
