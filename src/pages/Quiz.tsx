@@ -877,6 +877,7 @@ const Step3DeepDive = ({
   skippedCertNotice,
   onPrevVendor,
   canPrevVendor,
+  missingIds = [],
 }: {
   enabled: boolean;
   setEnabled: (b: boolean) => void;
@@ -889,6 +890,7 @@ const Step3DeepDive = ({
   skippedCertNotice: boolean;
   onPrevVendor: () => void;
   canPrevVendor: boolean;
+  missingIds?: string[];
 }) => {
   const categories = useMemo(() => {
     const map = new Map<string, Question[]>();
