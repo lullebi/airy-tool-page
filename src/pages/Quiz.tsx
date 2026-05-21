@@ -1459,12 +1459,10 @@ const Step5Measurement = ({
         ? "Blandad portfölj – delvis EU-suverän."
         : "Hög exponering mot icke-EU – ersättning rekommenderas.";
 
-  // Lane B = vendors that received a deep-dive analysis
-  const laneB = hasDeep ? vendors : [];
-  const laneA = hasDeep ? [] : vendors;
-  // Simple split: if hasDeep, treat non-EU as deep-dive (nischade), EU as general
-  const nischade = hasDeep ? vendors.filter((v) => !isEU(v)) : laneB;
-  const kanda = hasDeep ? vendors.filter(isEU) : laneA.length ? laneA : vendors;
+  // Kända = all selected vendors (general quick analysis applies to every vendor).
+  // Nischade = vendors flagged for deep-dive (non-EU when deep-dive has been run).
+  const kanda = vendors;
+  const nischade = hasDeep ? vendors.filter((v) => !isEU(v)) : [];
 
   const handleExport = async () => {
     toast("Genererar högupplöst rapport...", {
