@@ -406,30 +406,14 @@ const Quiz = () => {
     setStepIndex((i) => Math.max(0, i - 1));
   };
 
-  // Dev/testing shortcut: pre-fill all answers with mock values and jump to result.
-  const skipToResult = () => {
-    setStep1({
-      priorities: ["Säkerhet", "Efterlevnad"],
-      sector: "Finans",
-      euDataWeight: 4,
-      readiness: "God",
-    });
-    const mockQuick: Answers = {};
-    QUICK_SCAN.forEach((q) => {
-      mockQuick[q.id] = q.svarsalternativ[0].label;
-    });
-    setQuickAnswers(mockQuick);
-    const mockDeep: Answers = {};
-    DEEP_DIVE.forEach((q) => {
-      mockDeep[q.id] = q.svarsalternativ[0].label;
-    });
-    const allDeep: Record<string, Answers> = {};
-    vendors.forEach((v) => { allDeep[v.id] = { ...mockDeep }; });
-    setDeepAnswersByVendor(allDeep);
-    setDeepDiveEnabled(true);
-    setDeepVendorIndex(0);
-    setStepIndex(3);
-  };
+  // Redirect to vendor registration if no vendors in state (e.g. refresh of /quiz).
+  useEffect(() => {
+    if (vendors.length === 0) {
+      toast.error("Inga leverantörer registrerade — börja här");
+      navigate("/registrera-leverantorer", { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const togglePriority = (label: string) =>
     setStep1((s) => {
