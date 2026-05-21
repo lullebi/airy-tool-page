@@ -469,27 +469,46 @@ const RegistreraLeverantorer = () => {
                   </Select>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
-                    Land
-                  </Label>
-                  <Input
-                    value={v.country}
-                    onChange={(e) => updateVendor(v.id, { country: e.target.value })}
-                    placeholder="t.ex. USA, Tyskland"
-                    className="bg-white/70"
-                    maxLength={80}
-                  />
-                </div>
+                {v.apiId ? (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
+                      Jurisdiktion
+                    </Label>
+                    <div className="flex h-10 items-center">
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
+                          v.hq_in_eu
+                            ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200"
+                            : "bg-rose-100 text-rose-700 ring-1 ring-rose-200"
+                        }`}
+                      >
+                        {v.hq_in_eu ? "EU" : "Icke-EU"}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
+                      Land
+                    </Label>
+                    <Input
+                      value={v.country}
+                      onChange={(e) => updateVendor(v.id, { country: e.target.value })}
+                      placeholder="t.ex. USA, Tyskland"
+                      className="bg-white/70"
+                      maxLength={80}
+                    />
+                  </div>
+                )}
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
-                    System
+                    Vad använder ni det för?
                   </Label>
                   <Input
                     value={v.system}
                     onChange={(e) => updateVendor(v.id, { system: e.target.value })}
-                    placeholder="t.ex. CRM, mail, lagring"
+                    placeholder="t.ex. mailhantering, CRM, dokumentlagring"
                     className="bg-white/70"
                     maxLength={120}
                   />
