@@ -293,7 +293,19 @@ const Quiz = () => {
   const location = useLocation();
   const navState = (location.state as { vendors?: VendorLike[]; stepIndex?: number } | null);
   const stateVendors = navState?.vendors;
-  const vendors: VendorLike[] = stateVendors && stateVendors.length > 0 ? stateVendors : [];
+  // Fallback: read vendors from localStorage (set by RegistreraLeverantorer
+  // before navigation). Survives refreshes and accidental remounts.
+  let storedVendors: VendorLike[] = [];
+  try {
+    const raw = typeof window !== "undefined" ? window.localStorage.getItem("eurostack:vendors") : null;
+    if (raw) storedVendors = JSON.parse(raw) as VendorLike[];
+  } catch { /* ignore */ }
+  const vendors: VendorLike[] =
+    stateVendors && stateVendors.length > 0
+      ? stateVendors
+      : storedVendors.length > 0
+        ? storedVendors
+        : [];
 
   const [stepIndex, setStepIndex] = useState(
     typeof navState?.stepIndex === "number"
