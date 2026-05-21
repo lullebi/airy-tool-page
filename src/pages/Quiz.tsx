@@ -956,10 +956,13 @@ const Step3DeepDive = ({
                   {cat}
                 </h3>
                 <div className="grid gap-4">
-                  {qs.map((q, i) => (
+                  {qs.map((q, i) => {
+                    const isMissing = missingIds.includes(q.id);
+                    return (
                     <div
                       key={q.id}
-                      className="rounded-2xl bg-white/60 p-5 ring-1 ring-white/70"
+                      data-missing={isMissing}
+                      className={`rounded-2xl bg-white/60 p-5 ring-1 transition ${isMissing ? "ring-2 ring-rose-500 bg-rose-50/40" : "ring-white/70"}`}
                     >
                       <p className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
                         Fråga {i + 1}
@@ -989,8 +992,12 @@ const Step3DeepDive = ({
                           );
                         })}
                       </div>
+                      {isMissing && (
+                        <p className="mt-2 text-xs font-semibold text-rose-600">Välj ett svarsalternativ.</p>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
