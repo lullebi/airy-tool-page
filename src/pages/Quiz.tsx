@@ -406,30 +406,14 @@ const Quiz = () => {
     setStepIndex((i) => Math.max(0, i - 1));
   };
 
-  // Dev/testing shortcut: pre-fill all answers with mock values and jump to result.
-  const skipToResult = () => {
-    setStep1({
-      priorities: ["Säkerhet", "Efterlevnad"],
-      sector: "Finans",
-      euDataWeight: 4,
-      readiness: "God",
-    });
-    const mockQuick: Answers = {};
-    QUICK_SCAN.forEach((q) => {
-      mockQuick[q.id] = q.svarsalternativ[0].label;
-    });
-    setQuickAnswers(mockQuick);
-    const mockDeep: Answers = {};
-    DEEP_DIVE.forEach((q) => {
-      mockDeep[q.id] = q.svarsalternativ[0].label;
-    });
-    const allDeep: Record<string, Answers> = {};
-    vendors.forEach((v) => { allDeep[v.id] = { ...mockDeep }; });
-    setDeepAnswersByVendor(allDeep);
-    setDeepDiveEnabled(true);
-    setDeepVendorIndex(0);
-    setStepIndex(3);
-  };
+  // Redirect to vendor registration if no vendors in state (e.g. refresh of /quiz).
+  useEffect(() => {
+    if (vendors.length === 0) {
+      toast.error("Inga leverantörer registrerade — börja här");
+      navigate("/registrera-leverantorer", { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const togglePriority = (label: string) =>
     setStep1((s) => {
@@ -621,15 +605,7 @@ const Quiz = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Dev shortcut — testing only */}
-      <button
-        type="button"
-        onClick={skipToResult}
-        title="Dev: hoppa till resultat med mock-data"
-        className="fixed bottom-2 right-2 z-30 rounded-md bg-foreground/5 px-2 py-1 text-[10px] font-medium text-foreground/40 opacity-40 ring-1 ring-foreground/10 backdrop-blur transition hover:opacity-100 hover:text-foreground/80"
-      >
-        Hoppa till resultat
-      </button>
+      {/* Dev shortcut removed */}
 
       <footer className="relative z-10 border-t border-white/40 py-6">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 text-xs font-medium text-foreground/60 md:px-10">
@@ -858,6 +834,13 @@ const Step3DeepDive = ({
           : "Aktiveras för leverantörer där datasetet saknar information. Detaljerad granskning per leverantör."
       }
     >
+      <div className="mb-5 rounded-xl bg-blue-50/80 px-4 py-3 ring-1 ring-blue-200">
+        <p className="text-xs font-medium text-blue-900">
+          <strong>Notera:</strong> Dina svar samlas in för evidence-badges på resultatsteget
+          och kommer i nästa version finjustera ML-vikterna per leverantör. Just nu
+          påverkar svaren inte den totala poängen direkt — de driver bara dokumentationen.
+        </p>
+      </div>
 
       {!enabled ? (
         <p className="rounded-xl bg-white/60 p-5 text-sm text-foreground/70 ring-1 ring-white/70">
