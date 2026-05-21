@@ -200,6 +200,7 @@ type Vendor = {
   hq_in_eu?: boolean;
   storage_in_eu?: boolean;
   cloud_act_exposure?: boolean;
+  top_risk_drivers?: string[];
 };
 
 const VENDOR_TYPES = ["SaaS", "Infrastruktur", "Plattform", "Kommunikation", "Annat"];
