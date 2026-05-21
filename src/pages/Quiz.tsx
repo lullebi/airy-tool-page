@@ -1459,10 +1459,19 @@ const Step5Measurement = ({
         ? "Blandad portfölj – delvis EU-suverän."
         : "Hög exponering mot icke-EU – ersättning rekommenderas.";
 
-  // Kända = all selected vendors (general quick analysis applies to every vendor).
-  // Nischade = vendors flagged for deep-dive (non-EU when deep-dive has been run).
-  const kanda = vendors;
-  const nischade = hasDeep ? vendors.filter((v) => !isEU(v)) : [];
+  // Strict split by API category. Infrastructure/technical categories require
+  // deep-dive ("Nischade"). Everything else is general SaaS ("Kända").
+  const NICHE_CATEGORIES = new Set([
+    "Cloud IaaS",
+    "Storage",
+    "Security",
+    "Dev Tools",
+    "Payment",
+  ]);
+  const isNiche = (v: VendorLike) =>
+    NICHE_CATEGORIES.has((v.apiCategory ?? v.type ?? "").trim());
+  const kanda = vendors.filter((v) => !isNiche(v));
+  const nischade = vendors.filter(isNiche);
 
   const handleExport = async () => {
     toast("Genererar högupplöst rapport...", {
