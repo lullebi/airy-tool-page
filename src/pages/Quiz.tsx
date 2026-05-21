@@ -1459,29 +1459,15 @@ const Step5Measurement = ({
         ? "Blandad portfölj – delvis EU-suverän."
         : "Hög exponering mot icke-EU – ersättning rekommenderas.";
 
-  // Strict split by category. Infrastructure / technical categories go to the
-  // deep-dive lane ("Nischade"). General SaaS / business apps go to "Kända".
-  // Matches against the backend `category` (apiCategory) first, and falls back
-  // to the manually-selected Swedish `type` for custom vendors. Case- and
-  // whitespace-insensitive so quick-select payloads always land in the right
-  // lane.
-  const NICHE_KEYS = new Set([
-    // Backend categories
-    "cloud iaas",
-    "storage",
-    "security",
-    "dev tools",
-    "payment",
-    // Manual Swedish vendor types
-    "infrastruktur",
-    "plattform",
-  ]);
-  const isNiche = (v: VendorLike) => {
-    const key = (v.apiCategory ?? v.type ?? "").trim().toLowerCase();
-    return key.length > 0 && NICHE_KEYS.has(key);
-  };
-  const kanda = vendors.filter((v) => !isNiche(v));
-  const nischade = vendors.filter(isNiche);
+  // Simplified split: "Kända" contains every active vendor regardless of how
+  // it was added (snabbval or manual). "Nischade" only lists vendors that
+  // have actually been put through the deep-dive — those answers exist in
+  // `deepByVendor`. This avoids any reliance on a backend "general vs niche"
+  // category, which the database doesn't model.
+  const kanda = vendors;
+  const nischade = vendors.filter(
+    (v) => Object.keys(deepByVendor[v.id] ?? {}).length > 0,
+  );
 
   const handleExport = async () => {
     toast("Genererar högupplöst rapport...", {
