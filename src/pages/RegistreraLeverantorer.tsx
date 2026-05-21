@@ -422,6 +422,7 @@ const RegistreraLeverantorer = () => {
                       updateVendor(v.id, {
                         name: pick.name,
                         type: pick.category ?? "",
+                        apiCategory: pick.category ?? undefined,
                         apiId: pick.id,
                         hq_in_eu: pick.hq_in_eu,
                         storage_in_eu: pick.storage_in_eu,
@@ -431,6 +432,7 @@ const RegistreraLeverantorer = () => {
                     onPickCustom={(name) =>
                       updateVendor(v.id, {
                         name,
+                        apiCategory: undefined,
                         apiId: undefined,
                         hq_in_eu: undefined,
                         storage_in_eu: undefined,
@@ -441,6 +443,7 @@ const RegistreraLeverantorer = () => {
                       updateVendor(v.id, {
                         name: "",
                         type: "",
+                        apiCategory: undefined,
                         apiId: undefined,
                         hq_in_eu: undefined,
                         storage_in_eu: undefined,
