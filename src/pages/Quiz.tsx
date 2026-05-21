@@ -808,17 +808,25 @@ const StepQuestions = ({
   questions,
   answers,
   setAnswers,
+  missingIds = [],
 }: {
   title: string;
   subtitle: string;
   questions: Question[];
   answers: Answers;
   setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
+  missingIds?: string[];
 }) => (
   <Card title={title} subtitle={subtitle}>
     <div className="grid gap-6">
-      {questions.map((q, i) => (
-        <div key={q.id} className="rounded-2xl bg-white/60 p-5 ring-1 ring-white/70">
+      {questions.map((q, i) => {
+        const isMissing = missingIds.includes(q.id);
+        return (
+        <div
+          key={q.id}
+          data-missing={isMissing}
+          className={`rounded-2xl bg-white/60 p-5 ring-1 transition ${isMissing ? "ring-2 ring-rose-500 bg-rose-50/40" : "ring-white/70"}`}
+        >
           <p className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
             {q.kategori} · Fråga {i + 1}
           </p>
@@ -844,8 +852,12 @@ const StepQuestions = ({
               );
             })}
           </div>
+          {isMissing && (
+            <p className="mt-2 text-xs font-semibold text-rose-600">Välj ett svarsalternativ.</p>
+          )}
         </div>
-      ))}
+        );
+      })}
     </div>
   </Card>
 );
