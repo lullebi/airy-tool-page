@@ -49,7 +49,7 @@ const Atgardsplan = () => {
 
   useEffect(() => {
     const categories = Array.from(
-      new Set(vendors.map((v) => v.type).filter((t): t is string => !!t)),
+      new Set(vendors.map((v) => v.apiCategory ?? v.type).filter((t): t is string => !!t)),
     );
     categories.forEach((cat) => {
       setAltsByCategory((prev) =>
