@@ -2026,53 +2026,35 @@ const Step5Measurement = ({
         </div>
       </div>
 
-      {/* SWIMLANE A */}
+      {/* UNIFIED VENDOR ANALYSIS */}
       <div className="mb-6">
         <div className="mb-2 flex items-baseline justify-between">
           <h3 className="text-sm font-bold text-foreground">
-            Kända leverantörer <span className="text-foreground/50">· Generellt</span>
+            Leverantörsanalys <span className="text-foreground/50">· Samlad vy</span>
           </h3>
           <span className="text-[11px] font-medium text-foreground/55">
-            Snabbanalys tillämpad
+            {vendors.length > 0
+              ? `${vendors.length} leverantör${vendors.length === 1 ? "" : "er"}`
+              : "Tom lista"}
           </span>
         </div>
         <div className="flex flex-col gap-3 pb-3">
-          {kanda.length > 0 ? (
-            kanda.map(renderCard)
+          {vendors.length > 0 ? (
+            vendors.map(renderCard)
           ) : (
             <div className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-foreground/20 bg-white/50 px-4 py-8 text-center">
               <Inbox className="h-6 w-6 text-foreground/40" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground/70">
-                Inga kända leverantörer ännu
+                Inga leverantörer ännu
               </p>
               <p className="text-xs text-foreground/55">
-                Lägg till leverantörer från snabbvalet för att se dem här.
+                Lägg till leverantörer via snabbval eller manuell registrering för att se analysen här.
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* SWIMLANE B */}
-      <div className="mb-6">
-        <div className="mb-2 flex items-baseline justify-between">
-          <h3 className="text-sm font-bold text-foreground">
-            Nischade leverantörer <span className="text-foreground/50">· Djupanalys</span>
-          </h3>
-          <span className="text-[11px] font-medium text-foreground/55">
-            Detaljerad teknisk analys
-          </span>
-        </div>
-        <div className="flex flex-col gap-3 pb-3">
-          {nischade.length > 0 ? (
-            nischade.map(renderCard)
-          ) : (
-            <p className="text-xs text-foreground/55">
-              Inga leverantörer har genomgått djupanalys ännu. Kör en deep-dive för att se detaljerad teknisk genomlysning här.
-            </p>
-          )}
-        </div>
-      </div>
 
       {/* Sticky Actions */}
       <div className="sticky bottom-4 mt-4 flex flex-col items-center gap-2">
