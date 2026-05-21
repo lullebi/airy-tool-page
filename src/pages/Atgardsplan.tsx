@@ -74,7 +74,7 @@ const Atgardsplan = () => {
         );
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vendors.map((v) => v.type).join("|")]);
+  }, [vendors.map((v) => v.apiCategory ?? v.type).join("|")]);
 
   const rows: VendorRow[] = useMemo(
     () =>
