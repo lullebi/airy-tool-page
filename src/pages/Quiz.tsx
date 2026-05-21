@@ -1459,17 +1459,27 @@ const Step5Measurement = ({
         ? "Blandad portfölj – delvis EU-suverän."
         : "Hög exponering mot icke-EU – ersättning rekommenderas.";
 
-  // Strict split by API category. Infrastructure/technical categories require
-  // deep-dive ("Nischade"). Everything else is general SaaS ("Kända").
-  const NICHE_CATEGORIES = new Set([
-    "Cloud IaaS",
-    "Storage",
-    "Security",
-    "Dev Tools",
-    "Payment",
+  // Strict split by category. Infrastructure / technical categories go to the
+  // deep-dive lane ("Nischade"). General SaaS / business apps go to "Kända".
+  // Matches against the backend `category` (apiCategory) first, and falls back
+  // to the manually-selected Swedish `type` for custom vendors. Case- and
+  // whitespace-insensitive so quick-select payloads always land in the right
+  // lane.
+  const NICHE_KEYS = new Set([
+    // Backend categories
+    "cloud iaas",
+    "storage",
+    "security",
+    "dev tools",
+    "payment",
+    // Manual Swedish vendor types
+    "infrastruktur",
+    "plattform",
   ]);
-  const isNiche = (v: VendorLike) =>
-    NICHE_CATEGORIES.has((v.apiCategory ?? v.type ?? "").trim());
+  const isNiche = (v: VendorLike) => {
+    const key = (v.apiCategory ?? v.type ?? "").trim().toLowerCase();
+    return key.length > 0 && NICHE_KEYS.has(key);
+  };
   const kanda = vendors.filter((v) => !isNiche(v));
   const nischade = vendors.filter(isNiche);
 
