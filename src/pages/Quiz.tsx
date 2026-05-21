@@ -316,6 +316,9 @@ const Quiz = () => {
   const [deepDiveEnabled, setDeepDiveEnabled] = useState(true);
   // Index för vilken leverantör i Fördjupad analys-loopen som granskas just nu.
   const [deepVendorIndex, setDeepVendorIndex] = useState(0);
+  // Visa valideringsfel när användaren försökt gå vidare utan att fylla i allt.
+  const [showErrors, setShowErrors] = useState(false);
+  useEffect(() => { setShowErrors(false); }, [stepIndex, deepVendorIndex]);
 
   // API scoring state — POST /score result keyed by apiId.
   const [scoredMap, setScoredMap] = useState<ScoredMap>(new Map());
@@ -384,7 +387,34 @@ const Quiz = () => {
     return true;
   }, [stepIndex, step1, quickAnswers, currentDeepAnswers, deepDiveEnabled, deepVendors.length, activeDeepQuestions]);
 
+  const missingQuickIds = useMemo(
+    () => QUICK_SCAN.filter((q) => !quickAnswers[q.id]).map((q) => q.id),
+    [quickAnswers],
+  );
+  const missingDeepIds = useMemo(
+    () => activeDeepQuestions.filter((q) => !currentDeepAnswers[q.id]).map((q) => q.id),
+    [activeDeepQuestions, currentDeepAnswers],
+  );
+  const step1Missing = {
+    priorities: step1.priorities.length === 0,
+    sector: step1.sector === "",
+    euDataWeight: step1.euDataWeight === null,
+    readiness: step1.readiness === "",
+  };
+
   const goNext = () => {
+    if (!canNext) {
+      setShowErrors(true);
+      toast.error("Fyll i alla obligatoriska fält", {
+        description: "De som saknas är markerade i rött.",
+      });
+      // Scrolla till första röda fält
+      requestAnimationFrame(() => {
+        const el = document.querySelector("[data-missing='true']");
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      return;
+    }
     // Loop through vendors inside the Fördjupad analys step.
     if (stepIndex === 2 && deepDiveEnabled && deepVendors.length > 0) {
       const isLast = deepVendorIndex >= deepVendors.length - 1;
@@ -485,6 +515,8 @@ const Quiz = () => {
               state={step1}
               setState={setStep1}
               togglePriority={togglePriority}
+              showErrors={showErrors}
+              missing={step1Missing}
             />
           )}
           {stepIndex === 1 && (
@@ -494,6 +526,7 @@ const Quiz = () => {
               questions={QUICK_SCAN}
               answers={quickAnswers}
               setAnswers={setQuickAnswers}
+              missingIds={showErrors ? missingQuickIds : []}
             />
           )}
           {stepIndex === 2 && (
@@ -509,6 +542,7 @@ const Quiz = () => {
               skippedCertNotice={skipCerts}
               onPrevVendor={() => setDeepVendorIndex((i) => Math.max(0, i - 1))}
               canPrevVendor={deepVendorIndex > 0}
+              missingIds={showErrors ? missingDeepIds : []}
             />
           )}
           {stepIndex === 3 && (
@@ -550,7 +584,6 @@ const Quiz = () => {
             <Button
               size="lg"
               onClick={goNext}
-              disabled={!canNext}
               className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
               style={{ background: "var(--gradient-cta)" }}
             >
@@ -624,14 +657,22 @@ const Step1Konfig = ({
   state,
   setState,
   togglePriority,
+  showErrors,
+  missing,
 }: {
   state: Step1State;
   setState: React.Dispatch<React.SetStateAction<Step1State>>;
   togglePriority: (label: string) => void;
-}) => (
+  showErrors: boolean;
+  missing: { priorities: boolean; sector: boolean; euDataWeight: boolean; readiness: boolean };
+}) => {
+  const errCls = (bad: boolean) =>
+    showErrors && bad ? "rounded-xl ring-2 ring-rose-500 ring-offset-2 ring-offset-transparent p-3 -m-3" : "";
+  return (
   <Card title="Konfiguration" subtitle="Här sätter vi vikt och kontext för analysen.">
     <div className="grid gap-8">
       {/* Priorities */}
+      <div className={errCls(missing.priorities)} data-missing={showErrors && missing.priorities}>
       <Field label="Vad är viktigast för er?" hint="Välj upp till 3 prioriteringar">
         <div className="flex flex-wrap gap-2">
           {STEP1_PRIORITIES.map((p) => {
@@ -658,15 +699,20 @@ const Step1Konfig = ({
             );
           })}
         </div>
+        {showErrors && missing.priorities && (
+          <p className="mt-2 text-xs font-semibold text-rose-600">Välj minst en prioritering.</p>
+        )}
       </Field>
+      </div>
 
       {/* Sector */}
+      <div className={errCls(missing.sector)} data-missing={showErrors && missing.sector}>
       <Field label="Vilken sektor verkar ni inom?">
         <Select
           value={state.sector}
           onValueChange={(v) => setState((s) => ({ ...s, sector: v }))}
         >
-          <SelectTrigger className="h-11 rounded-xl bg-white/80">
+          <SelectTrigger className={`h-11 rounded-xl bg-white/80 ${showErrors && missing.sector ? "ring-2 ring-rose-500" : ""}`}>
             <SelectValue placeholder="Välj sektor" />
           </SelectTrigger>
           <SelectContent>
@@ -677,9 +723,14 @@ const Step1Konfig = ({
             ))}
           </SelectContent>
         </Select>
+        {showErrors && missing.sector && (
+          <p className="mt-2 text-xs font-semibold text-rose-600">Välj en sektor.</p>
+        )}
       </Field>
+      </div>
 
       {/* EU data weight */}
+      <div className={errCls(missing.euDataWeight)} data-missing={showErrors && missing.euDataWeight}>
       <Field label="Hur viktig är EU-datalagring för er?">
         <div className="flex flex-wrap gap-2">
           {[
@@ -707,9 +758,14 @@ const Step1Konfig = ({
             );
           })}
         </div>
+        {showErrors && missing.euDataWeight && (
+          <p className="mt-2 text-xs font-semibold text-rose-600">Välj ett alternativ.</p>
+        )}
       </Field>
+      </div>
 
       {/* Readiness */}
+      <div className={errCls(missing.readiness)} data-missing={showErrors && missing.readiness}>
       <Field label="Hur bedömer ni er förmåga att upprätthålla verksamheten vid ett plötsligt avbrott i leverantörens tjänster?">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {STEP1_READINESS.map((r) => {
@@ -733,10 +789,15 @@ const Step1Konfig = ({
             );
           })}
         </div>
+        {showErrors && missing.readiness && (
+          <p className="mt-2 text-xs font-semibold text-rose-600">Välj ett alternativ.</p>
+        )}
       </Field>
+      </div>
     </div>
   </Card>
-);
+  );
+};
 
 /* =========================================================================
    GENERIC STEP — Question list
@@ -747,17 +808,25 @@ const StepQuestions = ({
   questions,
   answers,
   setAnswers,
+  missingIds = [],
 }: {
   title: string;
   subtitle: string;
   questions: Question[];
   answers: Answers;
   setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
+  missingIds?: string[];
 }) => (
   <Card title={title} subtitle={subtitle}>
     <div className="grid gap-6">
-      {questions.map((q, i) => (
-        <div key={q.id} className="rounded-2xl bg-white/60 p-5 ring-1 ring-white/70">
+      {questions.map((q, i) => {
+        const isMissing = missingIds.includes(q.id);
+        return (
+        <div
+          key={q.id}
+          data-missing={isMissing}
+          className={`rounded-2xl bg-white/60 p-5 ring-1 transition ${isMissing ? "ring-2 ring-rose-500 bg-rose-50/40" : "ring-white/70"}`}
+        >
           <p className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
             {q.kategori} · Fråga {i + 1}
           </p>
@@ -783,8 +852,12 @@ const StepQuestions = ({
               );
             })}
           </div>
+          {isMissing && (
+            <p className="mt-2 text-xs font-semibold text-rose-600">Välj ett svarsalternativ.</p>
+          )}
         </div>
-      ))}
+        );
+      })}
     </div>
   </Card>
 );
@@ -804,6 +877,7 @@ const Step3DeepDive = ({
   skippedCertNotice,
   onPrevVendor,
   canPrevVendor,
+  missingIds = [],
 }: {
   enabled: boolean;
   setEnabled: (b: boolean) => void;
@@ -816,6 +890,7 @@ const Step3DeepDive = ({
   skippedCertNotice: boolean;
   onPrevVendor: () => void;
   canPrevVendor: boolean;
+  missingIds?: string[];
 }) => {
   const categories = useMemo(() => {
     const map = new Map<string, Question[]>();
@@ -881,10 +956,13 @@ const Step3DeepDive = ({
                   {cat}
                 </h3>
                 <div className="grid gap-4">
-                  {qs.map((q, i) => (
+                  {qs.map((q, i) => {
+                    const isMissing = missingIds.includes(q.id);
+                    return (
                     <div
                       key={q.id}
-                      className="rounded-2xl bg-white/60 p-5 ring-1 ring-white/70"
+                      data-missing={isMissing}
+                      className={`rounded-2xl bg-white/60 p-5 ring-1 transition ${isMissing ? "ring-2 ring-rose-500 bg-rose-50/40" : "ring-white/70"}`}
                     >
                       <p className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
                         Fråga {i + 1}
@@ -914,8 +992,12 @@ const Step3DeepDive = ({
                           );
                         })}
                       </div>
+                      {isMissing && (
+                        <p className="mt-2 text-xs font-semibold text-rose-600">Välj ett svarsalternativ.</p>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
