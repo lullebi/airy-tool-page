@@ -89,8 +89,9 @@ const Atgardsplan = () => {
         if (score < 70) risks.push("Otillräcklig dokumenterad NIS2/DORA-beredskap");
         if (score < 45) risks.push("Begränsade kontraktsmässiga skyddsåtgärder (DPA/SLA)");
         if (risks.length === 0) risks.push("Inga väsentliga risker identifierade");
-        const alt: AltState = v.type
-          ? altsByCategory[v.type] ?? { loading: true, eu: [] }
+        const altCat = v.apiCategory ?? v.type;
+        const alt: AltState = altCat
+          ? altsByCategory[altCat] ?? { loading: true, eu: [] }
           : { loading: false, eu: [] };
         return { vendor: v, score, risks, alt };
       }),
