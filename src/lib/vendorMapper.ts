@@ -13,6 +13,7 @@ export interface VendorLike {
   hq_in_eu?: boolean;
   storage_in_eu?: boolean;
   cloud_act_exposure?: boolean;
+  top_risk_drivers?: string[];
 }
 
 export function apiToVendorLike(v: ApiVendorListItem): VendorLike {
@@ -27,6 +28,7 @@ export function apiToVendorLike(v: ApiVendorListItem): VendorLike {
     hq_in_eu: v.hq_in_eu,
     storage_in_eu: v.storage_in_eu,
     cloud_act_exposure: v.cloud_act_exposure,
+    top_risk_drivers: v.top_risk_drivers,
   };
 }
 

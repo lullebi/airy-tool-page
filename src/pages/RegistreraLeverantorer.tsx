@@ -200,6 +200,7 @@ type Vendor = {
   hq_in_eu?: boolean;
   storage_in_eu?: boolean;
   cloud_act_exposure?: boolean;
+  top_risk_drivers?: string[];
 };
 
 const VENDOR_TYPES = ["SaaS", "Infrastruktur", "Plattform", "Kommunikation", "Annat"];
@@ -276,6 +277,7 @@ const RegistreraLeverantorer = () => {
         hq_in_eu: pick.hq_in_eu,
         storage_in_eu: pick.storage_in_eu,
         cloud_act_exposure: pick.cloud_act_exposure,
+        top_risk_drivers: pick.top_risk_drivers,
       };
       if (emptyIdx === -1) return [...vs, filled];
       return vs.map((v, i) => (i === emptyIdx ? filled : v));
@@ -427,6 +429,7 @@ const RegistreraLeverantorer = () => {
                         hq_in_eu: pick.hq_in_eu,
                         storage_in_eu: pick.storage_in_eu,
                         cloud_act_exposure: pick.cloud_act_exposure,
+                        top_risk_drivers: pick.top_risk_drivers,
                       })
                     }
                     onPickCustom={(name) =>
@@ -437,6 +440,7 @@ const RegistreraLeverantorer = () => {
                         hq_in_eu: undefined,
                         storage_in_eu: undefined,
                         cloud_act_exposure: undefined,
+                        top_risk_drivers: undefined,
                       })
                     }
                     onClear={() =>
@@ -448,6 +452,7 @@ const RegistreraLeverantorer = () => {
                         hq_in_eu: undefined,
                         storage_in_eu: undefined,
                         cloud_act_exposure: undefined,
+                        top_risk_drivers: undefined,
                       })
                     }
                   />

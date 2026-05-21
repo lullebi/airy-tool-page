@@ -1,33 +1,29 @@
-## Fix 7 — separera UX-`type` från API-`apiCategory`
+# Fix 8 — datadrivna risktexter
 
-Problem: `fetchAlternatives(v.type)` skickar svenska UX-kategorier ("Infrastruktur", "Plattform") → 404. Lösning: spara API-kategorin separat i `apiCategory`, behåll `type` för dropdown-UX.
+Ersätt hårdkodade risktexter i åtgärdsplanen med faktiska `top_risk_drivers` från `/vendors`-svaret. Behåll fallback för manuellt tillagda vendors.
 
-### Ändringar
+## Ändringar
 
-**1. `src/pages/RegistreraLeverantorer.tsx`**
-- Lägg till `apiCategory?: string` i `Vendor`-typen.
-- `handleQuickPick`: sätt `apiCategory: pick.category ?? undefined`.
-- `VendorNameCombobox onPickApi`: sätt `apiCategory: pick.category ?? undefined`.
-- `onPickCustom` och `onClear`: nolla med `apiCategory: undefined`.
+**1. `src/lib/vendorMapper.ts`**
+- Lägg till `top_risk_drivers?: string[]` i `VendorLike`.
+- Sätt `top_risk_drivers: v.top_risk_drivers` i `apiToVendorLike`.
 
-**2. `src/lib/vendorMapper.ts`**
-- Lägg till `apiCategory?: string` i `VendorLike`-interfacet.
-- `apiToVendorLike`: sätt `apiCategory: v.category ?? undefined`.
+**2. `src/pages/RegistreraLeverantorer.tsx`**
+- Lägg till `top_risk_drivers?: string[]` i `Vendor`-typen.
+- Propagera `top_risk_drivers: pick.top_risk_drivers` i `handleQuickPick` och `VendorNameCombobox onPickApi`.
+- Nolla med `top_risk_drivers: undefined` i `onPickCustom` och `onClear`.
 
-**3. `src/pages/Quiz.tsx` (Step5Measurement)**
-- `categoriesKey` och fetch-useEffect: använd `v.apiCategory ?? v.type`.
-- `altFor`: läs `cat = v.apiCategory ?? v.type`, slå upp `altsByCategory[cat]`.
+**3. `src/pages/Atgardsplan.tsx`**
+- Importera `RISK_DRIVER_SV` från `@/lib/scoringConstants`.
+- I `rows`-useMemo: om `v.top_risk_drivers?.length`, mappa via `RISK_DRIVER_SV[driver] ?? driver`. Annars fallback (EU→CLOUD Act-text, score-baserade rader, exkl. den gamla "NIS2/DORA-beredskap"-raden — ersätts av "Begränsad regulatorisk dokumentation enligt självskattning").
+- Lämna `riskLabel` och score-fallback (75/38) orörda.
 
-**4. `src/pages/Atgardsplan.tsx`**
-- Kategori-useEffect + dependency-key: använd `v.apiCategory ?? v.type`.
-- `rows`-useMemo: samma uppslagsnyckel.
+## Verifiering
 
-### Verifiering (efter implement)
+- M365 + Slack: visar CLOUD Act / HQ ej i EU / Lagring ej i EU.
+- Oderland: visar cert-score / EU-compliance / CISPE-gap istället för "Inga väsentliga risker".
+- EU-alternativ-listan från Fix 7 fungerar fortfarande.
 
-Happy path M365 + Slack + Oderland:
-- `/alternatives/SaaS%20Productivity` → 200, M365-kort visar "scrive".
-- Slack-kort visar "intercom" (+ ev. fler).
-- Oderland: inget EU-block eller ovhcloud/hetzner/scaleway.
-- Inga "Inga EU-alternativ taggade…"-meddelanden för API-pickade leverantörer.
-
-Out of scope: städa `VENDOR_TYPES`-listan (lever sida vid sida denna runda).
+## Out of scope
+- Mätningssidans riskprofil (Quiz.tsx).
+- `riskLabel`-trösklar och score-fallback.
