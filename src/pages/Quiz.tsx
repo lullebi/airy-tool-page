@@ -1464,78 +1464,311 @@ const Step5Measurement = ({
       const pageW = doc.internal.pageSize.getWidth();
       const pageH = doc.internal.pageSize.getHeight();
       const margin = 48;
-      let y = margin;
 
+      // Palette (RGB)
+      const C = {
+        primary: [15, 27, 61] as [number, number, number],
+        primarySoft: [30, 58, 95] as [number, number, number],
+        emerald: [16, 185, 129] as [number, number, number],
+        rose: [225, 29, 72] as [number, number, number],
+        amber: [245, 158, 11] as [number, number, number],
+        text: [20, 24, 35] as [number, number, number],
+        muted: [107, 114, 128] as [number, number, number],
+        line: [229, 231, 235] as [number, number, number],
+        zebra: [248, 250, 252] as [number, number, number],
+        white: [255, 255, 255] as [number, number, number],
+      };
+      const setFill = (c: [number, number, number]) => doc.setFillColor(c[0], c[1], c[2]);
+      const setStroke = (c: [number, number, number]) => doc.setDrawColor(c[0], c[1], c[2]);
+      const setText = (c: [number, number, number]) => doc.setTextColor(c[0], c[1], c[2]);
+
+      // Data
       const perVendorTotals = vendors.map((v) => computeVendorScore(v, scoredMap).total);
-      const total = perVendorTotals.length ? Math.round(perVendorTotals.reduce((a, b) => a + b, 0) / perVendorTotals.length) : 0;
+      const total = perVendorTotals.length
+        ? Math.round(perVendorTotals.reduce((a, b) => a + b, 0) / perVendorTotals.length)
+        : 0;
       const euCount = vendors.filter(isEU).length;
       const nonEuCount = vendors.length - euCount;
       const euPct = vendors.length ? Math.round((euCount / vendors.length) * 100) : 0;
 
+      // ===== Header band =====
+      setFill(C.primary);
+      doc.rect(0, 0, pageW, 90, "F");
+      setFill(C.emerald);
+      doc.rect(0, 90, pageW, 3, "F");
+      setText(C.white);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(20);
-      doc.text("Eurostack — Fullständig analys", margin, y);
-      y += 26;
+      doc.setFontSize(18);
+      doc.text("Eurostack — Suveränitetsrapport", margin, 48);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.setTextColor(110);
-      doc.text(
-        `Genererad ${new Date().toLocaleDateString("sv-SE")} • ${vendors.length} leverantörer`,
-        margin,
-        y,
-      );
-      y += 24;
+      doc.setTextColor(200, 215, 235);
+      const headRight = `${new Date().toLocaleDateString("sv-SE")}  ·  ${vendors.length} leverantörer`;
+      doc.text(headRight, pageW - margin, 48, { align: "right" });
+      doc.setFontSize(9);
+      doc.text("Datadriven analys baserad på EU-suveränitetsmodell", margin, 68);
 
-      doc.setTextColor(20);
+      let y = 90 + 28;
+
+      // ===== Summary card with donut =====
+      const cardH = 170;
+      setFill(C.zebra);
+      setStroke(C.line);
+      doc.setLineWidth(0.6);
+      doc.roundedRect(margin, y, pageW - margin * 2, cardH, 6, 6, "FD");
+
+      // Donut (left)
+      const cx = margin + 80;
+      const cy = y + cardH / 2;
+      const rOuter = 55;
+      const rInner = 34;
+      const drawDonutSegment = (
+        startAngle: number,
+        endAngle: number,
+        color: [number, number, number],
+      ) => {
+        setFill(color);
+        const steps = Math.max(8, Math.ceil(((endAngle - startAngle) / (Math.PI * 2)) * 80));
+        for (let i = 0; i < steps; i++) {
+          const a1 = startAngle + ((endAngle - startAngle) * i) / steps;
+          const a2 = startAngle + ((endAngle - startAngle) * (i + 1)) / steps;
+          const x1o = cx + rOuter * Math.cos(a1);
+          const y1o = cy + rOuter * Math.sin(a1);
+          const x2o = cx + rOuter * Math.cos(a2);
+          const y2o = cy + rOuter * Math.sin(a2);
+          const x1i = cx + rInner * Math.cos(a1);
+          const y1i = cy + rInner * Math.sin(a1);
+          const x2i = cx + rInner * Math.cos(a2);
+          const y2i = cy + rInner * Math.sin(a2);
+          // Quad as two triangles
+          doc.triangle(x1o, y1o, x2o, y2o, x2i, y2i, "F");
+          doc.triangle(x1o, y1o, x2i, y2i, x1i, y1i, "F");
+        }
+      };
+
+      if (vendors.length === 0) {
+        setFill(C.line);
+        doc.circle(cx, cy, rOuter, "F");
+        setFill(C.white);
+        doc.circle(cx, cy, rInner, "F");
+      } else {
+        const euFrac = euCount / vendors.length;
+        const start = -Math.PI / 2;
+        if (euFrac > 0) drawDonutSegment(start, start + Math.PI * 2 * euFrac, C.emerald);
+        if (euFrac < 1) drawDonutSegment(start + Math.PI * 2 * euFrac, start + Math.PI * 2, C.rose);
+      }
+      // Center label
+      setText(C.primary);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(13);
-      doc.text("Sammanfattning", margin, y);
-      y += 18;
+      doc.setFontSize(18);
+      doc.text(`${euPct}%`, cx, cy + 2, { align: "center" });
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-      doc.text(`Total Eurostack-score: ${total}/100`, margin, y); y += 16;
-      doc.text(`EU-leverantörer: ${euCount} (${euPct}%)`, margin, y); y += 16;
-      doc.text(`Icke-EU-leverantörer: ${nonEuCount} (${100 - euPct}%)`, margin, y); y += 16;
-      doc.text(`Sektor: ${step1.sector || "–"}`, margin, y); y += 16;
-      doc.text(`Prioriteringar: ${step1.priorities.join(", ") || "–"}`, margin, y); y += 24;
+      doc.setFontSize(8);
+      setText(C.muted);
+      doc.text("EU", cx, cy + 14, { align: "center" });
 
+      // Legend under donut
+      const legY = y + cardH - 22;
+      setFill(C.emerald);
+      doc.rect(cx - 56, legY, 8, 8, "F");
+      setText(C.text);
+      doc.setFontSize(9);
+      doc.text(`EU (${euCount})`, cx - 44, legY + 7);
+      setFill(C.rose);
+      doc.rect(cx + 6, legY, 8, 8, "F");
+      doc.text(`Icke-EU (${nonEuCount})`, cx + 18, legY + 7);
+
+      // Stats (right)
+      const sx = margin + 180;
+      let sy = y + 28;
+      setText(C.muted);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(13);
+      doc.setFontSize(9);
+      doc.text("SAMMANFATTNING", sx, sy);
+      sy += 16;
+      const statRow = (label: string, value: string) => {
+        setText(C.muted);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text(label, sx, sy);
+        setText(C.text);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text(value, sx + 160, sy, { align: "left" });
+        sy += 18;
+      };
+      statRow("Total Eurostack-score", `${total} / 100`);
+      statRow("EU-leverantörer", `${euCount} (${euPct}%)`);
+      statRow("Icke-EU-leverantörer", `${nonEuCount} (${100 - euPct}%)`);
+      statRow("Sektor", step1.sector || "–");
+      const prios = step1.priorities.join(", ") || "–";
+      statRow("Prioriteringar", prios.length > 38 ? prios.slice(0, 36) + "…" : prios);
+
+      y += cardH + 26;
+
+      // ===== Vendors table =====
+      setText(C.text);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
       doc.text("Leverantörer", margin, y);
-      y += 16;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
+      y += 12;
 
-      vendors.forEach((v, i) => {
-        if (y > pageH - margin - 60) {
+      const cols = [
+        { key: "#", w: 24, align: "left" as const },
+        { key: "Leverantör", w: 130, align: "left" as const },
+        { key: "Kategori", w: 100, align: "left" as const },
+        { key: "Region", w: 60, align: "left" as const },
+        { key: "Status", w: 110, align: "left" as const },
+        { key: "Score", w: 75, align: "right" as const },
+      ];
+      const tableW = cols.reduce((a, c) => a + c.w, 0);
+      const tableX = margin;
+      const rowH = 22;
+
+      const drawHeader = () => {
+        setFill(C.primary);
+        doc.rect(tableX, y, tableW, rowH, "F");
+        setText(C.white);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        let x = tableX + 8;
+        cols.forEach((c) => {
+          doc.text(
+            c.key,
+            c.align === "right" ? x + c.w - 16 : x,
+            y + rowH / 2 + 3,
+            { align: c.align === "right" ? "right" : "left" },
+          );
+          x += c.w;
+        });
+        y += rowH;
+      };
+
+      drawHeader();
+
+      const ensureSpace = (need: number) => {
+        if (y + need > pageH - 60) {
           doc.addPage();
           y = margin;
+          drawHeader();
         }
-        const eu = isEU(v);
+      };
+
+      vendors.forEach((v, i) => {
+        ensureSpace(rowH);
         const status = statusFromVendor(v, scoredMap);
-        doc.setFont("helvetica", "bold");
-        doc.text(`${i + 1}. ${v.name}`, margin, y);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(110);
-        doc.text(
-          `${v.type ?? "–"} • ${v.country ?? "–"} • ${eu ? "EU" : "Icke-EU"} • Status: ${status.label}`,
-          margin,
-          y + 14,
-        );
-        if (!eu) {
-          const alt = altFor(v);
-          doc.setTextColor(20);
-          doc.text(`EU-alternativ: ${alt.name} (${alt.country})`, margin, y + 28);
-          y += 44;
-        } else {
-          y += 30;
+        const score = computeVendorScore(v, scoredMap).total;
+        const eu = isEU(v);
+        // Zebra
+        if (i % 2 === 0) {
+          setFill(C.zebra);
+          doc.rect(tableX, y, tableW, rowH, "F");
         }
-        doc.setTextColor(20);
+        // Bottom line
+        setStroke(C.line);
+        doc.setLineWidth(0.3);
+        doc.line(tableX, y + rowH, tableX + tableW, y + rowH);
+
+        let x = tableX + 8;
+        const cellY = y + rowH / 2 + 3;
+        setText(C.text);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+
+        const clip = (s: string, max: number) => (s.length > max ? s.slice(0, max - 1) + "…" : s);
+
+        // #
+        doc.text(String(i + 1), x, cellY);
+        x += cols[0].w;
+        // Name
+        doc.setFont("helvetica", "bold");
+        doc.text(clip(v.name || "–", 28), x, cellY);
+        doc.setFont("helvetica", "normal");
+        x += cols[1].w;
+        // Category
+        setText(C.muted);
+        doc.text(clip(v.type ?? "–", 22), x, cellY);
+        x += cols[2].w;
+        // Region pill
+        const regionLabel = eu ? "EU" : "Icke-EU";
+        const regionColor = eu ? C.emerald : C.rose;
+        setFill(regionColor);
+        doc.roundedRect(x, y + 5, 44, rowH - 10, 6, 6, "F");
+        setText(C.white);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.text(regionLabel, x + 22, y + rowH / 2 + 2.5, { align: "center" });
+        x += cols[3].w;
+        // Status pill
+        const stTone = status.tone as "ok" | "warn" | "bad" | string;
+        const stColor =
+          stTone === "ok" ? C.emerald : stTone === "warn" ? C.amber : C.rose;
+        setFill(stColor);
+        const stLabel = clip(status.label, 18);
+        const stW = Math.min(96, doc.getTextWidth(stLabel) + 16);
+        doc.roundedRect(x, y + 5, stW, rowH - 10, 6, 6, "F");
+        setText(C.white);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.text(stLabel, x + stW / 2, y + rowH / 2 + 2.5, { align: "center" });
+        x += cols[4].w;
+        // Score
+        setText(C.text);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text(`${score}`, x + cols[5].w - 16, cellY, { align: "right" });
+
+        y += rowH;
       });
 
-      doc.setFontSize(9);
-      doc.setTextColor(140);
-      doc.text("© 2026 Lumen Analytics AB — Eurostack Quiz", margin, pageH - 24);
+      y += 22;
+
+      // ===== EU alternatives =====
+      const nonEuVendors = vendors.filter((v) => !isEU(v));
+      if (nonEuVendors.length > 0) {
+        ensureSpace(40);
+        setText(C.text);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text("Rekommenderade EU-alternativ", margin, y);
+        y += 14;
+        nonEuVendors.forEach((v) => {
+          ensureSpace(20);
+          const alt = altFor(v);
+          setFill(C.zebra);
+          setStroke(C.line);
+          doc.setLineWidth(0.4);
+          doc.roundedRect(margin, y, pageW - margin * 2, 22, 4, 4, "FD");
+          setText(C.text);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(9);
+          doc.text(v.name, margin + 10, y + 14);
+          setText(C.muted);
+          doc.setFont("helvetica", "normal");
+          doc.text("→", margin + 130, y + 14);
+          setText(C.emerald);
+          doc.setFont("helvetica", "bold");
+          doc.text(alt.name, margin + 145, y + 14);
+          setText(C.muted);
+          doc.setFont("helvetica", "normal");
+          doc.text(`(${alt.country})`, margin + 145 + doc.getTextWidth(alt.name) + 6, y + 14);
+          y += 26;
+        });
+      }
+
+      // ===== Footer on every page =====
+      const pageCount = doc.getNumberOfPages();
+      for (let p = 1; p <= pageCount; p++) {
+        doc.setPage(p);
+        setStroke(C.line);
+        doc.setLineWidth(0.4);
+        doc.line(margin, pageH - 36, pageW - margin, pageH - 36);
+        setText(C.muted);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.text("© 2026 Lumen Analytics AB — Eurostack", margin, pageH - 22);
+        doc.text(`Sida ${p} / ${pageCount}`, pageW - margin, pageH - 22, { align: "right" });
+      }
 
       const filename = `eurostack-rapport-${new Date().toISOString().slice(0, 10)}.pdf`;
       doc.save(filename);
@@ -1549,6 +1782,7 @@ const Step5Measurement = ({
       });
     }
   };
+
 
   const renderCard = (v: VendorLike) => {
     const eu = isEU(v);
