@@ -429,6 +429,7 @@ const RegistreraLeverantorer = () => {
                         hq_in_eu: pick.hq_in_eu,
                         storage_in_eu: pick.storage_in_eu,
                         cloud_act_exposure: pick.cloud_act_exposure,
+                        top_risk_drivers: pick.top_risk_drivers,
                       })
                     }
                     onPickCustom={(name) =>
@@ -439,6 +440,7 @@ const RegistreraLeverantorer = () => {
                         hq_in_eu: undefined,
                         storage_in_eu: undefined,
                         cloud_act_exposure: undefined,
+                        top_risk_drivers: undefined,
                       })
                     }
                     onClear={() =>
@@ -450,6 +452,7 @@ const RegistreraLeverantorer = () => {
                         hq_in_eu: undefined,
                         storage_in_eu: undefined,
                         cloud_act_exposure: undefined,
+                        top_risk_drivers: undefined,
                       })
                     }
                   />
