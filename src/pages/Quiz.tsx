@@ -834,6 +834,13 @@ const Step3DeepDive = ({
           : "Aktiveras för leverantörer där datasetet saknar information. Detaljerad granskning per leverantör."
       }
     >
+      <div className="mb-5 rounded-xl bg-blue-50/80 px-4 py-3 ring-1 ring-blue-200">
+        <p className="text-xs font-medium text-blue-900">
+          <strong>Notera:</strong> Dina svar samlas in för evidence-badges på resultatsteget
+          och kommer i nästa version finjustera ML-vikterna per leverantör. Just nu
+          påverkar svaren inte den totala poängen direkt — de driver bara dokumentationen.
+        </p>
+      </div>
 
       {!enabled ? (
         <p className="rounded-xl bg-white/60 p-5 text-sm text-foreground/70 ring-1 ring-white/70">
