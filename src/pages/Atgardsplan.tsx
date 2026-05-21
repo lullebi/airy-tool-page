@@ -82,13 +82,21 @@ const Atgardsplan = () => {
       vendors.map((v) => {
         const eu = isEU(v);
         const score = state.scores?.[v.id] ?? (eu ? 75 : 38);
-        const risks: string[] = [];
-        if (!eu) {
-          risks.push("Tredjelandsöverföring (utanför EU/EES)");
-          risks.push("Exponering mot US CLOUD Act");
+        let risks: string[] = [];
+
+        if (v.top_risk_drivers && v.top_risk_drivers.length > 0) {
+          risks = v.top_risk_drivers.map(
+            (driver) => RISK_DRIVER_SV[driver] ?? driver,
+          );
+        } else {
+          if (!eu) {
+            risks.push("Tredjelandsöverföring (utanför EU/EES)");
+            risks.push("Exponering mot US CLOUD Act");
+          }
+          if (score < 70) risks.push("Begränsad regulatorisk dokumentation enligt självskattning");
+          if (score < 45) risks.push("Begränsade kontraktsmässiga skyddsåtgärder (DPA/SLA)");
         }
-        if (score < 70) risks.push("Otillräcklig dokumenterad NIS2/DORA-beredskap");
-        if (score < 45) risks.push("Begränsade kontraktsmässiga skyddsåtgärder (DPA/SLA)");
+
         if (risks.length === 0) risks.push("Inga väsentliga risker identifierade");
         const altCat = v.apiCategory ?? v.type;
         const alt: AltState = altCat
