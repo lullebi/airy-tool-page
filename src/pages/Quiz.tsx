@@ -657,14 +657,22 @@ const Step1Konfig = ({
   state,
   setState,
   togglePriority,
+  showErrors,
+  missing,
 }: {
   state: Step1State;
   setState: React.Dispatch<React.SetStateAction<Step1State>>;
   togglePriority: (label: string) => void;
-}) => (
+  showErrors: boolean;
+  missing: { priorities: boolean; sector: boolean; euDataWeight: boolean; readiness: boolean };
+}) => {
+  const errCls = (bad: boolean) =>
+    showErrors && bad ? "rounded-xl ring-2 ring-rose-500 ring-offset-2 ring-offset-transparent p-3 -m-3" : "";
+  return (
   <Card title="Konfiguration" subtitle="Här sätter vi vikt och kontext för analysen.">
     <div className="grid gap-8">
       {/* Priorities */}
+      <div className={errCls(missing.priorities)} data-missing={showErrors && missing.priorities}>
       <Field label="Vad är viktigast för er?" hint="Välj upp till 3 prioriteringar">
         <div className="flex flex-wrap gap-2">
           {STEP1_PRIORITIES.map((p) => {
@@ -691,15 +699,20 @@ const Step1Konfig = ({
             );
           })}
         </div>
+        {showErrors && missing.priorities && (
+          <p className="mt-2 text-xs font-semibold text-rose-600">Välj minst en prioritering.</p>
+        )}
       </Field>
+      </div>
 
       {/* Sector */}
+      <div className={errCls(missing.sector)} data-missing={showErrors && missing.sector}>
       <Field label="Vilken sektor verkar ni inom?">
         <Select
           value={state.sector}
           onValueChange={(v) => setState((s) => ({ ...s, sector: v }))}
         >
-          <SelectTrigger className="h-11 rounded-xl bg-white/80">
+          <SelectTrigger className={`h-11 rounded-xl bg-white/80 ${showErrors && missing.sector ? "ring-2 ring-rose-500" : ""}`}>
             <SelectValue placeholder="Välj sektor" />
           </SelectTrigger>
           <SelectContent>
@@ -710,9 +723,14 @@ const Step1Konfig = ({
             ))}
           </SelectContent>
         </Select>
+        {showErrors && missing.sector && (
+          <p className="mt-2 text-xs font-semibold text-rose-600">Välj en sektor.</p>
+        )}
       </Field>
+      </div>
 
       {/* EU data weight */}
+      <div className={errCls(missing.euDataWeight)} data-missing={showErrors && missing.euDataWeight}>
       <Field label="Hur viktig är EU-datalagring för er?">
         <div className="flex flex-wrap gap-2">
           {[
@@ -740,9 +758,14 @@ const Step1Konfig = ({
             );
           })}
         </div>
+        {showErrors && missing.euDataWeight && (
+          <p className="mt-2 text-xs font-semibold text-rose-600">Välj ett alternativ.</p>
+        )}
       </Field>
+      </div>
 
       {/* Readiness */}
+      <div className={errCls(missing.readiness)} data-missing={showErrors && missing.readiness}>
       <Field label="Hur bedömer ni er förmåga att upprätthålla verksamheten vid ett plötsligt avbrott i leverantörens tjänster?">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {STEP1_READINESS.map((r) => {
@@ -766,10 +789,15 @@ const Step1Konfig = ({
             );
           })}
         </div>
+        {showErrors && missing.readiness && (
+          <p className="mt-2 text-xs font-semibold text-rose-600">Välj ett alternativ.</p>
+        )}
       </Field>
+      </div>
     </div>
   </Card>
-);
+  );
+};
 
 /* =========================================================================
    GENERIC STEP — Question list
