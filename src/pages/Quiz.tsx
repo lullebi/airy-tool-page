@@ -316,6 +316,9 @@ const Quiz = () => {
   const [deepDiveEnabled, setDeepDiveEnabled] = useState(true);
   // Index för vilken leverantör i Fördjupad analys-loopen som granskas just nu.
   const [deepVendorIndex, setDeepVendorIndex] = useState(0);
+  // Visa valideringsfel när användaren försökt gå vidare utan att fylla i allt.
+  const [showErrors, setShowErrors] = useState(false);
+  useEffect(() => { setShowErrors(false); }, [stepIndex, deepVendorIndex]);
 
   // API scoring state — POST /score result keyed by apiId.
   const [scoredMap, setScoredMap] = useState<ScoredMap>(new Map());
