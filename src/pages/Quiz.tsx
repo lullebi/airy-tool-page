@@ -515,6 +515,8 @@ const Quiz = () => {
               state={step1}
               setState={setStep1}
               togglePriority={togglePriority}
+              showErrors={showErrors}
+              missing={step1Missing}
             />
           )}
           {stepIndex === 1 && (
@@ -524,6 +526,7 @@ const Quiz = () => {
               questions={QUICK_SCAN}
               answers={quickAnswers}
               setAnswers={setQuickAnswers}
+              missingIds={showErrors ? missingQuickIds : []}
             />
           )}
           {stepIndex === 2 && (
@@ -539,6 +542,7 @@ const Quiz = () => {
               skippedCertNotice={skipCerts}
               onPrevVendor={() => setDeepVendorIndex((i) => Math.max(0, i - 1))}
               canPrevVendor={deepVendorIndex > 0}
+              missingIds={showErrors ? missingDeepIds : []}
             />
           )}
           {stepIndex === 3 && (
@@ -580,7 +584,6 @@ const Quiz = () => {
             <Button
               size="lg"
               onClick={goNext}
-              disabled={!canNext}
               className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
               style={{ background: "var(--gradient-cta)" }}
             >
