@@ -4,6 +4,7 @@ export interface VendorLike {
   id: string;
   name: string;
   type?: string;
+  apiCategory?: string;
   country?: string;
   mustKeep?: boolean;
   apiId?: string;
@@ -20,6 +21,7 @@ export function apiToVendorLike(v: ApiVendorListItem): VendorLike {
     apiId: v.id,
     name: v.name,
     type: v.category ?? undefined,
+    apiCategory: v.category ?? undefined,
     country: undefined,
     mustKeep: false,
     hq_in_eu: v.hq_in_eu,
