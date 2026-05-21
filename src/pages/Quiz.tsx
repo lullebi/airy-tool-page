@@ -2068,7 +2068,7 @@ const Step5Measurement = ({
             nischade.map(renderCard)
           ) : (
             <p className="text-xs text-foreground/55">
-              Inga leverantörer har genomgått deep-dive ännu.
+              Inga leverantörer har genomgått djupanalys ännu. Kör en deep-dive för att se detaljerad teknisk genomlysning här.
             </p>
           )}
         </div>
