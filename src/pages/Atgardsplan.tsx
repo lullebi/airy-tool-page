@@ -49,7 +49,7 @@ const Atgardsplan = () => {
 
   useEffect(() => {
     const categories = Array.from(
-      new Set(vendors.map((v) => v.type).filter((t): t is string => !!t)),
+      new Set(vendors.map((v) => v.apiCategory ?? v.type).filter((t): t is string => !!t)),
     );
     categories.forEach((cat) => {
       setAltsByCategory((prev) =>
@@ -74,7 +74,7 @@ const Atgardsplan = () => {
         );
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vendors.map((v) => v.type).join("|")]);
+  }, [vendors.map((v) => v.apiCategory ?? v.type).join("|")]);
 
   const rows: VendorRow[] = useMemo(
     () =>
@@ -89,8 +89,9 @@ const Atgardsplan = () => {
         if (score < 70) risks.push("Otillräcklig dokumenterad NIS2/DORA-beredskap");
         if (score < 45) risks.push("Begränsade kontraktsmässiga skyddsåtgärder (DPA/SLA)");
         if (risks.length === 0) risks.push("Inga väsentliga risker identifierade");
-        const alt: AltState = v.type
-          ? altsByCategory[v.type] ?? { loading: true, eu: [] }
+        const altCat = v.apiCategory ?? v.type;
+        const alt: AltState = altCat
+          ? altsByCategory[altCat] ?? { loading: true, eu: [] }
           : { loading: false, eu: [] };
         return { vendor: v, score, risks, alt };
       }),

@@ -1395,9 +1395,11 @@ const Step5Measurement = ({
 
   // Fetch EU alternatives per unique vendor category from API.
   const [altsByCategory, setAltsByCategory] = useState<Record<string, string[]>>({});
-  const categoriesKey = vendors.map((v) => v.type ?? "").filter(Boolean).join("|");
+  const categoriesKey = vendors.map((v) => v.apiCategory ?? v.type ?? "").filter(Boolean).join("|");
   useEffect(() => {
-    const cats = Array.from(new Set(vendors.map((v) => v.type).filter((t): t is string => !!t)));
+    const cats = Array.from(new Set(
+      vendors.map((v) => v.apiCategory ?? v.type).filter((t): t is string => !!t),
+    ));
     cats.forEach((cat) => {
       setAltsByCategory((prev) => (prev[cat] ? prev : { ...prev, [cat]: [] }));
       fetchAlternatives(cat)
@@ -1408,7 +1410,8 @@ const Step5Measurement = ({
   }, [categoriesKey]);
 
   const altFor = (v: VendorLike): { name: string; country: string; reason: string } => {
-    const list = v.type ? altsByCategory[v.type] ?? [] : [];
+    const cat = v.apiCategory ?? v.type;
+    const list = cat ? altsByCategory[cat] ?? [] : [];
     const name = list[0];
     if (name) {
       return {
