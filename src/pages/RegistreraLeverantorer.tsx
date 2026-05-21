@@ -192,6 +192,7 @@ type Vendor = {
   id: string;
   name: string;
   type: string;
+  apiCategory?: string;
   country: string;
   system: string;
   mustKeep: boolean;
