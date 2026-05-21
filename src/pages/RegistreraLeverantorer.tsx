@@ -553,7 +553,7 @@ const RegistreraLeverantorer = () => {
           )}
           {!canStart && hasAnyVendor && incompleteCustomVendors.length === 0 && missingSystemVendors.length > 0 && (
             <p className="text-xs font-medium text-foreground/60">
-              Ange System för alla leverantörer
+              Ange användningsområde för alla leverantörer
             </p>
           )}
           {!hasAnyVendor && (
