@@ -88,7 +88,7 @@ type Question = {
 
 const STEP1_PRIORITIES: Option[] = [
   { label: "Säkerhet", scoreValue: 100 },
-  { label: "Kostnad", scoreValue: 100 },
+  
   { label: "Efterlevnad", scoreValue: 100 },
   { label: "Flexibilitet", scoreValue: 100 },
   { label: "Skalbarhet", scoreValue: 100 },
