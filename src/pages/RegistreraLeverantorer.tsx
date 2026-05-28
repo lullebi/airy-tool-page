@@ -512,7 +512,10 @@ const RegistreraLeverantorer = () => {
                       <SelectValue placeholder="Välj typ" />
                     </SelectTrigger>
                     <SelectContent>
-                      {VENDOR_TYPES.map((t) => (
+                      {(v.type && !VENDOR_TYPES.includes(v.type)
+                        ? [v.type, ...VENDOR_TYPES]
+                        : VENDOR_TYPES
+                      ).map((t) => (
                         <SelectItem key={t} value={t}>
                           {t}
                         </SelectItem>
