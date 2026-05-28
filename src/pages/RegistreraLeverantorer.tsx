@@ -257,6 +257,32 @@ const RegistreraLeverantorer = () => {
   const updateVendor = (id: string, patch: Partial<Vendor>) =>
     setVendors((vs) => vs.map((v) => (v.id === id ? { ...v, ...patch } : v)));
 
+  // Auto-fill country for any vendor picked from the API that hasn't been resolved yet.
+  useEffect(() => {
+    const targets = vendors.filter((v) => v.apiId && !v.country.trim());
+    if (targets.length === 0) return;
+    let active = true;
+    targets.forEach((v) => {
+      fetchVendor(v.apiId!)
+        .then((detail) => {
+          if (!active) return;
+          const country = countryFromIso2(detail.features.hq_country_iso2);
+          if (!country) return;
+          setVendors((vs) =>
+            vs.map((x) =>
+              x.id === v.id && x.apiId === v.apiId && !x.country.trim()
+                ? { ...x, country }
+                : x,
+            ),
+          );
+        })
+        .catch(() => { /* silent — user can fill manually */ });
+    });
+    return () => {
+      active = false;
+    };
+  }, [vendors]);
+
   const removeVendor = (id: string) =>
     setVendors((vs) => (vs.length === 1 ? [emptyVendor()] : vs.filter((v) => v.id !== id)));
 
