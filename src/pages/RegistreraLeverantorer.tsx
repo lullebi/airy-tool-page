@@ -23,7 +23,23 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { fetchVendors, type ApiVendorListItem } from "@/lib/api";
+import { fetchVendor, fetchVendors, type ApiVendorListItem } from "@/lib/api";
+
+const COUNTRY_NAMES = (() => {
+  try {
+    return new Intl.DisplayNames(["sv"], { type: "region" });
+  } catch {
+    return null;
+  }
+})();
+const countryFromIso2 = (iso2: string | null | undefined) => {
+  if (!iso2) return "";
+  try {
+    return COUNTRY_NAMES?.of(iso2.toUpperCase()) ?? iso2.toUpperCase();
+  } catch {
+    return iso2.toUpperCase();
+  }
+};
 
 type VendorNameComboboxProps = {
   value: string;
