@@ -131,56 +131,7 @@ const STEP1_READINESS: (Option & { description: string })[] = [
   },
 ];
 
-const QUICK_SCAN: Question[] = [
-  {
-    id: "qs_sensitive_data",
-    kategori: "Snabbanalys",
-    text: "Hanterar era leverantörer känslig data?",
-    viktning: 0.3,
-    type: "single",
-    svarsalternativ: [
-      { label: "Ja", scoreValue: 100 },
-      { label: "Nej", scoreValue: 0 },
-      { label: "Vet ej", scoreValue: 50 },
-    ],
-  },
-  {
-    id: "qs_certifications",
-    kategori: "Snabbanalys",
-    text: "Har era tech-leverantörer certifieringar (ISO 27001, SOC2, C5)?",
-    viktning: 0.25,
-    type: "single",
-    svarsalternativ: [
-      { label: "Ja", scoreValue: 100 },
-      { label: "Nej", scoreValue: 0 },
-      { label: "Vet ej", scoreValue: 50 },
-    ],
-  },
-  {
-    id: "qs_business_critical",
-    kategori: "Snabbanalys",
-    text: "Är era leverantörer affärskritiska?",
-    viktning: 0.25,
-    type: "single",
-    svarsalternativ: [
-      { label: "Ja", scoreValue: 100 },
-      { label: "Nej", scoreValue: 0 },
-      { label: "Vet ej", scoreValue: 50 },
-    ],
-  },
-  {
-    id: "qs_legal_agreements",
-    kategori: "Snabbanalys",
-    text: "Har ni avtal som motsvarar DPA, SLA eller liknande juridiska krav?",
-    viktning: 0.2,
-    type: "single",
-    svarsalternativ: [
-      { label: "Ja", scoreValue: 100 },
-      { label: "Nej", scoreValue: 0 },
-      { label: "Vet ej", scoreValue: 50 },
-    ],
-  },
-];
+const QUICK_SCAN: Question[] = [];
 
 const DEEP_DIVE: Question[] = [
   // Security Level
