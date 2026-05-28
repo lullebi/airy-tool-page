@@ -131,14 +131,59 @@ const STEP1_READINESS: (Option & { description: string })[] = [
   },
 ];
 
-const QUICK_SCAN: Question[] = [];
+const QUICK_SCAN: Question[] = [
+  {
+    id: "qs_sensitive_data",
+    kategori: "Snabbanalys",
+    text: "Hanterar era leverantörer känslig data?",
+    viktning: 0.3,
+    type: "single",
+    svarsalternativ: [
+      { label: "Ja", scoreValue: 100 },
+      { label: "Nej", scoreValue: 0 },
+      { label: "Vet ej", scoreValue: 50 },
+    ],
+  },
+  {
+    id: "qs_certifications",
+    kategori: "Snabbanalys",
+    text: "Har era tech-leverantörer certifieringar (ISO 27001, SOC2, C5)?",
+    viktning: 0.25,
+    type: "single",
+    svarsalternativ: [
+      { label: "Ja", scoreValue: 100 },
+      { label: "Nej", scoreValue: 0 },
+      { label: "Vet ej", scoreValue: 50 },
+    ],
+  },
+  {
+    id: "qs_business_critical",
+    kategori: "Snabbanalys",
+    text: "Är era leverantörer affärskritiska?",
+    viktning: 0.25,
+    type: "single",
+    svarsalternativ: [
+      { label: "Ja", scoreValue: 100 },
+      { label: "Nej", scoreValue: 0 },
+      { label: "Vet ej", scoreValue: 50 },
+    ],
+  },
+  {
+    id: "qs_legal_agreements",
+    kategori: "Snabbanalys",
+    text: "Har ni avtal som motsvarar DPA, SLA eller liknande juridiska krav?",
+    viktning: 0.2,
+    type: "single",
+    svarsalternativ: [
+      { label: "Ja", scoreValue: 100 },
+      { label: "Nej", scoreValue: 0 },
+      { label: "Vet ej", scoreValue: 50 },
+    ],
+  },
+];
 
 const DEEP_DIVE: Question[] = [
-  // Organisation (flyttade från Snabbanalys)
-  { id: "qs_sensitive_data", kategori: "Organisation", text: "Hanterar era leverantörer känslig data?", viktning: 0.3, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Nej",scoreValue:0},{label:"Vet ej",scoreValue:50}] },
-  { id: "qs_certifications", kategori: "Organisation", text: "Har era tech-leverantörer certifieringar (ISO 27001, SOC2, C5)?", viktning: 0.25, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Nej",scoreValue:0},{label:"Vet ej",scoreValue:50}] },
-  { id: "qs_business_critical", kategori: "Organisation", text: "Är era leverantörer affärskritiska?", viktning: 0.25, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Nej",scoreValue:0},{label:"Vet ej",scoreValue:50}] },
-  { id: "qs_legal_agreements", kategori: "Organisation", text: "Har ni avtal som motsvarar DPA, SLA eller liknande juridiska krav?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Nej",scoreValue:0},{label:"Vet ej",scoreValue:50}] },
+
 
   // Security Level
   { id: "dd_sec_encryption", kategori: "Säkerhetsnivå", text: "Krypteras data både i vila och under transport?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja, alltid",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
