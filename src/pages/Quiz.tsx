@@ -224,33 +224,32 @@ const DEEP_DIVE: Question[] = [
 
 
   // Security Level
-  { id: "dd_sec_encryption", kategori: "Säkerhetsnivå", text: "Krypteras data både i vila och under transport?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja, alltid",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_sec_encryption", kategori: "Säkerhetsnivå", text: "Krypteras data i vila och under transport?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja, alltid",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
   { id: "dd_sec_access", kategori: "Säkerhetsnivå", text: "Används MFA och rollbaserad åtkomst?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_sec_audit", kategori: "Säkerhetsnivå", text: "Genomförs regelbundna säkerhetsrevisioner?", viktning: 0.16, type: "single", svarsalternativ: [{label:"Årligen",scoreValue:100},{label:"Sällan",scoreValue:50},{label:"Aldrig",scoreValue:0}] },
-  { id: "dd_sec_pen", kategori: "Säkerhetsnivå", text: "Genomförs penetrationstester av tredje part?", viktning: 0.14, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_sec_keys", kategori: "Säkerhetsnivå", text: "Kontrollerar ni krypteringsnycklarna (BYOK/HYOK)?", viktning: 0.16, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_sec_zero", kategori: "Säkerhetsnivå", text: "Tillämpar leverantören zero-trust-arkitektur?", viktning: 0.16, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_sec_audit", kategori: "Säkerhetsnivå", text: "Genomförs säkerhetsrevisioner?", viktning: 0.16, type: "single", svarsalternativ: [{label:"Årligen",scoreValue:100},{label:"Sällan",scoreValue:50},{label:"Aldrig",scoreValue:0}] },
+  { id: "dd_sec_pen", kategori: "Säkerhetsnivå", text: "Genomförs penetrationstester?", viktning: 0.14, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_sec_zero", kategori: "Säkerhetsnivå", text: "Tillämpar leverantören zero-trust?", viktning: 0.16, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
 
   // Incident Management
-  { id: "dd_inc_plan", kategori: "Incidenthantering", text: "Finns en dokumenterad incidenthanteringsplan?", viktning: 0.22, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_inc_sla", kategori: "Incidenthantering", text: "Finns SLA för svarstid vid säkerhetsincidenter?", viktning: 0.2, type: "single", svarsalternativ: [{label:"< 4h",scoreValue:100},{label:"< 24h",scoreValue:60},{label:"Ingen SLA",scoreValue:0}] },
+  { id: "dd_inc_plan", kategori: "Incidenthantering", text: "Finns incidenthanteringsplan?", viktning: 0.22, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_inc_sla", kategori: "Incidenthantering", text: "Finns SLA för svarstid?", viktning: 0.2, type: "single", svarsalternativ: [{label:"< 4h",scoreValue:100},{label:"< 24h",scoreValue:60},{label:"Ingen SLA",scoreValue:0}] },
   { id: "dd_inc_notif", kategori: "Incidenthantering", text: "Notifieras kund inom 72h vid databreach?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_inc_drills", kategori: "Incidenthantering", text: "Genomförs regelbundna incidentövningar?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Sällan",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_inc_log", kategori: "Incidenthantering", text: "Finns fullständiga loggar tillgängliga för forensik?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_inc_drills", kategori: "Incidenthantering", text: "Genomförs incidentövningar?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Sällan",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_inc_log", kategori: "Incidenthantering", text: "Finns loggar för forensik?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
 
   // Data Location / Jurisdiction
-  { id: "dd_loc_eu", kategori: "Datalagring och jurisdiktion", text: "Lagras all data inom EU/EES?", viktning: 0.25, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:40},{label:"Nej",scoreValue:0}] },
+  { id: "dd_loc_eu", kategori: "Datalagring och jurisdiktion", text: "Lagras data inom EU/EES?", viktning: 0.25, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:40},{label:"Nej",scoreValue:0}] },
   { id: "dd_loc_transfer", kategori: "Datalagring och jurisdiktion", text: "Sker dataöverföring till tredje land?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Aldrig",scoreValue:100},{label:"Sällan",scoreValue:50},{label:"Ofta",scoreValue:0}] },
-  { id: "dd_loc_scc", kategori: "Datalagring och jurisdiktion", text: "Används SCC eller godkända överföringsmekanismer?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_loc_residency", kategori: "Datalagring och jurisdiktion", text: "Garanterar leverantören data residency på begäran?", viktning: 0.17, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_loc_sub", kategori: "Datalagring och jurisdiktion", text: "Är alla underleverantörer EU-baserade?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_loc_scc", kategori: "Datalagring och jurisdiktion", text: "Används SCC?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_loc_residency", kategori: "Datalagring och jurisdiktion", text: "Garanteras data residency?", viktning: 0.17, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_loc_sub", kategori: "Datalagring och jurisdiktion", text: "Är underleverantörer EU-baserade?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
 
   // Ownership / Lagar & Regelverk
-  { id: "dd_own_hq", kategori: "Ägarskap och regelverk", text: "Har leverantören huvudkontor i EU?", viktning: 0.22, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Nej",scoreValue:0}] },
-  { id: "dd_own_cloud_act", kategori: "Ägarskap och regelverk", text: "Omfattas leverantören av US CLOUD Act eller liknande?", viktning: 0.22, type: "single", svarsalternativ: [{label:"Nej",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Ja",scoreValue:0}] },
-  { id: "dd_own_owner", kategori: "Ägarskap och regelverk", text: "Är ägarstrukturen transparent och EU-kontrollerad?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_own_gdpr", kategori: "Ägarskap och regelverk", text: "Är leverantören fullt GDPR-compliant?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
-  { id: "dd_own_dora", kategori: "Ägarskap och regelverk", text: "Möter leverantören DORA / NIS2-krav där tillämpligt?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_own_hq", kategori: "Ägarskap och regelverk", text: "Har leverantören HQ i EU?", viktning: 0.22, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Nej",scoreValue:0}] },
+  { id: "dd_own_cloud_act", kategori: "Ägarskap och regelverk", text: "Omfattas av US CLOUD Act?", viktning: 0.22, type: "single", svarsalternativ: [{label:"Nej",scoreValue:100},{label:"Vet ej",scoreValue:50},{label:"Ja",scoreValue:0}] },
+  { id: "dd_own_owner", kategori: "Ägarskap och regelverk", text: "Är ägarstrukturen EU-kontrollerad?", viktning: 0.2, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_own_gdpr", kategori: "Ägarskap och regelverk", text: "Är leverantören GDPR-compliant?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
+  { id: "dd_own_dora", kategori: "Ägarskap och regelverk", text: "Möter leverantören DORA/NIS2-krav?", viktning: 0.18, type: "single", svarsalternativ: [{label:"Ja",scoreValue:100},{label:"Delvis",scoreValue:50},{label:"Nej",scoreValue:0}] },
 ];
 
 /* =========================================================================
