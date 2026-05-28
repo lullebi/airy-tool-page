@@ -23,7 +23,23 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { fetchVendors, type ApiVendorListItem } from "@/lib/api";
+import { fetchVendor, fetchVendors, type ApiVendorListItem } from "@/lib/api";
+
+const COUNTRY_NAMES = (() => {
+  try {
+    return new Intl.DisplayNames(["sv"], { type: "region" });
+  } catch {
+    return null;
+  }
+})();
+const countryFromIso2 = (iso2: string | null | undefined) => {
+  if (!iso2) return "";
+  try {
+    return COUNTRY_NAMES?.of(iso2.toUpperCase()) ?? iso2.toUpperCase();
+  } catch {
+    return iso2.toUpperCase();
+  }
+};
 
 type VendorNameComboboxProps = {
   value: string;
@@ -240,6 +256,32 @@ const RegistreraLeverantorer = () => {
 
   const updateVendor = (id: string, patch: Partial<Vendor>) =>
     setVendors((vs) => vs.map((v) => (v.id === id ? { ...v, ...patch } : v)));
+
+  // Auto-fill country for any vendor picked from the API that hasn't been resolved yet.
+  useEffect(() => {
+    const targets = vendors.filter((v) => v.apiId && !v.country.trim());
+    if (targets.length === 0) return;
+    let active = true;
+    targets.forEach((v) => {
+      fetchVendor(v.apiId!)
+        .then((detail) => {
+          if (!active) return;
+          const country = countryFromIso2(detail.features.hq_country_iso2);
+          if (!country) return;
+          setVendors((vs) =>
+            vs.map((x) =>
+              x.id === v.id && x.apiId === v.apiId && !x.country.trim()
+                ? { ...x, country }
+                : x,
+            ),
+          );
+        })
+        .catch(() => { /* silent — user can fill manually */ });
+    });
+    return () => {
+      active = false;
+    };
+  }, [vendors]);
 
   const removeVendor = (id: string) =>
     setVendors((vs) => (vs.length === 1 ? [emptyVendor()] : vs.filter((v) => v.id !== id)));
