@@ -1558,7 +1558,6 @@ const Step5Measurement = ({
     let active = true;
     vendors.forEach((v) => {
       if (!v.apiId) return;
-      setDetailsById((prev) => (prev[v.apiId!] ? prev : prev));
       fetchVendor(v.apiId)
         .then((d) => {
           if (active) setDetailsById((prev) => ({ ...prev, [v.apiId!]: d }));
