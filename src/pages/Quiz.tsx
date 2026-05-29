@@ -2265,7 +2265,13 @@ const Step5Measurement = ({
 
         const paragraph = [intro, ...metricLines, driverLine]
           .filter(Boolean)
-          .join("\n");
+          .join("\n")
+          // Helvetica i jsPDF använder WinAnsi-encoding. Tecken utanför den
+          // (t.ex. pilen "→", U+2192) tvingar jsPDF att koda HELA raden som
+          // 2-byte-text, vilket lägger in ett mellanrum före varje bokstav.
+          // Byt ut/ta bort sådana tecken så att texten renderas normalt.
+          .replace(/→/g, "»")
+          .replace(/[^\x00-\xff]/g, "");
         setText(C.text);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8.5);
