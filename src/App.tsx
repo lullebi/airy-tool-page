@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,10 +9,17 @@ import NotFound from "./pages/NotFound.tsx";
 import RegistreraLeverantorer from "./pages/RegistreraLeverantorer.tsx";
 import Quiz from "./pages/Quiz.tsx";
 import Atgardsplan from "./pages/Atgardsplan.tsx";
+import { warmUp } from "@/lib/api";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  // Väck Render-instansen direkt vid appstart så den är varm när användaren behöver datan.
+  useEffect(() => {
+    warmUp();
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -28,6 +36,8 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
+
 
 export default App;
