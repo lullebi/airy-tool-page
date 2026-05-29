@@ -272,7 +272,98 @@ const STEPS = ["Konfiguration", "Snabbanalys", "Fördjupad analys", "Resultat", 
 // Canonical "European" check: hq_in_eu === true from GET /vendors.
 // No hardcoded country allowlists, no name-based heuristics.
 import { isEuropean as isEU } from "@/lib/vendorMapper";
-import { fetchAlternatives } from "@/lib/api";
+import { fetchAlternatives, fetchVendor, type ApiVendorDetail } from "@/lib/api";
+
+/* =========================================================================
+   TECHNICAL PROVENANCE — region helpers (origin / processing / storage)
+   ========================================================================= */
+
+const REGION_NAMES_SV = (() => {
+  try {
+    return new Intl.DisplayNames(["sv"], { type: "region" });
+  } catch {
+    return null;
+  }
+})();
+
+const countryFromIso2 = (iso2: string | null | undefined) => {
+  if (!iso2) return "";
+  try {
+    return REGION_NAMES_SV?.of(iso2.toUpperCase()) ?? iso2.toUpperCase();
+  } catch {
+    return iso2.toUpperCase();
+  }
+};
+
+const EU_HINT =
+  /\b(eu|ees|eea|europe|europa|frankfurt|ireland|irland|germany|tyskland|sweden|sverige|netherlands|nederl|paris|france|frankrike|stockholm|amsterdam|dublin|finland|spain|spanien|italy|italien|belgium|belgien)\b/i;
+const NONEU_HINT =
+  /\b(us|usa|united states|amerika|global|globalt|asia|asien|apac|china|kina|india|indien|singapore)\b/i;
+
+type RegionStatus = "eu" | "noneu" | "unknown";
+
+const regionStatus = (text?: string | null, bool?: boolean): RegionStatus => {
+  if (typeof bool === "boolean") return bool ? "eu" : "noneu";
+  if (!text) return "unknown";
+  if (EU_HINT.test(text)) return "eu";
+  if (NONEU_HINT.test(text)) return "noneu";
+  return "unknown";
+};
+
+const REGION_TONE: Record<RegionStatus, { ring: string; icon: string; pill: string; label: string }> = {
+  eu: {
+    ring: "bg-emerald-50 ring-emerald-200",
+    icon: "text-emerald-600",
+    pill: "bg-emerald-100 text-emerald-700",
+    label: "EU",
+  },
+  noneu: {
+    ring: "bg-rose-50 ring-rose-200",
+    icon: "text-rose-600",
+    pill: "bg-rose-100 text-rose-700",
+    label: "Icke-EU",
+  },
+  unknown: {
+    ring: "bg-amber-50 ring-amber-200",
+    icon: "text-amber-600",
+    pill: "bg-amber-100 text-amber-700",
+    label: "Okänt",
+  },
+};
+
+const RegionCell = ({
+  icon: Icon,
+  label,
+  location,
+  status,
+}: {
+  icon: typeof Globe;
+  label: string;
+  location: string;
+  status: RegionStatus;
+}) => {
+  const tone = REGION_TONE[status];
+  return (
+    <div className={`flex flex-col items-center rounded-lg p-2 text-center ring-1 ${tone.ring}`}>
+      <Icon className={`h-4 w-4 ${tone.icon}`} aria-hidden="true" />
+      <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-foreground/55">{label}</p>
+      <p className="mt-0.5 text-[11px] font-bold leading-tight text-foreground line-clamp-2">
+        {location}
+      </p>
+      <span
+        className={`mt-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider ${tone.pill}`}
+      >
+        {tone.label}
+      </span>
+    </div>
+  );
+};
+
+const FlowArrow = () => (
+  <div className="flex items-center justify-center">
+    <ArrowRight className="h-3.5 w-3.5 text-foreground/30" aria-hidden="true" />
+  </div>
+);
 
 /* =========================================================================
    SCORING
