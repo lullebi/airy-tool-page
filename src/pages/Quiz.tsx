@@ -691,7 +691,7 @@ const Quiz = () => {
             >
               {stepIndex === 2 && deepDiveEnabled && deepVendors.length > 1 && deepVendorIndex < deepVendors.length - 1
                 ? "Nästa"
-                : ["Gå till snabbanalys", "Gå till fördjupad analys", "Gå till resultat", "Gå till mätning"][stepIndex]}
+                : ["Gå till snabbanalys", "Gå till fördjupad analys", "Gå till resultat på mätning", "Visa poängberäkning"][stepIndex]}
               <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
             </Button>
           ) : (
