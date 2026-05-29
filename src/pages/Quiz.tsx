@@ -2280,7 +2280,7 @@ const Step5Measurement = ({
     const deep = deepFor(v);
     const { total: tot } = computeVendorScore(v, scoredMap);
     const status = statusFromVendor(v, scoredMap);
-    const badges = buildBadges(quick, deep, hasDeep);
+    const badges = buildBadges(quick, deep, hasDeep, eu);
     const isOpen = !eu ? true : openId === v.id;
     const alt = altFor(v);
     const reg = regionsFor(v);
