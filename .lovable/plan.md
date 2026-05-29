@@ -1,41 +1,21 @@
-# Plan: Få frontend och backend 100% syncade
+# Fix: dropdown-val fyller inte i "Land"
 
-## Nuläge (verifierat mot live-API)
-Jag testade det driftsatta API:t (`https://eurostack-api.onrender.com`) mot kontraktet. **Alla endpoints svarar och formerna stämmer**: `/`, `/health`, `/vendors`, `/vendors/{id}`, `/score`, `/alternatives/{kategori}`, `/meta`. Frontend anropar redan alla relevanta endpoints korrekt. Det betyder att grund-kopplingen är på plats — det som återstår är robusthet och några små avvikelser mellan kontrakt och kod.
+## Rotorsak
+I `src/pages/RegistreraLeverantorer.tsx` fylls "Land" aldrig i direkt vid val. Både snabbval och dropdown sätter bara `name`/`type`/`apiId` och lämnar `country` tomt — själva landet hämtas av en separat `useEffect` (rad 261–284) som anropar `fetchVendor(apiId)` och läser `hq_country_iso2`. Den effekten körs bara när villkoret `v.apiId && !v.country.trim()` är sant.
 
-## Vad som faktiskt saknas för att det ska vara 100%
+Problemet uppstår i dropdownens `onPickApi` (rad 465–476): den **återställer inte `country`** när man byter leverantör. 
+- Första valet på ett tomt kort fungerar (country tomt → effekten hämtar).
+- Men byter man leverantör i dropdownen ligger förra landets värde kvar, `country.trim()` är icke-tomt, och effekten hoppar över → "Land" blir kvar/oförändrad (stale) i stället för att matcha den nya leverantören.
 
-### 1. Render kall-start hanteras inte (största praktiska problemet)
-Render gratis-tier somnar efter inaktivitet. Första anropet kan ta 30–60 s eller timea ut, vilket gör att första användaren får fel eller en hängande sida.
-- Lägg en central `fetch`-wrapper i `src/lib/api.ts` med timeout + automatisk retry (t.ex. 2 försök med backoff) som tål kall-start.
-- Lägg en tyst "warm-up"-ping mot `/health` när appen laddas (t.ex. i `App.tsx`), så servern hinner vakna innan användaren når quizet.
+Snabbvalet (`handleQuickPick`, rad 308–326) återanvänder/skapar alltid ett rent kort med `country: ""`, så där triggas hämtningen korrekt — därav skillnaden.
 
-### 2. Felmeddelanden parsas inte enligt kontraktet
-Kontraktet säger att alla fel har formen `{ "detail": "..." }`. Idag kastar `asJson` bara `status statusText`, så backendens riktiga meddelande (t.ex. `vendor 'foo' not found`) syns aldrig.
-- Uppdatera `asJson` så den läser `detail`-fältet ur felsvaret och använder det i felmeddelandet.
+## Lösning
+Gör dropdownvalet reaktivt genom att nollställa `country` när en ny API-leverantör väljs, så auto-fill-effekten kör om för det nya `apiId`.
 
-### 3. Typavvikelse: `confidence`
-Live-API:t returnerar `confidence: "Average"`, men frontend-typen tillåter bara `"High" | "Medium" | "Low" | null`. Det är en tyst typmismatch.
-- Bredda `confidence`-typen i `ApiVendorDetail` så den matchar verkligheten (inkludera `"Average"`, alternativt `string | null`).
+- I `onPickApi` (raderna 465–476): lägg till `country: ""` i patchen till `updateVendor`. Då hämtas och sätts rätt land för den nyvalda leverantören, både vid första val och vid byte.
 
-### 4. Base-URL hårdkodad
-`API_BASE` är hårdkodad. Kontraktet nämner att CORS tightenas till Lovable-domänen efter 2026-06-02 och att lokal dev kör mot `127.0.0.1:8000`.
-- Läs base-URL från en env-variabel med nuvarande prod-URL som fallback, så lokal dev och framtida domänbyten inte kräver kodändring.
+Det är den enda ändringen som behövs — `useEffect` och `countryFromIso2` är redan korrekta och återanvänds. Ingen ändring av tema, layout eller datakälla.
 
-### 5. Saknad fetcher (valfritt, för komplett kontrakt)
-`GET /alternatives` (utan slug, hela kategorimappningen) finns i kontraktet men inte i `api.ts`.
-- Lägg till en `fetchAllAlternatives()` (valfritt — bara om vi vill ha hela mappningen cachad).
-
-## Utanför frontend (kräver ML-spåret / Lukas)
-Detta kan jag inte fixa i koden men måste göras för 100% sync:
-- **CORS efter 2026-06-02:** backend måste allowlista den publicerade Lovable-domänen (`airy-tool-page.lovable.app` + ev. custom domän), annars slutar alla anrop fungera.
-- **Kontraktets `status: UTKAST`:** bekräfta att kontraktet är godkänt så inga fältnamn ändras under oss.
-
-## Teknisk sammanfattning (filer)
-- `src/lib/api.ts`: central fetch-wrapper (timeout + retry), `detail`-felparsing, env-baserad `API_BASE`, bredda `confidence`-typ, ev. `fetchAllAlternatives()`.
-- `src/App.tsx`: warm-up-ping mot `/health` vid mount.
-- Inga ändringar i UI/tema, ingen ny logik i quiz-flödet — bara robusthet och kontrakts-trohet.
-
-## Vad jag INTE ändrar
-- Inget tema/layout, inga quizfrågor, ingen scoring-formel (den bor i backend).
-- `alpha` skickas inte med — backend defaultar till 0.5 vilket är kontraktets rekommendation.
+## Teknisk sammanfattning
+- Fil: `src/pages/RegistreraLeverantorer.tsx`, `VendorNameCombobox`-propet `onPickApi`.
+- Effekt: när "Leverantörsnamn" ändras via dropdown nollställs landet och hämtas på nytt från datasetets `hq_country_iso2`, vilket gör "Land" reaktivt mot namnvalet — precis som snabbvalet.

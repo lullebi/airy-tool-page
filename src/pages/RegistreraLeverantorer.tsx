@@ -468,6 +468,7 @@ const RegistreraLeverantorer = () => {
                         type: pick.category ?? "",
                         apiCategory: pick.category ?? undefined,
                         apiId: pick.id,
+                        country: "",
                         hq_in_eu: pick.hq_in_eu,
                         storage_in_eu: pick.storage_in_eu,
                         cloud_act_exposure: pick.cloud_act_exposure,
