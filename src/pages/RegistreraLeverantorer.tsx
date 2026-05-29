@@ -524,28 +524,22 @@ const RegistreraLeverantorer = () => {
                   </Select>
                 </div>
 
-                {v.apiId ? (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
-                      Jurisdiktion
-                    </Label>
-                    <div className="flex h-10 items-center">
-                      <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
-                          v.hq_in_eu
-                            ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200"
-                            : "bg-rose-100 text-rose-700 ring-1 ring-rose-200"
-                        }`}
-                      >
-                        {v.hq_in_eu ? "EU" : "Icke-EU"}
-                      </span>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
+                    Land
+                  </Label>
+                  {v.apiId ? (
+                    <div className="flex h-10 items-center rounded-md border border-input bg-white/70 px-3 text-sm text-foreground">
+                      {v.country ? (
+                        v.country
+                      ) : (
+                        <span className="flex items-center gap-2 text-foreground/55">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Hämtar land…
+                        </span>
+                      )}
                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
-                      Land
-                    </Label>
+                  ) : (
                     <Input
                       value={v.country}
                       onChange={(e) => updateVendor(v.id, { country: e.target.value })}
@@ -553,8 +547,8 @@ const RegistreraLeverantorer = () => {
                       className="bg-white/70"
                       maxLength={80}
                     />
-                  </div>
-                )}
+                  )}
+                </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold uppercase tracking-wider text-foreground/70">
