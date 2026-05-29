@@ -2228,9 +2228,9 @@ const Step5Measurement = ({
         const score = computeVendorScore(v, scoredMap).total;
         const status = statusFromVendor(v, scoredMap);
         const badges = buildBadges(
-          quickAnswers,
-          deepAnswersByVendor[v.id] ?? {},
-          deepDiveEnabled,
+          quick,
+          deepByVendor[v.id] ?? {},
+          hasDeep,
           eu,
         );
         const drivers = (v.top_risk_drivers ?? [])
