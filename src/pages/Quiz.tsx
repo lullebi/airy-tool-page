@@ -1551,6 +1551,58 @@ const Step5Measurement = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoriesKey]);
 
+  // Fetch full vendor detail (origin/processing/storage regions) per API vendor.
+  const [detailsById, setDetailsById] = useState<Record<string, ApiVendorDetail>>({});
+  const apiIdsKey = vendors.map((v) => v.apiId ?? "").filter(Boolean).join("|");
+  useEffect(() => {
+    let active = true;
+    vendors.forEach((v) => {
+      if (!v.apiId) return;
+      setDetailsById((prev) => (prev[v.apiId!] ? prev : prev));
+      fetchVendor(v.apiId)
+        .then((d) => {
+          if (active) setDetailsById((prev) => ({ ...prev, [v.apiId!]: d }));
+        })
+        .catch(() => {});
+    });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiIdsKey]);
+
+  // Resolve the three technical regions for a vendor (falls back to list-view booleans).
+  const regionsFor = (v: VendorLike) => {
+    const d = detailsById[v.apiId ?? ""];
+    const f = d?.features;
+    const originStatus = regionStatus(undefined, f?.hq_in_eu ?? v.hq_in_eu);
+    const originText =
+      countryFromIso2(f?.hq_country_iso2) ||
+      v.country ||
+      (originStatus === "eu" ? "Inom EU" : originStatus === "noneu" ? "Utanför EU" : "—");
+    const procText = f?.processing_region || "—";
+    const procStatus = f
+      ? regionStatus(f.processing_region, f.cloud_act_exposure ? false : undefined)
+      : "unknown";
+    const storageText =
+      f?.storage_region || (typeof v.storage_in_eu === "boolean" ? (v.storage_in_eu ? "Inom EU" : "Utanför EU") : "—");
+    const storageStatus = regionStatus(undefined, f?.storage_in_eu ?? v.storage_in_eu);
+    const statuses: RegionStatus[] = [originStatus, procStatus, storageStatus];
+    const hasNonEu = statuses.includes("noneu");
+    const hasUnknown = statuses.includes("unknown");
+    const euOnes = statuses.filter((s) => s === "eu").length;
+    const mismatch = euOnes > 0 && euOnes < 3; // some EU, some not
+    return {
+      loading: !!v.apiId && !d,
+      origin: { text: originText, status: originStatus },
+      processing: { text: procText, status: procStatus },
+      storage: { text: storageText, status: storageStatus },
+      hasNonEu,
+      hasUnknown,
+      mismatch,
+    };
+  };
+
   const altFor = (v: VendorLike): { name: string; country: string; reason: string } => {
     const cat = v.apiCategory ?? v.type;
     const list = cat ? altsByCategory[cat] ?? [] : [];
