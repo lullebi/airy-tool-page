@@ -2251,7 +2251,7 @@ const Step5Measurement = ({
           y,
           { align: "right" },
         );
-        y += 14;
+        y += 13;
 
         // Build the explanation paragraph from the evidence behind each metric.
         const intro = eu
@@ -2271,11 +2271,11 @@ const Step5Measurement = ({
         doc.setFontSize(8.5);
         const lines = doc.splitTextToSize(paragraph, contentW) as string[];
         lines.forEach((ln) => {
-          ensureSpace(12);
+          ensureSpace(13);
           doc.text(ln, margin, y);
-          y += 11;
+          y += 13;
         });
-        y += 10;
+        y += 13;
       });
 
       y += 12;
