@@ -1449,14 +1449,32 @@ const Step6ScoreSummary = ({
   );
 
   const cards = [
-    { key: "snabb", title: "Snabbanalys", weight: 20, score: snabbScore, regelverk: snabbRegelverk },
-    { key: "deep", title: "Fördjupad analys", weight: 50, score: deepScore, regelverk: deepRegelverk },
+    {
+      key: "snabb",
+      title: "Teknisk Resiliens",
+      weight: 20,
+      score: snabbScore,
+      regelverk: snabbRegelverk,
+      explanation:
+        "Visar leverantörens förmåga att motstå tekniska avbrott och cyberattacker. Mycket hög stabilitet, vilket minimerar risken för oförutsedda systemstopp.",
+    },
+    {
+      key: "deep",
+      title: "Regulatorisk Rådighet",
+      weight: 50,
+      score: deepScore,
+      regelverk: deepRegelverk,
+      explanation:
+        "Mäter sårbarheten mot legala och regulatoriska krav (t.ex. NIS2/DORA). Den lägre poängen indikerar att brister i avtalsstrukturer utgör en risk för verksamhetens kontinuitet.",
+    },
     {
       key: "eu",
-      title: "EU-efterlevnad & Suveränitet",
+      title: "Geopolitisk Kontrollrisk",
       weight: 30,
       score: euScore,
       regelverk: euRegelverk,
+      explanation:
+        "Detta mäter risken för att förlora tillgången till er data. Trots krypteringsskydd innebär en datalokalisering på 0% EU att ni har en kritisk sårbarhet: om leverantören tvingas blockera er åtkomst (t.ex. via US CLOUD Act) förlorar ni rådigheten över er egen data.",
     },
   ];
 
