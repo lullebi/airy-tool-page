@@ -229,7 +229,7 @@ type Answers = Record<string, string>; // questionId -> option label
 
 // VendorLike imported from "@/lib/vendorMapper"
 
-const STEPS = ["Konfiguration", "Snabbanalys", "Fördjupad analys", "Resultat", "Mätning"] as const;
+const STEPS = ["Konfiguration", "Snabbanalys", "Fördjupad analys", "Resultat på mätning", "Så räknades poängen fram"] as const;
 
 // Canonical "European" check: hq_in_eu === true from GET /vendors.
 // No hardcoded country allowlists, no name-based heuristics.
