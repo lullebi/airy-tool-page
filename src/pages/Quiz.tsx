@@ -650,7 +650,7 @@ const Quiz = () => {
             />
           )}
           {stepIndex === 3 && (
-            <Step4Result
+            <Step5Measurement
               vendors={vendors}
               step1={step1}
               quick={quickAnswers}
@@ -662,15 +662,13 @@ const Quiz = () => {
             />
           )}
           {stepIndex === 4 && (
-            <Step5Measurement
+            <Step6ScoreSummary
               vendors={vendors}
               step1={step1}
               quick={quickAnswers}
               deepByVendor={deepAnswersByVendor}
-              hasDeep={deepDiveEnabled}
+              activeDeepQuestions={activeDeepQuestions}
               scoredMap={scoredMap}
-              scoring={scoring}
-              scoreError={scoreError}
             />
           )}
         </div>
