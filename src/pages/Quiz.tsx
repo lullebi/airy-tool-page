@@ -2251,7 +2251,7 @@ const Step5Measurement = ({
           y,
           { align: "right" },
         );
-        y += 14;
+        y += 13;
 
         // Build the explanation paragraph from the evidence behind each metric.
         const intro = eu
