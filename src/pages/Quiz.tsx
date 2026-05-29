@@ -2214,6 +2214,72 @@ const Step5Measurement = ({
 
       y += 22;
 
+      // ===== Score motivation per vendor =====
+      ensureSpace(40);
+      setText(C.text);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text("Motivering — varför varje leverantör fick sin poäng", margin, y);
+      y += 16;
+
+      const contentW = pageW - margin * 2;
+      vendors.forEach((v, i) => {
+        const eu = isEU(v);
+        const score = computeVendorScore(v, scoredMap).total;
+        const status = statusFromVendor(v, scoredMap);
+        const badges = buildBadges(
+          quick,
+          deepByVendor[v.id] ?? {},
+          hasDeep,
+          eu,
+        );
+        const drivers = (v.top_risk_drivers ?? [])
+          .map((d) => RISK_DRIVER_SV[d] ?? d)
+          .filter(Boolean);
+
+        // Header line for the vendor
+        ensureSpace(26);
+        setText(C.primary);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text(`${i + 1}. ${v.name || "–"}`, margin, y);
+        setText(eu ? C.emerald : C.rose);
+        doc.setFontSize(9);
+        doc.text(
+          `${score}/100 · ${status.label} · ${eu ? "EU" : "Icke-EU"}`,
+          pageW - margin,
+          y,
+          { align: "right" },
+        );
+        y += 14;
+
+        // Build the explanation paragraph from the evidence behind each metric.
+        const intro = eu
+          ? "Leverantören är EU-baserad, vilket möjliggör full poäng på datalagring och GDPR förutsatt att svaren stödjer det."
+          : "Leverantören saknar EU-hemvist; datalagring och GDPR nollställs eftersom suveränitet inte kan garanteras vid tredjelandsöverföring (US CLOUD Act).";
+        const metricLines = badges.map(
+          (b) => `• ${b.label}: ${b.value}/100 — ${b.evidence}`,
+        );
+        const driverLine =
+          drivers.length > 0 ? `Främsta riskdrivare: ${drivers.join(", ")}.` : "";
+
+        const paragraph = [intro, ...metricLines, driverLine]
+          .filter(Boolean)
+          .join("\n");
+        setText(C.text);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        const lines = doc.splitTextToSize(paragraph, contentW) as string[];
+        lines.forEach((ln) => {
+          ensureSpace(12);
+          doc.text(ln, margin, y);
+          y += 11;
+        });
+        y += 10;
+      });
+
+      y += 12;
+
       // ===== EU alternatives =====
       const nonEuVendors = vendors.filter((v) => !isEU(v));
       if (nonEuVendors.length > 0) {
