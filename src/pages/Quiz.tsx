@@ -2128,7 +2128,7 @@ const Step5Measurement = ({
 
   return (
     <Card
-      title="Fullständig analys"
+      title="Resultat på mätning"
       subtitle="Översikt av era leverantörer mätt mot Eurostack-standard."
     >
       {/* HEADER: Donut + summary */}
