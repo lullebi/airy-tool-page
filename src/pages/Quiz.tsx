@@ -1148,201 +1148,217 @@ const Step3DeepDive = ({
 };
 
 /* =========================================================================
-   STEP 4 — Result
+   STEP 5 (final) — Score breakdown / "Så räknades poängen fram"
+   Hämtar dynamisk poänguppdelning från backend. Faller tillbaka på en
+   lokalt härledd, men fortfarande dynamisk, uppdelning om endpointen
+   ännu inte är tillgänglig. Inga texter hårdkodas statiskt.
    ========================================================================= */
-const Step4Result = ({
+
+// Lokalt härledd, dynamisk poänguppdelning utifrån klientens faktiska svar.
+const buildLocalBreakdown = (
+  step1: Step1State,
+  quick: Answers,
+  deepByVendor: Record<string, Answers>,
+  activeDeepQuestions: Question[],
+): ScoreBreakdownResponse => {
+  const snabb = weightedAverage(QUICK_SCAN, quick);
+  const deepScores = Object.values(deepByVendor)
+    .filter((a) => Object.keys(a).length > 0)
+    .map((a) => weightedAverage(activeDeepQuestions, a));
+  const fordjupad = deepScores.length
+    ? Math.round(deepScores.reduce((a, b) => a + b, 0) / deepScores.length)
+    : 0;
+  const euScore = step1.euDataWeight ? Math.round((step1.euDataWeight / 5) * 100) : 0;
+  const beredskap = STEP1_READINESS.find((o) => o.label === step1.readiness)?.scoreValue ?? 0;
+
+  // Dynamiska vikter utifrån prioriteringar och EU-vikt.
+  const pr = step1.priorities;
+  let wSnabb = 0.3;
+  let wDeep = 0.3;
+  let wEu = 0.2;
+  let wBered = 0.2;
+  if (pr.includes("Säkerhet")) wDeep += 0.1;
+  if (pr.includes("Efterlevnad")) wEu += 0.1;
+  if (pr.includes("Flexibilitet") || pr.includes("Skalbarhet")) wBered += 0.1;
+  if ((step1.euDataWeight ?? 0) >= 4) wEu += 0.05;
+  const wSum = wSnabb + wDeep + wEu + wBered;
+  wSnabb /= wSum;
+  wDeep /= wSum;
+  wEu /= wSum;
+  wBered /= wSum;
+
+  const pct = (w: number) => Math.round(w * 100);
+  const prList = pr.length ? pr.join(", ").toLowerCase() : "inga särskilda prioriteringar";
+  const sectorTxt = step1.sector ? ` inom ${step1.sector.toLowerCase()}` : "";
+
+  const categories: ScoreBreakdownCategory[] = [
+    {
+      key: "snabb",
+      label: "Snabbanalys",
+      score: snabb,
+      weight: wSnabb,
+      explanation:
+        `Övergripande svar från snabbanalysen ger en första, bred riskbild av era leverantörer. ` +
+        `Vikten ${pct(wSnabb)} % speglar att detta är en inledande bedömning${
+          pr.includes("Säkerhet") ? ", medan ni lagt större tyngd vid den fördjupade säkerhetsanalysen" : ""
+        }.`,
+    },
+    {
+      key: "deep",
+      label: "Fördjupad analys",
+      score: fordjupad,
+      weight: wDeep,
+      explanation:
+        `Detaljerade svar om kryptering, åtkomst, incidenthantering och regelefterlevnad. ` +
+        `Vikten ${pct(wDeep)} % ${
+          pr.includes("Säkerhet")
+            ? "är förhöjd eftersom ni prioriterat säkerhet"
+            : "återspeglar hur djupt leverantörernas tekniska kontroller granskats"
+        }${sectorTxt}.`,
+    },
+    {
+      key: "eu",
+      label: "EU-vikt",
+      score: euScore,
+      weight: wEu,
+      explanation:
+        `Hur högt ni värderar EU-datalagring och suveränitet (angivet ${
+          step1.euDataWeight ?? "–"
+        }/5). Vikten ${pct(wEu)} % ${
+          pr.includes("Efterlevnad") || (step1.euDataWeight ?? 0) >= 4
+            ? "är förhöjd utifrån era prioriteringar (" + prList + ")"
+            : "baseras på er angivna EU-vikt"
+        }.`,
+    },
+    {
+      key: "bered",
+      label: "Beredskap",
+      score: beredskap,
+      weight: wBered,
+      explanation:
+        `Er förmåga att hantera avbrott och byta leverantör (angiven beredskap: ${
+          step1.readiness || "–"
+        }). Vikten ${pct(wBered)} % ${
+          pr.includes("Flexibilitet") || pr.includes("Skalbarhet")
+            ? "är förhöjd eftersom ni prioriterat flexibilitet/skalbarhet"
+            : "speglar hur kritisk kontinuitet är för er verksamhet"
+        }.`,
+    },
+  ];
+
+  const total = Math.round(
+    snabb * wSnabb + fordjupad * wDeep + euScore * wEu + beredskap * wBered,
+  );
+  return { categories, total };
+};
+
+const Step6ScoreSummary = ({
   vendors,
   step1,
-  scoredMap,
-  scoring,
-  scoreError,
+  quick,
+  deepByVendor,
+  activeDeepQuestions,
 }: {
   vendors: VendorLike[];
   step1: Step1State;
   quick: Answers;
   deepByVendor: Record<string, Answers>;
-  hasDeep: boolean;
+  activeDeepQuestions: Question[];
   scoredMap: ScoredMap;
-  scoring: boolean;
-  scoreError: string | null;
 }) => {
-  const [scoreBreakdownOpen, setScoreBreakdownOpen] = useState(false);
-  const scores = vendors.map((v) => ({
-    vendor: v,
-    ...computeVendorScore(v, scoredMap),
-  }));
-  const avg = (key: "quickScore" | "deepScore" | "euWeight" | "readinessScore" | "total") =>
-    scores.length
-      ? Math.round(scores.reduce((a, s) => a + (s[key] as number), 0) / scores.length)
-      : 0;
-  const aggQuick = avg("quickScore");
-  const aggDeep = avg("deepScore");
-  const aggEu = avg("euWeight");
-  const aggReadiness = avg("readinessScore");
-  const aggTotal = avg("total");
+  const [breakdown, setBreakdown] = useState<ScoreBreakdownResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  const localBreakdown = useMemo(
+    () => buildLocalBreakdown(step1, quick, deepByVendor, activeDeepQuestions),
+    [step1, quick, deepByVendor, activeDeepQuestions],
+  );
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    const apiIds = vendors.map((v) => v.apiId).filter((id): id is string => !!id);
+    fetchScoreBreakdown({
+      vendor_ids: apiIds,
+      weights: prioritiesToWeights(step1.priorities),
+      context: {
+        priorities: step1.priorities,
+        sector: step1.sector,
+        eu_data_weight: step1.euDataWeight,
+        readiness: step1.readiness,
+      },
+    })
+      .then((res) => {
+        if (active) setBreakdown(res);
+      })
+      .catch(() => {
+        // Endpointen finns ännu inte i backend → använd lokal, dynamisk uppdelning.
+        if (active) setBreakdown(null);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step1.priorities.join("|"), step1.sector, step1.euDataWeight, step1.readiness]);
+
+  const data = breakdown ?? localBreakdown;
 
   return (
     <Card
-      title="Resultat"
-      subtitle="Sammanvägd poäng per leverantör mätt mot Eurostack-standard."
+      title="Så räknades poängen fram"
+      subtitle="Poängen baseras på era svar i quizet och vägs samman utifrån era prioriteringar."
     >
-      {scoring && (
+      {loading && (
         <div className="mb-4 flex items-center gap-2 text-sm text-foreground/70">
-          <Loader2 className="h-4 w-4 animate-spin" /> Beräknar score från Eurostack-modellen…
+          <Loader2 className="h-4 w-4 animate-spin" /> Hämtar poängberäkning…
         </div>
       )}
-      {scoreError && (
-        <div className="mb-4 rounded-xl bg-rose-50 px-4 py-2 text-sm text-rose-700 ring-1 ring-rose-200">
-          {scoreError}
-        </div>
-      )}
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Sektor" value={step1.sector || "—"} />
-        <Stat label="EU-datalagring" value={`${step1.euDataWeight ?? "-"}/5`} />
-        <Stat label="Beredskap" value={step1.readiness || "-"} />
-        <Stat label="Prioriteter" value={`${step1.priorities.length}`} />
-      </div>
 
-      <div className="grid gap-4">
-        {scores.map(({ vendor, total, quickScore, deepScore, euWeight, readinessScore, rec }) => {
-          const status = statusFromVendor(vendor, scoredMap);
-          const StatusIcon =
-            status.tone === "ok"
-              ? CheckCircle2
-              : status.tone === "warn"
-                ? AlertTriangle
-                : ShieldAlert;
-          const statusColor =
-            status.tone === "ok"
-              ? "text-emerald-600"
-              : status.tone === "warn"
-                ? "text-amber-600"
-                : "text-rose-600";
-          return (
-            <div
-              key={vendor.id}
-              className="rounded-2xl bg-white/70 p-5 ring-1 ring-white/70"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-base font-bold text-foreground">{vendor.name}</p>
-                  <p className="text-xs font-medium text-foreground/60">
-                    {vendor.type ?? "—"} · {vendor.country ?? "—"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className={`inline-flex items-center gap-1.5 text-sm font-semibold ${statusColor}`}>
-                    <StatusIcon className="h-4 w-4" />
-                    {status.label}
-                  </div>
-                  <Tooltip delayDuration={150}>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => setScoreBreakdownOpen(true)}
-                        aria-label="Visa poängberäkning"
-                        className="rounded-xl bg-foreground px-4 py-2 text-lg font-bold text-background cursor-pointer transition hover:ring-2 hover:ring-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      >
-                        {total}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="rounded-lg bg-foreground px-3 py-1.5 text-xs font-medium text-background shadow-lg">
-                      Klicka för detaljer
-                    </TooltipContent>
-                  </Tooltip>
-
-
-
-                </div>
+      <div className="grid gap-3">
+        {data.categories.map((cat) => (
+          <div
+            key={cat.key}
+            className="rounded-2xl bg-muted/50 p-4 ring-1 ring-border/60"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-base font-bold text-foreground">{cat.label}</p>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center rounded-full bg-white/70 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-foreground/70 ring-1 ring-border/60">
+                  Vikt {Math.round(cat.weight * 100)}%
+                </span>
+                <span className="text-lg font-bold text-foreground">{Math.round(cat.score)}</span>
               </div>
-
-              <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/70 ring-1 ring-white/70">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${total}%`, background: "var(--gradient-cta)" }}
-                />
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-medium text-foreground/70 md:grid-cols-4">
-                <Contribution label="Snabbanalys" value={quickScore} />
-                <Contribution label="Fördjupad analys" value={deepScore} />
-                <Contribution label="EU-vikt" value={euWeight} />
-                <Contribution label="Beredskap" value={readinessScore} />
-              </div>
-
-              {(() => {
-                const contribs = [
-                  { key: "quick", value: quickScore, reg: "Data Act", Icon: FileText },
-                  { key: "deep", value: deepScore, reg: "DORA", Icon: ShieldCheck },
-                  { key: "eu", value: euWeight, reg: "GDPR & EU-suveränitet", Icon: Lock },
-                  { key: "readiness", value: readinessScore, reg: "NIS2", Icon: Network },
-                ];
-                const weakest = contribs.reduce((a, b) => (a.value <= b.value ? a : b));
-                const WeakIcon = weakest.Icon;
-                return (
-                  <div className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2 ring-1 ring-amber-200">
-                    <WeakIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
-                    <p className="text-xs font-medium text-amber-900">
-                      Poängen påverkas främst av brister i enlighet med{" "}
-                      <span className="font-bold underline decoration-amber-600 decoration-2 underline-offset-2">
-                        {weakest.reg}
-                      </span>
-                      .
-                    </p>
-                  </div>
-                );
-              })()}
             </div>
-          );
-        })}
+            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/70 ring-1 ring-border/40">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${Math.min(100, Math.round(cat.score))}%`, background: "var(--gradient-cta)" }}
+              />
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-foreground/70">{cat.explanation}</p>
+          </div>
+        ))}
+
+        {/* Totalpoäng — mörk navy-kort */}
+        <div className="mt-1 flex items-center justify-between rounded-2xl bg-foreground px-5 py-4 text-background shadow-[var(--shadow-deep)]">
+          <div>
+            <p className="text-sm font-semibold">Totalpoäng</p>
+            <p className="text-[11px] font-medium text-background/60">
+              Sammanvägd poäng utifrån era prioriteringar
+            </p>
+          </div>
+          <p className="text-3xl font-bold">{Math.round(data.total)}</p>
+        </div>
       </div>
 
       <p className="mt-6 text-xs text-foreground/55">
         Mätning sker mot Eurostack-standard (DORA, NIS2, GDPR, Data Act, EU-suveränitet).
-        All insamlad data kan användas för att generera en rekommendationsrapport.
+        Vikter och förklaringar anpassas dynamiskt efter era angivna prioriteringar.
       </p>
-
-      <Dialog open={scoreBreakdownOpen} onOpenChange={setScoreBreakdownOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Så räknades poängen fram</DialogTitle>
-            <DialogDescription>
-              Poängen baseras på svaren i quizet och vägs samman utifrån klientens prioriteringar.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            {[
-              { label: "Snabbanalys", value: aggQuick, weight: "35%", desc: "Övergripande svar från snabbskanningen av leverantören." },
-              { label: "Fördjupad analys", value: aggDeep, weight: "35%", desc: "Detaljerade svar kring certifieringar, drift och säkerhet." },
-              { label: "EU-vikt", value: aggEu, weight: "15%", desc: "Hur högt ni prioriterar EU-datalagring och suveränitet." },
-              { label: "Beredskap", value: aggReadiness, weight: "15%", desc: "Er förmåga att hantera avbrott och byta leverantör." },
-            ].map((r) => (
-              <div key={r.label} className="rounded-lg bg-muted/40 px-3 py-2 ring-1 ring-border/60">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-foreground">{r.label}</p>
-                  <p className="text-sm font-bold text-foreground">
-                    {Math.round(r.value)}
-                    <span className="ml-1 text-[10px] font-medium text-foreground/50">· vikt {r.weight}</span>
-                  </p>
-                </div>
-                <p className="mt-0.5 text-xs text-foreground/60">{r.desc}</p>
-              </div>
-            ))}
-            <div className="mt-1 flex items-center justify-between rounded-lg bg-foreground px-3 py-2 text-background">
-              <p className="text-sm font-semibold">Totalpoäng</p>
-              <p className="text-lg font-bold">{aggTotal}</p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setScoreBreakdownOpen(false)}>
-              Stäng
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Card>
-
   );
 };
 
