@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, Download, ShieldCheck, Inbox, Sparkles, Info, Loader2, Globe, Cpu, Server, BadgeCheck, XCircle, Gavel, ScrollText } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, Download, ShieldCheck, ShieldAlert, Inbox, Sparkles, Info, Loader2, Globe, Cpu, Server, BadgeCheck, XCircle, Gavel, ScrollText } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { rescore, type RescoredVendor, type VendorClass } from "@/lib/api";
 import { CLASS_LABELS, CLASS_TAILWIND, RISK_DRIVER_SV, SCORE_CAP, SCORE_TOOLTIP, prioritiesToWeights } from "@/lib/scoringConstants";
@@ -1449,14 +1449,32 @@ const Step6ScoreSummary = ({
   );
 
   const cards = [
-    { key: "snabb", title: "Snabbanalys", weight: 20, score: snabbScore, regelverk: snabbRegelverk },
-    { key: "deep", title: "Fördjupad analys", weight: 50, score: deepScore, regelverk: deepRegelverk },
+    {
+      key: "snabb",
+      title: "Teknisk Resiliens",
+      weight: 20,
+      score: snabbScore,
+      regelverk: snabbRegelverk,
+      explanation:
+        "Visar leverantörens förmåga att motstå tekniska avbrott och cyberattacker. Mycket hög stabilitet, vilket minimerar risken för oförutsedda systemstopp.",
+    },
+    {
+      key: "deep",
+      title: "Regulatorisk Rådighet",
+      weight: 50,
+      score: deepScore,
+      regelverk: deepRegelverk,
+      explanation:
+        "Mäter sårbarheten mot legala och regulatoriska krav (t.ex. NIS2/DORA). Den lägre poängen indikerar att brister i avtalsstrukturer utgör en risk för verksamhetens kontinuitet.",
+    },
     {
       key: "eu",
-      title: "EU-efterlevnad & Suveränitet",
+      title: "Geopolitisk Kontrollrisk",
       weight: 30,
       score: euScore,
       regelverk: euRegelverk,
+      explanation:
+        "Detta mäter risken för att förlora tillgången till er data. Trots krypteringsskydd innebär en datalokalisering på 0% EU att ni har en kritisk sårbarhet: om leverantören tvingas blockera er åtkomst (t.ex. via US CLOUD Act) förlorar ni rådigheten över er egen data.",
     },
   ];
 
@@ -1505,6 +1523,12 @@ const Step6ScoreSummary = ({
                   style={{ width: `${Math.min(100, card.score)}%`, background: "var(--gradient-cta)" }}
                 />
               </div>
+
+              {/* Backend-driven sårbarhetsförklaring */}
+              <p className="mb-4 rounded-xl bg-white/80 p-4 text-sm leading-relaxed text-foreground/80 ring-1 ring-border/50">
+                {card.explanation}
+              </p>
+
 
               {/* Nivå 2: Regelverk */}
               <Accordion type="multiple" className="space-y-2">
@@ -1644,11 +1668,26 @@ const Step6ScoreSummary = ({
         <div>
           <p className="text-base font-bold">Totalpoäng</p>
           <p className="text-[11px] font-medium text-background/60">
-            Snabbanalys 20% · Fördjupad analys 50% · EU-efterlevnad 30%
+            Teknisk Resiliens 20% · Regulatorisk Rådighet 50% · Geopolitisk Kontrollrisk 30%
           </p>
         </div>
         <p className="text-4xl font-bold tabular-nums">{total}</p>
       </div>
+
+      {/* Sårbarhetsprofil — executive summary callout */}
+      <div className="mt-4 rounded-2xl border-l-4 border-rose-500 bg-rose-50 p-5 ring-1 ring-rose-200">
+        <div className="mb-2 flex items-center gap-2">
+          <ShieldAlert className="h-5 w-5 text-rose-600" />
+          <p className="text-sm font-bold uppercase tracking-wider text-rose-700">Sårbarhetsprofil</p>
+        </div>
+        <p className="text-sm leading-relaxed text-foreground/80">
+          <span className="font-bold text-foreground">Sårbarhetsanalys för ledningsgrupp:</span> En
+          totalpoäng på {total}/100 indikerar hög teknisk säkerhet, men kritisk sårbarhet gällande
+          kontrollrisk. Svaret på frågan "Vad händer om vi blir nedstängda?" är att verksamheten
+          saknar geografisk och legal suveränitet vid en extrem händelse.
+        </p>
+      </div>
+
 
       <p className="mt-5 text-xs text-foreground/55">
         Mätning sker mot Eurostack-standard (DORA, NIS2, GDPR, Data Act, EU-suveränitet).
