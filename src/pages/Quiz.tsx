@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, ShieldAlert, ChevronDown, Download, Repeat, ShieldCheck, Inbox, Sparkles, Database, Network, Lock, FileText, Info, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, ShieldAlert, ChevronDown, Download, Repeat, ShieldCheck, Inbox, Sparkles, Network, Lock, FileText, Info, Loader2, Globe, Cpu, Server, BadgeCheck, XCircle } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { rescore, type RescoredVendor, type VendorClass } from "@/lib/api";
 import { CLASS_LABELS, CLASS_TAILWIND, RISK_DRIVER_SV, SCORE_CAP, SCORE_TOOLTIP, prioritiesToWeights } from "@/lib/scoringConstants";
@@ -272,7 +272,98 @@ const STEPS = ["Konfiguration", "Snabbanalys", "Fördjupad analys", "Resultat", 
 // Canonical "European" check: hq_in_eu === true from GET /vendors.
 // No hardcoded country allowlists, no name-based heuristics.
 import { isEuropean as isEU } from "@/lib/vendorMapper";
-import { fetchAlternatives } from "@/lib/api";
+import { fetchAlternatives, fetchVendor, type ApiVendorDetail } from "@/lib/api";
+
+/* =========================================================================
+   TECHNICAL PROVENANCE — region helpers (origin / processing / storage)
+   ========================================================================= */
+
+const REGION_NAMES_SV = (() => {
+  try {
+    return new Intl.DisplayNames(["sv"], { type: "region" });
+  } catch {
+    return null;
+  }
+})();
+
+const countryFromIso2 = (iso2: string | null | undefined) => {
+  if (!iso2) return "";
+  try {
+    return REGION_NAMES_SV?.of(iso2.toUpperCase()) ?? iso2.toUpperCase();
+  } catch {
+    return iso2.toUpperCase();
+  }
+};
+
+const EU_HINT =
+  /\b(eu|ees|eea|europe|europa|frankfurt|ireland|irland|germany|tyskland|sweden|sverige|netherlands|nederl|paris|france|frankrike|stockholm|amsterdam|dublin|finland|spain|spanien|italy|italien|belgium|belgien)\b/i;
+const NONEU_HINT =
+  /\b(us|usa|united states|amerika|global|globalt|asia|asien|apac|china|kina|india|indien|singapore)\b/i;
+
+type RegionStatus = "eu" | "noneu" | "unknown";
+
+const regionStatus = (text?: string | null, bool?: boolean): RegionStatus => {
+  if (typeof bool === "boolean") return bool ? "eu" : "noneu";
+  if (!text) return "unknown";
+  if (EU_HINT.test(text)) return "eu";
+  if (NONEU_HINT.test(text)) return "noneu";
+  return "unknown";
+};
+
+const REGION_TONE: Record<RegionStatus, { ring: string; icon: string; pill: string; label: string }> = {
+  eu: {
+    ring: "bg-emerald-50 ring-emerald-200",
+    icon: "text-emerald-600",
+    pill: "bg-emerald-100 text-emerald-700",
+    label: "EU",
+  },
+  noneu: {
+    ring: "bg-rose-50 ring-rose-200",
+    icon: "text-rose-600",
+    pill: "bg-rose-100 text-rose-700",
+    label: "Icke-EU",
+  },
+  unknown: {
+    ring: "bg-amber-50 ring-amber-200",
+    icon: "text-amber-600",
+    pill: "bg-amber-100 text-amber-700",
+    label: "Okänt",
+  },
+};
+
+const RegionCell = ({
+  icon: Icon,
+  label,
+  location,
+  status,
+}: {
+  icon: typeof Globe;
+  label: string;
+  location: string;
+  status: RegionStatus;
+}) => {
+  const tone = REGION_TONE[status];
+  return (
+    <div className={`flex flex-col items-center rounded-lg p-2 text-center ring-1 ${tone.ring}`}>
+      <Icon className={`h-4 w-4 ${tone.icon}`} aria-hidden="true" />
+      <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-foreground/55">{label}</p>
+      <p className="mt-0.5 text-[11px] font-bold leading-tight text-foreground line-clamp-2">
+        {location}
+      </p>
+      <span
+        className={`mt-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider ${tone.pill}`}
+      >
+        {tone.label}
+      </span>
+    </div>
+  );
+};
+
+const FlowArrow = () => (
+  <div className="flex items-center justify-center">
+    <ArrowRight className="h-3.5 w-3.5 text-foreground/30" aria-hidden="true" />
+  </div>
+);
 
 /* =========================================================================
    SCORING
@@ -1460,6 +1551,57 @@ const Step5Measurement = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoriesKey]);
 
+  // Fetch full vendor detail (origin/processing/storage regions) per API vendor.
+  const [detailsById, setDetailsById] = useState<Record<string, ApiVendorDetail>>({});
+  const apiIdsKey = vendors.map((v) => v.apiId ?? "").filter(Boolean).join("|");
+  useEffect(() => {
+    let active = true;
+    vendors.forEach((v) => {
+      if (!v.apiId) return;
+      fetchVendor(v.apiId)
+        .then((d) => {
+          if (active) setDetailsById((prev) => ({ ...prev, [v.apiId!]: d }));
+        })
+        .catch(() => {});
+    });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiIdsKey]);
+
+  // Resolve the three technical regions for a vendor (falls back to list-view booleans).
+  const regionsFor = (v: VendorLike) => {
+    const d = detailsById[v.apiId ?? ""];
+    const f = d?.features;
+    const originStatus = regionStatus(undefined, f?.hq_in_eu ?? v.hq_in_eu);
+    const originText =
+      countryFromIso2(f?.hq_country_iso2) ||
+      v.country ||
+      (originStatus === "eu" ? "Inom EU" : originStatus === "noneu" ? "Utanför EU" : "—");
+    const procText = f?.processing_region || "—";
+    const procStatus = f
+      ? regionStatus(f.processing_region, f.cloud_act_exposure ? false : undefined)
+      : "unknown";
+    const storageText =
+      f?.storage_region || (typeof v.storage_in_eu === "boolean" ? (v.storage_in_eu ? "Inom EU" : "Utanför EU") : "—");
+    const storageStatus = regionStatus(undefined, f?.storage_in_eu ?? v.storage_in_eu);
+    const statuses: RegionStatus[] = [originStatus, procStatus, storageStatus];
+    const hasNonEu = statuses.includes("noneu");
+    const hasUnknown = statuses.includes("unknown");
+    const euOnes = statuses.filter((s) => s === "eu").length;
+    const mismatch = euOnes > 0 && euOnes < 3; // some EU, some not
+    return {
+      loading: !!v.apiId && !d,
+      origin: { text: originText, status: originStatus },
+      processing: { text: procText, status: procStatus },
+      storage: { text: storageText, status: storageStatus },
+      hasNonEu,
+      hasUnknown,
+      mismatch,
+    };
+  };
+
   const altFor = (v: VendorLike): { name: string; country: string; reason: string } => {
     const cat = v.apiCategory ?? v.type;
     const list = cat ? altsByCategory[cat] ?? [] : [];
@@ -1846,6 +1988,7 @@ const Step5Measurement = ({
     const badges = buildBadges(quick, deep, hasDeep);
     const isOpen = !eu ? true : openId === v.id;
     const alt = altFor(v);
+    const reg = regionsFor(v);
 
     return (
       <div
@@ -1876,91 +2019,149 @@ const Step5Measurement = ({
               {eu ? "EU" : "Icke-EU"}
             </span>
           </div>
+        </button>
 
-          <div className="mt-3 rounded-lg bg-white/80 px-2.5 py-2 ring-1 ring-white/70">
+        {/* 1 — TECHNICAL PROVENANCE: where data originates → is processed → is stored */}
+        <div
+          className={`mt-3 rounded-xl p-3 ring-1 ${
+            reg.hasNonEu
+              ? "bg-rose-50/70 ring-rose-200"
+              : reg.hasUnknown
+                ? "bg-amber-50/60 ring-amber-200"
+                : "bg-emerald-50/60 ring-emerald-200"
+          }`}
+        >
+          <div className="mb-2 flex items-center justify-between gap-2">
             <p className="text-[9px] font-bold uppercase tracking-wider text-foreground/55">
-              Riskprofil
+              Teknisk dataproveniens
             </p>
-            <div className="mt-1.5 space-y-1.5">
-              <div className="flex items-start gap-1.5">
-                <AlertTriangle
-                  className={`mt-0.5 h-3 w-3 flex-shrink-0 ${eu ? "text-emerald-600" : "text-rose-600"}`}
-                />
-                <p className="text-[11px] font-medium text-foreground/75">
-                  <span className="font-bold text-foreground/80">Compliance-risk: </span>
-                  <span className={eu ? "font-bold text-emerald-600" : "font-bold text-rose-600"}>
-                    {eu ? "Låg risk" : "Hög risk"}
-                  </span>
-                  <span className="text-foreground/65">
-                    {eu
-                      ? " – Jurisdiktion inom EU."
-                      : " – Jurisdiktion utanför EU (exponering mot CLOUD Act)."}
-                  </span>
-                </p>
-              </div>
-              <div className="flex items-start gap-1.5">
-                <ShieldCheck
-                  className={`mt-0.5 h-3 w-3 flex-shrink-0 ${
+            {reg.hasNonEu ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-rose-700">
+                <AlertTriangle className="h-3 w-3" />
+                Risk för avbrott
+              </span>
+            ) : reg.mismatch ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-700">
+                <AlertTriangle className="h-3 w-3" />
+                Jurisdiktionsglapp
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
+                <CheckCircle2 className="h-3 w-3" />
+                Samlad i EU
+              </span>
+            )}
+          </div>
+
+          {reg.loading ? (
+            <p className="flex items-center gap-2 py-2 text-[11px] font-medium text-foreground/55">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Hämtar regioner…
+            </p>
+          ) : (
+            <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-stretch gap-1">
+              <RegionCell icon={Globe} label="Ursprung" location={reg.origin.text} status={reg.origin.status} />
+              <FlowArrow />
+              <RegionCell icon={Cpu} label="Bearbetning" location={reg.processing.text} status={reg.processing.status} />
+              <FlowArrow />
+              <RegionCell icon={Server} label="Lagring" location={reg.storage.text} status={reg.storage.status} />
+            </div>
+          )}
+
+          {!reg.loading && (reg.hasNonEu || reg.mismatch) && (
+            <p className="mt-2 text-[10px] font-medium leading-snug text-foreground/70">
+              {reg.hasNonEu
+                ? "Data lämnar EU i ett eller flera led – konkret risk för avbrott eller dataåtkomst under tredjelandsregler (t.ex. US CLOUD Act)."
+                : "Regionerna spänner över olika jurisdiktioner – verifiera dataflödet mellan ursprung, bearbetning och lagring."}
+            </p>
+          )}
+        </div>
+
+        {/* Risk read */}
+        <div className="mt-3 rounded-lg bg-white/80 px-2.5 py-2 ring-1 ring-white/70">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-foreground/55">
+            Riskprofil
+          </p>
+          <div className="mt-1.5 space-y-1.5">
+            <div className="flex items-start gap-1.5">
+              <AlertTriangle
+                className={`mt-0.5 h-3 w-3 flex-shrink-0 ${eu ? "text-emerald-600" : "text-rose-600"}`}
+              />
+              <p className="text-[11px] font-medium text-foreground/75">
+                <span className="font-bold text-foreground/80">Compliance-risk: </span>
+                <span className={eu ? "font-bold text-emerald-600" : "font-bold text-rose-600"}>
+                  {eu ? "Låg risk" : "Hög risk"}
+                </span>
+                <span className="text-foreground/65">
+                  {eu
+                    ? " – Jurisdiktion inom EU."
+                    : " – Jurisdiktion utanför EU (exponering mot CLOUD Act)."}
+                </span>
+              </p>
+            </div>
+            <div className="flex items-start gap-1.5">
+              <ShieldCheck
+                className={`mt-0.5 h-3 w-3 flex-shrink-0 ${
+                  status.tone === "ok"
+                    ? "text-emerald-600"
+                    : status.tone === "warn"
+                      ? "text-amber-600"
+                      : "text-rose-600"
+                }`}
+              />
+              <p className="text-[11px] font-medium text-foreground/75">
+                <span className="font-bold text-foreground/80">Säkerhetsrisk: </span>
+                <span
+                  className={`font-bold ${
                     status.tone === "ok"
                       ? "text-emerald-600"
                       : status.tone === "warn"
                         ? "text-amber-600"
                         : "text-rose-600"
                   }`}
-                />
-                <p className="text-[11px] font-medium text-foreground/75">
-                  <span className="font-bold text-foreground/80">Säkerhetsrisk: </span>
-                  <span
-                    className={`font-bold ${
-                      status.tone === "ok"
-                        ? "text-emerald-600"
-                        : status.tone === "warn"
-                          ? "text-amber-600"
-                          : "text-rose-600"
-                    }`}
-                  >
-                    {status.tone === "ok" ? "Låg risk" : status.tone === "warn" ? "Medel risk" : "Hög risk"}
-                  </span>
-                  <span className="text-foreground/65">
-                    {status.tone === "ok"
-                      ? " – Hög teknisk motståndskraft och regulatorisk beredskap (NIS2/DORA)."
-                      : status.tone === "warn"
-                        ? " – Acceptabel teknisk motståndskraft, vissa förbättringsområden."
-                        : " – Bristande teknisk motståndskraft, åtgärder rekommenderas."}
-                  </span>
-                </p>
-              </div>
+                >
+                  {status.tone === "ok" ? "Låg risk" : status.tone === "warn" ? "Medel risk" : "Hög risk"}
+                </span>
+                <span className="text-foreground/65">
+                  {status.tone === "ok"
+                    ? " – Hög teknisk motståndskraft och regulatorisk beredskap (NIS2/DORA)."
+                    : status.tone === "warn"
+                      ? " – Acceptabel teknisk motståndskraft, vissa förbättringsområden."
+                      : " – Bristande teknisk motståndskraft, åtgärder rekommenderas."}
+                </span>
+              </p>
             </div>
           </div>
+        </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-1.5">
+        {/* 2 — REGULATORY SUPPORT: certifications as secondary verification ("bevisbörda") */}
+        <div className="mt-3 rounded-lg bg-white/60 px-2.5 py-2 ring-1 ring-white/70">
+          <p className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-foreground/55">
+            <BadgeCheck className="h-3 w-3 text-blue-500" aria-hidden="true" />
+            Regulatoriskt stöd · Bevisbörda
+          </p>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
             {badges.map((b) => {
-              const BadgeIcon =
-                b.key === "datalagring"
-                  ? Database
-                  : b.key === "nis2"
-                    ? Network
-                    : b.key === "dora"
-                      ? ShieldCheck
-                      : Lock;
+              const pass = b.value >= 70;
+              const partial = b.value >= 40 && b.value < 70;
+              const Mark = pass ? CheckCircle2 : partial ? AlertTriangle : XCircle;
+              const markColor = pass ? "text-emerald-600" : partial ? "text-amber-600" : "text-rose-500";
               return (
                 <div
                   key={b.key}
                   title={b.evidence}
-                  className="rounded-lg bg-white/80 px-2 py-1.5 ring-1 ring-white/70"
+                  className="flex items-center gap-1.5 rounded-md bg-white/80 px-2 py-1 ring-1 ring-white/70"
                 >
-                  <p className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-foreground/55">
-                    <BadgeIcon className="h-3 w-3 text-blue-500" aria-hidden="true" />
-                    {b.label}
-                  </p>
-                  <p className="mt-0.5 text-xs font-bold text-foreground">{b.value}</p>
+                  <Mark className={`h-3.5 w-3.5 flex-shrink-0 ${markColor}`} aria-hidden="true" />
+                  <span className="truncate text-[10px] font-semibold text-foreground/75">{b.label}</span>
+                  <span className="ml-auto text-[10px] font-bold text-foreground/55">{b.value}</span>
                 </div>
               );
             })}
           </div>
+        </div>
 
-        </button>
-
+        {/* 3 — ACTIONABLE SOLUTION: European alternative */}
         {!eu && isOpen && (
           <div className="mt-4 animate-in fade-in slide-in-from-top-1 duration-200">
             <div className="rounded-lg bg-emerald-200/40 p-3 ring-1 ring-emerald-300/50">
@@ -1976,6 +2177,7 @@ const Step5Measurement = ({
       </div>
     );
   };
+
 
   return (
     <Card
