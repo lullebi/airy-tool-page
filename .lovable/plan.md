@@ -1,21 +1,27 @@
-# Fix: dropdown-val fyller inte i "Land"
+## Goal
 
-## Rotorsak
-I `src/pages/RegistreraLeverantorer.tsx` fylls "Land" aldrig i direkt vid val. Både snabbval och dropdown sätter bara `name`/`type`/`apiId` och lämnar `country` tomt — själva landet hämtas av en separat `useEffect` (rad 261–284) som anropar `fetchVendor(apiId)` och läser `hq_country_iso2`. Den effekten körs bara när villkoret `v.apiId && !v.country.trim()` är sant.
+Remove four questions from the "Snabbanalys" step in `src/pages/Quiz.tsx` because they duplicate inputs already collected in the "Konfiguration" (Konfigurera) step. The step's numbering and scoring must stay clean and continuous.
 
-Problemet uppstår i dropdownens `onPickApi` (rad 465–476): den **återställer inte `country`** när man byter leverantör. 
-- Första valet på ett tomt kort fungerar (country tomt → effekten hämtar).
-- Men byter man leverantör i dropdownen ligger förra landets värde kvar, `country.trim()` är icke-tomt, och effekten hoppar över → "Land" blir kvar/oförändrad (stale) i stället för att matcha den nya leverantören.
+## What gets removed
 
-Snabbvalet (`handleQuickPick`, rad 308–326) återanvänder/skapar alltid ett rent kort med `country: ""`, så där triggas hämtningen korrekt — därav skillnaden.
+From the `QUICK_SCAN` array (currently 8 questions), remove these 4 objects:
 
-## Lösning
-Gör dropdownvalet reaktivt genom att nollställa `country` när en ny API-leverantör väljs, så auto-fill-effekten kör om för det nya `apiId`.
+- `qs_eu_data_weight` — "Hur viktig är EU-datalagring för er?"
+- `qs_sector` — "Vilken sektor verkar ni inom?"
+- `qs_readiness` — "Hur bedömer ni er förmåga vid avbrott?"
+- `qs_priority` — "Vad är viktigast för er?"
 
-- I `onPickApi` (raderna 465–476): lägg till `country: ""` i patchen till `updateVendor`. Då hämtas och sätts rätt land för den nyvalda leverantören, både vid första val och vid byte.
+After removal, `QUICK_SCAN` keeps these 4:
 
-Det är den enda ändringen som behövs — `useEffect` och `countryFromIso2` är redan korrekta och återanvänds. Ingen ändring av tema, layout eller datakälla.
+- `qs_sensitive_data`, `qs_business_critical`, `qs_legal_agreements`, `qs_encryption_keys`
 
-## Teknisk sammanfattning
-- Fil: `src/pages/RegistreraLeverantorer.tsx`, `VendorNameCombobox`-propet `onPickApi`.
-- Effekt: när "Leverantörsnamn" ändras via dropdown nollställs landet och hämtas på nytt från datasetets `hq_country_iso2`, vilket gör "Land" reaktivt mot namnvalet — precis som snabbvalet.
+## Why nothing else needs changing
+
+- **Numbering is automatic.** The "Fråga {i + 1}" label in `StepQuestions` is rendered from the array index (`questions.map((q, i) => …)`), so removing entries renumbers the remaining questions 1–4 with no gaps.
+- **Completion gate is automatic.** Step validation uses `QUICK_SCAN.every((q) => quickAnswers[q.id])` and `missingQuickIds` is derived from `QUICK_SCAN`, so both adjust to the shorter list.
+- **Scoring is self-normalizing.** `weightedAverage` divides by the sum of the remaining `viktning` values (`totalW`), so the quick-scan score stays valid without re-tuning weights.
+- **No orphaned references.** The removed data (sector, EU weight, readiness, priorities) is still fully sourced from the Konfiguration step via `Step1State` (`step1.sector`, `step1.euDataWeight`, `step1.readiness`, `step1.priorities`), which the Result step already reads. `findQ` falls back safely if an old id isn't found.
+
+## Files
+
+- `src/pages/Quiz.tsx` — delete the 4 question objects from the `QUICK_SCAN` array (lines ~183–220). No other edits required.
