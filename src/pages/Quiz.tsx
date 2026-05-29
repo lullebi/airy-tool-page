@@ -25,6 +25,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const QUESTION_HELP: Record<string, string> = {
   qs_sensitive_data: "Känslig data omfattar personuppgifter, finansiell, hälso- eller affärskritisk information som skyddas av GDPR eller branschregler.",
