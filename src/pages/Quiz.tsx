@@ -1668,11 +1668,26 @@ const Step6ScoreSummary = ({
         <div>
           <p className="text-base font-bold">Totalpoäng</p>
           <p className="text-[11px] font-medium text-background/60">
-            Snabbanalys 20% · Fördjupad analys 50% · EU-efterlevnad 30%
+            Teknisk Resiliens 20% · Regulatorisk Rådighet 50% · Geopolitisk Kontrollrisk 30%
           </p>
         </div>
         <p className="text-4xl font-bold tabular-nums">{total}</p>
       </div>
+
+      {/* Sårbarhetsprofil — executive summary callout */}
+      <div className="mt-4 rounded-2xl border-l-4 border-rose-500 bg-rose-50 p-5 ring-1 ring-rose-200">
+        <div className="mb-2 flex items-center gap-2">
+          <ShieldAlert className="h-5 w-5 text-rose-600" />
+          <p className="text-sm font-bold uppercase tracking-wider text-rose-700">Sårbarhetsprofil</p>
+        </div>
+        <p className="text-sm leading-relaxed text-foreground/80">
+          <span className="font-bold text-foreground">Sårbarhetsanalys för ledningsgrupp:</span> En
+          totalpoäng på {total}/100 indikerar hög teknisk säkerhet, men kritisk sårbarhet gällande
+          kontrollrisk. Svaret på frågan "Vad händer om vi blir nedstängda?" är att verksamheten
+          saknar geografisk och legal suveränitet vid en extrem händelse.
+        </p>
+      </div>
+
 
       <p className="mt-5 text-xs text-foreground/55">
         Mätning sker mot Eurostack-standard (DORA, NIS2, GDPR, Data Act, EU-suveränitet).
