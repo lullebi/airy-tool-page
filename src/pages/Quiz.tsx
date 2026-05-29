@@ -180,44 +180,6 @@ const QUICK_SCAN: Question[] = [
       { label: "Nej", scoreValue: 0 },
     ],
   },
-  {
-    id: "qs_eu_data_weight",
-    kategori: "Snabbanalys",
-    text: "Hur viktig är EU-datalagring för er?",
-    viktning: 0.1,
-    type: "single",
-    svarsalternativ: [
-      { label: "1", scoreValue: 20 },
-      { label: "2", scoreValue: 40 },
-      { label: "3", scoreValue: 60 },
-      { label: "4", scoreValue: 80 },
-      { label: "5", scoreValue: 100 },
-    ],
-  },
-  {
-    id: "qs_sector",
-    kategori: "Snabbanalys",
-    text: "Vilken sektor verkar ni inom?",
-    viktning: 0.1,
-    type: "single",
-    svarsalternativ: STEP1_SECTORS.map((s) => ({ label: s, scoreValue: 50 })),
-  },
-  {
-    id: "qs_readiness",
-    kategori: "Snabbanalys",
-    text: "Hur bedömer ni er förmåga vid avbrott?",
-    viktning: 0.1,
-    type: "single",
-    svarsalternativ: STEP1_READINESS.map(({ label, scoreValue }) => ({ label, scoreValue })),
-  },
-  {
-    id: "qs_priority",
-    kategori: "Snabbanalys",
-    text: "Vad är viktigast för er?",
-    viktning: 0.1,
-    type: "single",
-    svarsalternativ: STEP1_PRIORITIES.map((p) => ({ label: p.label, scoreValue: p.scoreValue })),
-  },
 ];
 
 const DEEP_DIVE: Question[] = [
