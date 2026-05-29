@@ -1155,109 +1155,72 @@ const Step3DeepDive = ({
 };
 
 /* =========================================================================
-   STEP 5 (final) — Score breakdown / "Så räknades poängen fram"
-   Hämtar dynamisk poänguppdelning från backend. Faller tillbaka på en
-   lokalt härledd, men fortfarande dynamisk, uppdelning om endpointen
-   ännu inte är tillgänglig. Inga texter hårdkodas statiskt.
+   STEP 5 (final) — Interaktiv "Score Breakdown" / "Så räknades poängen fram"
+   Tre vägda kort (Snabbanalys 20 %, Fördjupad analys 50 %, EU-efterlevnad &
+   Suveränitet 30 %). Varje kort fälls ut till en drill-down:
+   Regelverk (GDPR · DORA · NIS2) → Kategorier → Kontroller, där varje kontroll
+   poängsätts med en badge (Ja = 100, Delvis = 50, Nej = 0). EU-kortet visar
+   även leverantörstelemetri (region) och en tabell över tidigare böter.
    ========================================================================= */
 
-// Lokalt härledd, dynamisk poänguppdelning utifrån klientens faktiska svar.
-const buildLocalBreakdown = (
-  step1: Step1State,
-  quick: Answers,
-  deepByVendor: Record<string, Answers>,
-  activeDeepQuestions: Question[],
-): ScoreBreakdownResponse => {
-  const snabb = weightedAverage(QUICK_SCAN, quick);
-  const deepScores = Object.values(deepByVendor)
-    .filter((a) => Object.keys(a).length > 0)
-    .map((a) => weightedAverage(activeDeepQuestions, a));
-  const fordjupad = deepScores.length
-    ? Math.round(deepScores.reduce((a, b) => a + b, 0) / deepScores.length)
-    : 0;
-  const euScore = step1.euDataWeight ? Math.round((step1.euDataWeight / 5) * 100) : 0;
-  const beredskap = STEP1_READINESS.find((o) => o.label === step1.readiness)?.scoreValue ?? 0;
+// Fasta vikter enligt designen.
+const BREAKDOWN_WEIGHTS = { snabb: 0.2, deep: 0.5, eu: 0.3 } as const;
 
-  // Dynamiska vikter utifrån prioriteringar och EU-vikt.
-  const pr = step1.priorities;
-  let wSnabb = 0.3;
-  let wDeep = 0.3;
-  let wEu = 0.2;
-  let wBered = 0.2;
-  if (pr.includes("Säkerhet")) wDeep += 0.1;
-  if (pr.includes("Efterlevnad")) wEu += 0.1;
-  if (pr.includes("Flexibilitet") || pr.includes("Skalbarhet")) wBered += 0.1;
-  if ((step1.euDataWeight ?? 0) >= 4) wEu += 0.05;
-  const wSum = wSnabb + wDeep + wEu + wBered;
-  wSnabb /= wSum;
-  wDeep /= wSum;
-  wEu /= wSum;
-  wBered /= wSum;
+type BreakdownControl = { id: string; label: string; answer: string; score: number };
+type BreakdownCategory = { name: string; controls: BreakdownControl[] };
+type BreakdownRegelverk = { name: string; desc: string; categories: BreakdownCategory[] };
 
-  const pct = (w: number) => Math.round(w * 100);
-  const prList = pr.length ? pr.join(", ").toLowerCase() : "inga särskilda prioriteringar";
-  const sectorTxt = step1.sector ? ` inom ${step1.sector.toLowerCase()}` : "";
-
-  const categories: ScoreBreakdownCategory[] = [
-    {
-      key: "snabb",
-      label: "Snabbanalys",
-      score: snabb,
-      weight: wSnabb,
-      explanation:
-        `Övergripande svar från snabbanalysen ger en första, bred riskbild av era leverantörer. ` +
-        `Vikten ${pct(wSnabb)} % speglar att detta är en inledande bedömning${
-          pr.includes("Säkerhet") ? ", medan ni lagt större tyngd vid den fördjupade säkerhetsanalysen" : ""
-        }.`,
-    },
-    {
-      key: "deep",
-      label: "Fördjupad analys",
-      score: fordjupad,
-      weight: wDeep,
-      explanation:
-        `Detaljerade svar om kryptering, åtkomst, incidenthantering och regelefterlevnad. ` +
-        `Vikten ${pct(wDeep)} % ${
-          pr.includes("Säkerhet")
-            ? "är förhöjd eftersom ni prioriterat säkerhet"
-            : "återspeglar hur djupt leverantörernas tekniska kontroller granskats"
-        }${sectorTxt}.`,
-    },
-    {
-      key: "eu",
-      label: "EU-vikt",
-      score: euScore,
-      weight: wEu,
-      explanation:
-        `Hur högt ni värderar EU-datalagring och suveränitet (angivet ${
-          step1.euDataWeight ?? "–"
-        }/5). Vikten ${pct(wEu)} % ${
-          pr.includes("Efterlevnad") || (step1.euDataWeight ?? 0) >= 4
-            ? "är förhöjd utifrån era prioriteringar (" + prList + ")"
-            : "baseras på er angivna EU-vikt"
-        }.`,
-    },
-    {
-      key: "bered",
-      label: "Beredskap",
-      score: beredskap,
-      weight: wBered,
-      explanation:
-        `Er förmåga att hantera avbrott och byta leverantör (angiven beredskap: ${
-          step1.readiness || "–"
-        }). Vikten ${pct(wBered)} % ${
-          pr.includes("Flexibilitet") || pr.includes("Skalbarhet")
-            ? "är förhöjd eftersom ni prioriterat flexibilitet/skalbarhet"
-            : "speglar hur kritisk kontinuitet är för er verksamhet"
-        }.`,
-    },
-  ];
-
-  const total = Math.round(
-    snabb * wSnabb + fordjupad * wDeep + euScore * wEu + beredskap * wBered,
-  );
-  return { categories, total };
+// Färgton för en kontrollpoäng → Ja / Delvis / Nej.
+const controlTone = (score: number) => {
+  if (score >= 75)
+    return { label: "Ja", cls: "bg-emerald-50 text-emerald-700 ring-emerald-200" };
+  if (score <= 25) return { label: "Nej", cls: "bg-rose-50 text-rose-700 ring-rose-200" };
+  return { label: "Delvis", cls: "bg-amber-50 text-amber-700 ring-amber-200" };
 };
+
+const ControlRow = ({ c }: { c: BreakdownControl }) => {
+  const tone = controlTone(c.score);
+  return (
+    <div className="flex items-start justify-between gap-3 border-b border-border/40 py-2.5 last:border-0">
+      <div className="min-w-0">
+        <p className="text-sm font-medium leading-snug text-foreground">{c.label}</p>
+        <p className="mt-0.5 text-xs text-foreground/50">Svar: {c.answer}</p>
+      </div>
+      <span
+        className={`mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ${tone.cls}`}
+      >
+        {tone.label}
+        <span className="tabular-nums opacity-70">· {c.score}</span>
+      </span>
+    </div>
+  );
+};
+
+// Telemetri-uppslag per leverantör (origin / processing / storage).
+const telemetryFor = (d?: ApiVendorDetail) => {
+  const f = d?.features;
+  const originStatus = regionStatus(undefined, f?.hq_in_eu);
+  const originText =
+    countryFromIso2(f?.hq_country_iso2) ||
+    (originStatus === "eu" ? "Inom EU" : originStatus === "noneu" ? "Utanför EU" : "—");
+  const procText = f?.processing_region || "—";
+  const procStatus = f
+    ? regionStatus(f.processing_region, f.cloud_act_exposure ? false : undefined)
+    : "unknown";
+  const storageText = f?.storage_region || "—";
+  const storageStatus = regionStatus(f?.storage_region, f?.storage_in_eu);
+  return {
+    origin: { text: originText, status: originStatus },
+    processing: { text: procText, status: procStatus },
+    storage: { text: storageText, status: storageStatus },
+  };
+};
+
+const eurFmt = new Intl.NumberFormat("sv-SE", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
 
 const Step6ScoreSummary = ({
   vendors,
@@ -1273,99 +1236,425 @@ const Step6ScoreSummary = ({
   activeDeepQuestions: Question[];
   scoredMap: ScoredMap;
 }) => {
-  const [breakdown, setBreakdown] = useState<ScoreBreakdownResponse | null>(null);
+  // Hämta full leverantörsdetalj (cert, regioner, böter) för EU-kortet.
+  const [detailsById, setDetailsById] = useState<Record<string, ApiVendorDetail>>({});
   const [loading, setLoading] = useState(true);
-
-  const localBreakdown = useMemo(
-    () => buildLocalBreakdown(step1, quick, deepByVendor, activeDeepQuestions),
-    [step1, quick, deepByVendor, activeDeepQuestions],
-  );
+  const apiIdsKey = vendors.map((v) => v.apiId ?? "").filter(Boolean).join("|");
 
   useEffect(() => {
     let active = true;
+    const ids = vendors.map((v) => v.apiId).filter((id): id is string => !!id);
+    if (ids.length === 0) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const apiIds = vendors.map((v) => v.apiId).filter((id): id is string => !!id);
-    fetchScoreBreakdown({
-      vendor_ids: apiIds,
-      weights: prioritiesToWeights(step1.priorities),
-      context: {
-        priorities: step1.priorities,
-        sector: step1.sector,
-        eu_data_weight: step1.euDataWeight,
-        readiness: step1.readiness,
-      },
-    })
-      .then((res) => {
-        if (active) setBreakdown(res);
-      })
-      .catch(() => {
-        // Endpointen finns ännu inte i backend → använd lokal, dynamisk uppdelning.
-        if (active) setBreakdown(null);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
+    Promise.allSettled(ids.map((id) => fetchVendor(id))).then((res) => {
+      if (!active) return;
+      const map: Record<string, ApiVendorDetail> = {};
+      res.forEach((r, i) => {
+        if (r.status === "fulfilled") map[ids[i]] = r.value;
       });
+      setDetailsById(map);
+      setLoading(false);
+    });
     return () => {
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step1.priorities.join("|"), step1.sector, step1.euDataWeight, step1.readiness]);
+  }, [apiIdsKey]);
 
-  const data = breakdown ?? localBreakdown;
+  const details = useMemo(() => Object.values(detailsById), [detailsById]);
+
+  /* ---- Kort 1: Snabbanalys ---- */
+  const snabbScore = useMemo(() => weightedAverage(QUICK_SCAN, quick), [quick]);
+  const quickControl = (id: string): BreakdownControl => {
+    const q = QUICK_SCAN.find((x) => x.id === id);
+    if (!q) return { id, label: id, answer: "—", score: 0 };
+    return { id, label: q.text, answer: quick[id] ?? "Ej besvarad", score: scoreFor(q, quick) };
+  };
+  const snabbRegelverk: BreakdownRegelverk[] = [
+    {
+      name: "GDPR",
+      desc: "Dataskydd & personuppgifter",
+      categories: [
+        {
+          name: "Dataskydd",
+          controls: ["qs_sensitive_data", "qs_legal_agreements", "qs_encryption_keys"].map(
+            quickControl,
+          ),
+        },
+      ],
+    },
+    {
+      name: "NIS2",
+      desc: "Verksamhetskritikalitet",
+      categories: [
+        { name: "Kontinuitet", controls: [quickControl("qs_business_critical")] },
+      ],
+    },
+  ];
+
+  /* ---- Kort 2: Fördjupad analys ---- */
+  const deepAgg = useMemo(() => {
+    const map: Record<string, { scores: number[]; answers: string[] }> = {};
+    for (const ans of Object.values(deepByVendor)) {
+      for (const q of activeDeepQuestions) {
+        if (ans[q.id]) {
+          (map[q.id] ??= { scores: [], answers: [] }).scores.push(scoreFor(q, ans));
+          map[q.id].answers.push(ans[q.id]);
+        }
+      }
+    }
+    return map;
+  }, [deepByVendor, activeDeepQuestions]);
+
+  const deepControl = (q: Question): BreakdownControl => {
+    const agg = deepAgg[q.id];
+    if (!agg || agg.scores.length === 0)
+      return { id: q.id, label: q.text, answer: "Ej besvarad", score: 0 };
+    const score = Math.round(agg.scores.reduce((a, b) => a + b, 0) / agg.scores.length);
+    const uniq = Array.from(new Set(agg.answers));
+    const answer = uniq.length === 1 ? uniq[0] : `${uniq.length} olika svar`;
+    return { id: q.id, label: q.text, answer, score };
+  };
+
+  const deepScore = useMemo(() => {
+    const per = Object.values(deepByVendor)
+      .filter((a) => Object.keys(a).length > 0)
+      .map((a) => weightedAverage(activeDeepQuestions, a));
+    return per.length ? Math.round(per.reduce((a, b) => a + b, 0) / per.length) : 0;
+  }, [deepByVendor, activeDeepQuestions]);
+
+  const deepCat = (name: string): BreakdownCategory => ({
+    name,
+    controls: activeDeepQuestions.filter((q) => q.kategori === name).map(deepControl),
+  });
+
+  const deepRegelverk: BreakdownRegelverk[] = [
+    {
+      name: "GDPR",
+      desc: "Datalagring, jurisdiktion & ägarskap",
+      categories: [deepCat("Datalagring och jurisdiktion"), deepCat("Ägarskap och regelverk")],
+    },
+    {
+      name: "DORA",
+      desc: "Digital driftsmotståndskraft",
+      categories: [deepCat("Incidenthantering")],
+    },
+    {
+      name: "NIS2",
+      desc: "Cybersäkerhet för kritiska sektorer",
+      categories: [deepCat("Säkerhetsnivå")],
+    },
+  ].map((r) => ({ ...r, categories: r.categories.filter((c) => c.controls.length > 0) }));
+
+  /* ---- Kort 3: EU-efterlevnad & Suveränitet ---- */
+  const avgCert = (key: keyof ApiVendorDetail["features"]["certifications"]): number | null => {
+    const vals = details
+      .map((d) => d.features.certifications[key])
+      .filter((v): v is number => typeof v === "number");
+    if (!vals.length) return null;
+    return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100);
+  };
+  const fracTrue = (pick: (d: ApiVendorDetail) => boolean): number | null => {
+    if (!details.length) return null;
+    return Math.round((details.filter(pick).length / details.length) * 100);
+  };
+
+  const euCtrl = (label: string, score: number | null): BreakdownControl => ({
+    id: label,
+    label,
+    answer:
+      score === null
+        ? "Saknar data"
+        : score >= 75
+          ? "Uppfylls"
+          : score >= 50
+            ? "Delvis uppfyllt"
+            : "Brister",
+    score: score ?? 0,
+  });
+
+  const euRegelverk: BreakdownRegelverk[] = [
+    {
+      name: "GDPR",
+      desc: "Dataskydd & lagringsplats",
+      categories: [
+        {
+          name: "Dataskydd & lagring",
+          controls: [
+            euCtrl("GDPR-åtaganden", avgCert("gdpr_commitments")),
+            euCtrl("ISO 27001-certifiering", avgCert("iso27001")),
+            euCtrl("Lagring inom EU/EES", fracTrue((d) => d.features.storage_in_eu)),
+          ],
+        },
+      ],
+    },
+    {
+      name: "DORA",
+      desc: "Finansiell driftsmotståndskraft",
+      categories: [
+        {
+          name: "Driftskontroller",
+          controls: [
+            euCtrl("DORA-efterlevnad", avgCert("dora")),
+            euCtrl("SOC 2-attestering", avgCert("soc2")),
+          ],
+        },
+      ],
+    },
+    {
+      name: "NIS2",
+      desc: "Cybersäkerhetskrav",
+      categories: [
+        {
+          name: "Cybersäkerhet",
+          controls: [
+            euCtrl("NIS2-efterlevnad", avgCert("nis2")),
+            euCtrl("C5-attestering", avgCert("c5_attestation")),
+          ],
+        },
+      ],
+    },
+  ];
+
+  const euScore = useMemo(() => {
+    const all = euRegelverk
+      .flatMap((r) => r.categories.flatMap((c) => c.controls))
+      .map((c) => c.score);
+    if (step1.euDataWeight && !details.length) return Math.round((step1.euDataWeight / 5) * 100);
+    return all.length ? Math.round(all.reduce((a, b) => a + b, 0) / all.length) : 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [details, step1.euDataWeight]);
+
+  // Tidigare böter — sammanställs från leverantörsdata.
+  const fines = useMemo(
+    () =>
+      details
+        .filter((d) => d.features.gdpr_fines_count > 0 || (d.features.gdpr_fines_total_eur ?? 0) > 0)
+        .map((d) => ({
+          vendor: d.name,
+          breach: "GDPR-överträdelse",
+          count: d.features.gdpr_fines_count,
+          amount: d.features.gdpr_fines_total_eur ?? 0,
+        })),
+    [details],
+  );
+
+  const total = Math.round(
+    snabbScore * BREAKDOWN_WEIGHTS.snabb +
+      deepScore * BREAKDOWN_WEIGHTS.deep +
+      euScore * BREAKDOWN_WEIGHTS.eu,
+  );
+
+  const cards = [
+    { key: "snabb", title: "Snabbanalys", weight: 20, score: snabbScore, regelverk: snabbRegelverk },
+    { key: "deep", title: "Fördjupad analys", weight: 50, score: deepScore, regelverk: deepRegelverk },
+    {
+      key: "eu",
+      title: "EU-efterlevnad & Suveränitet",
+      weight: 30,
+      score: euScore,
+      regelverk: euRegelverk,
+    },
+  ];
 
   return (
-    <Card
-      title="Så räknades poängen fram"
-      subtitle="Poängen baseras på era svar i quizet och vägs samman utifrån era prioriteringar."
-    >
+    <section className="rounded-3xl bg-[hsl(var(--sky-100))] p-6 ring-1 ring-[hsl(var(--sky-200))] shadow-[var(--shadow-deep)] md:p-8">
+      <header className="mb-6">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+          Så räknades poängen fram
+        </h2>
+        <p className="mt-1 text-sm font-medium text-foreground/60">
+          Klicka på ett kort för att se underliggande regelverk, kategorier och kontroller.
+        </p>
+      </header>
+
       {loading && (
         <div className="mb-4 flex items-center gap-2 text-sm text-foreground/70">
-          <Loader2 className="h-4 w-4 animate-spin" /> Hämtar poängberäkning…
+          <Loader2 className="h-4 w-4 animate-spin" /> Hämtar leverantörsdata…
         </div>
       )}
 
-      <div className="grid gap-3">
-        {data.categories.map((cat) => (
-          <div
-            key={cat.key}
-            className="rounded-2xl bg-muted/50 p-4 ring-1 ring-border/60"
+      {/* Interaktiva, expanderbara kort */}
+      <Accordion type="multiple" className="space-y-3">
+        {cards.map((card) => (
+          <AccordionItem
+            key={card.key}
+            value={card.key}
+            className="overflow-hidden rounded-2xl border-0 bg-white/80 ring-1 ring-[hsl(var(--sky-200))] shadow-sm"
           >
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-base font-bold text-foreground">{cat.label}</p>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center rounded-full bg-white/70 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-foreground/70 ring-1 ring-border/60">
-                  Vikt {Math.round(cat.weight * 100)}%
+            <AccordionTrigger className="px-5 py-4 hover:no-underline">
+              <div className="flex w-full items-center justify-between gap-3 pr-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-base font-bold text-foreground">{card.title}</span>
+                  <span className="inline-flex items-center rounded-full bg-[hsl(var(--sky-200))] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-primary">
+                    Vikt {card.weight}%
+                  </span>
+                </div>
+                <span className="text-xl font-bold tabular-nums text-foreground">
+                  {card.score}
                 </span>
-                <span className="text-lg font-bold text-foreground">{Math.round(cat.score)}</span>
               </div>
-            </div>
-            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/70 ring-1 ring-border/40">
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${Math.min(100, Math.round(cat.score))}%`, background: "var(--gradient-cta)" }}
-              />
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-foreground/70">{cat.explanation}</p>
-          </div>
-        ))}
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5">
+              <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-[hsl(var(--sky-200))]">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${Math.min(100, card.score)}%`, background: "var(--gradient-cta)" }}
+                />
+              </div>
 
-        {/* Totalpoäng — mörk navy-kort */}
-        <div className="mt-1 flex items-center justify-between rounded-2xl bg-foreground px-5 py-4 text-background shadow-[var(--shadow-deep)]">
-          <div>
-            <p className="text-sm font-semibold">Totalpoäng</p>
-            <p className="text-[11px] font-medium text-background/60">
-              Sammanvägd poäng utifrån era prioriteringar
-            </p>
-          </div>
-          <p className="text-3xl font-bold">{Math.round(data.total)}</p>
+              {/* Nivå 2: Regelverk */}
+              <Accordion type="multiple" className="space-y-2">
+                {card.regelverk.map((rv) => (
+                  <AccordionItem
+                    key={rv.name}
+                    value={`${card.key}-${rv.name}`}
+                    className="rounded-xl border-0 bg-[hsl(var(--sky-100))] ring-1 ring-[hsl(var(--sky-200))]"
+                  >
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                      <div className="flex items-center gap-2.5 text-left">
+                        <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
+                        <span className="text-sm font-bold text-foreground">{rv.name}</span>
+                        <span className="text-xs font-medium text-foreground/50">{rv.desc}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      {/* Nivå 3: Kategorier → Kontroller */}
+                      <div className="space-y-3">
+                        {rv.categories.map((cat) => (
+                          <div
+                            key={cat.name}
+                            className="rounded-lg bg-white/80 p-3 ring-1 ring-border/50"
+                          >
+                            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-foreground/50">
+                              {cat.name}
+                            </p>
+                            <div>
+                              {cat.controls.map((c) => (
+                                <ControlRow key={c.id} c={c} />
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+
+              {/* EU-kort: telemetri + bötestabell */}
+              {card.key === "eu" && (
+                <div className="mt-4 space-y-4">
+                  {/* Leverantörstelemetri */}
+                  <div className="rounded-xl bg-white/80 p-4 ring-1 ring-border/50">
+                    <div className="mb-3 flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-bold text-foreground">Leverantörstelemetri</p>
+                    </div>
+                    {details.length === 0 ? (
+                      <p className="text-sm text-foreground/55">Ingen telemetridata tillgänglig.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {details.map((d) => {
+                          const t = telemetryFor(d);
+                          return (
+                            <div key={d.id}>
+                              <p className="mb-1.5 text-xs font-semibold text-foreground/70">
+                                {d.name}
+                              </p>
+                              <div className="grid grid-cols-3 gap-2">
+                                <RegionCell
+                                  icon={Globe}
+                                  label="Ursprung"
+                                  location={t.origin.text}
+                                  status={t.origin.status}
+                                />
+                                <RegionCell
+                                  icon={Cpu}
+                                  label="Bearbetning"
+                                  location={t.processing.text}
+                                  status={t.processing.status}
+                                />
+                                <RegionCell
+                                  icon={Server}
+                                  label="Lagring"
+                                  location={t.storage.text}
+                                  status={t.storage.status}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tidigare böter */}
+                  <div className="rounded-xl bg-white/80 p-4 ring-1 ring-border/50">
+                    <div className="mb-3 flex items-center gap-2">
+                      <Gavel className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-bold text-foreground">Tidigare böter</p>
+                    </div>
+                    {fines.length === 0 ? (
+                      <p className="text-sm text-foreground/55">
+                        Inga registrerade regulatoriska böter.
+                      </p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead className="text-xs">Regelöverträdelse</TableHead>
+                            <TableHead className="text-xs">Antal</TableHead>
+                            <TableHead className="text-right text-xs">Belopp</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {fines.map((f, i) => (
+                            <TableRow key={i} className="hover:bg-transparent">
+                              <TableCell className="py-2.5">
+                                <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                  <ScrollText className="h-3.5 w-3.5 text-rose-500" />
+                                  {f.vendor} — {f.breach}
+                                </span>
+                              </TableCell>
+                              <TableCell className="py-2.5 text-sm text-foreground/70">
+                                {f.count || "—"}
+                              </TableCell>
+                              <TableCell className="py-2.5 text-right text-sm font-semibold tabular-nums text-foreground">
+                                {f.amount > 0 ? eurFmt.format(f.amount) : "—"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </div>
+                </div>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+
+      {/* Totalpoäng — mörk navy-footer */}
+      <div className="mt-4 flex items-center justify-between rounded-2xl bg-foreground px-6 py-5 text-background shadow-[var(--shadow-deep)]">
+        <div>
+          <p className="text-base font-bold">Totalpoäng</p>
+          <p className="text-[11px] font-medium text-background/60">
+            Snabbanalys 20% · Fördjupad analys 50% · EU-efterlevnad 30%
+          </p>
         </div>
+        <p className="text-4xl font-bold tabular-nums">{total}</p>
       </div>
 
-      <p className="mt-6 text-xs text-foreground/55">
+      <p className="mt-5 text-xs text-foreground/55">
         Mätning sker mot Eurostack-standard (DORA, NIS2, GDPR, Data Act, EU-suveränitet).
-        Vikter och förklaringar anpassas dynamiskt efter era angivna prioriteringar.
+        Kontrollerna poängsätts: Ja = 100, Delvis = 50, Nej = 0.
       </p>
-    </Card>
+    </section>
   );
 };
 
