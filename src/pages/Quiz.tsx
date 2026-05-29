@@ -1403,35 +1403,6 @@ const Field = ({
   </div>
 );
 
-const Stat = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-xl bg-white/60 p-3 ring-1 ring-white/70">
-    <p className="text-[10px] font-bold uppercase tracking-wider text-foreground/55">
-      {label}
-    </p>
-    <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
-  </div>
-);
-
-const Contribution = ({ label, value }: { label: string; value: number }) => {
-  const tone =
-    value >= 70
-      ? { dot: "bg-emerald-500", text: "text-emerald-700" }
-      : value >= 40
-        ? { dot: "bg-amber-500", text: "text-amber-700" }
-        : { dot: "bg-rose-500", text: "text-rose-700" };
-  return (
-    <div className="rounded-lg bg-white/70 px-3 py-2 ring-1 ring-white/60">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-foreground/50">
-        {label}
-      </p>
-      <p className={`mt-0.5 flex items-center gap-1.5 text-sm font-bold ${tone.text}`}>
-        <span className={`inline-block h-1.5 w-1.5 rounded-full ${tone.dot}`} aria-hidden="true" />
-        {Math.round(value)}
-      </p>
-    </div>
-  );
-};
-
 
 
 
