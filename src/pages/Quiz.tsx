@@ -1524,6 +1524,12 @@ const Step6ScoreSummary = ({
                 />
               </div>
 
+              {/* Backend-driven sårbarhetsförklaring */}
+              <p className="mb-4 rounded-xl bg-white/80 p-4 text-sm leading-relaxed text-foreground/80 ring-1 ring-border/50">
+                {card.explanation}
+              </p>
+
+
               {/* Nivå 2: Regelverk */}
               <Accordion type="multiple" className="space-y-2">
                 {card.regelverk.map((rv) => (
