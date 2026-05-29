@@ -1989,6 +1989,7 @@ const Step5Measurement = ({
     const badges = buildBadges(quick, deep, hasDeep);
     const isOpen = !eu ? true : openId === v.id;
     const alt = altFor(v);
+    const reg = regionsFor(v);
 
     return (
       <div
@@ -2019,91 +2020,149 @@ const Step5Measurement = ({
               {eu ? "EU" : "Icke-EU"}
             </span>
           </div>
+        </button>
 
-          <div className="mt-3 rounded-lg bg-white/80 px-2.5 py-2 ring-1 ring-white/70">
+        {/* 1 — TECHNICAL PROVENANCE: where data originates → is processed → is stored */}
+        <div
+          className={`mt-3 rounded-xl p-3 ring-1 ${
+            reg.hasNonEu
+              ? "bg-rose-50/70 ring-rose-200"
+              : reg.hasUnknown
+                ? "bg-amber-50/60 ring-amber-200"
+                : "bg-emerald-50/60 ring-emerald-200"
+          }`}
+        >
+          <div className="mb-2 flex items-center justify-between gap-2">
             <p className="text-[9px] font-bold uppercase tracking-wider text-foreground/55">
-              Riskprofil
+              Teknisk dataproveniens
             </p>
-            <div className="mt-1.5 space-y-1.5">
-              <div className="flex items-start gap-1.5">
-                <AlertTriangle
-                  className={`mt-0.5 h-3 w-3 flex-shrink-0 ${eu ? "text-emerald-600" : "text-rose-600"}`}
-                />
-                <p className="text-[11px] font-medium text-foreground/75">
-                  <span className="font-bold text-foreground/80">Compliance-risk: </span>
-                  <span className={eu ? "font-bold text-emerald-600" : "font-bold text-rose-600"}>
-                    {eu ? "Låg risk" : "Hög risk"}
-                  </span>
-                  <span className="text-foreground/65">
-                    {eu
-                      ? " – Jurisdiktion inom EU."
-                      : " – Jurisdiktion utanför EU (exponering mot CLOUD Act)."}
-                  </span>
-                </p>
-              </div>
-              <div className="flex items-start gap-1.5">
-                <ShieldCheck
-                  className={`mt-0.5 h-3 w-3 flex-shrink-0 ${
+            {reg.hasNonEu ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-rose-700">
+                <AlertTriangle className="h-3 w-3" />
+                Risk för avbrott
+              </span>
+            ) : reg.mismatch ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-700">
+                <AlertTriangle className="h-3 w-3" />
+                Jurisdiktionsglapp
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
+                <CheckCircle2 className="h-3 w-3" />
+                Samlad i EU
+              </span>
+            )}
+          </div>
+
+          {reg.loading ? (
+            <p className="flex items-center gap-2 py-2 text-[11px] font-medium text-foreground/55">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Hämtar regioner…
+            </p>
+          ) : (
+            <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-stretch gap-1">
+              <RegionCell icon={Globe} label="Ursprung" location={reg.origin.text} status={reg.origin.status} />
+              <FlowArrow />
+              <RegionCell icon={Cpu} label="Bearbetning" location={reg.processing.text} status={reg.processing.status} />
+              <FlowArrow />
+              <RegionCell icon={Server} label="Lagring" location={reg.storage.text} status={reg.storage.status} />
+            </div>
+          )}
+
+          {!reg.loading && (reg.hasNonEu || reg.mismatch) && (
+            <p className="mt-2 text-[10px] font-medium leading-snug text-foreground/70">
+              {reg.hasNonEu
+                ? "Data lämnar EU i ett eller flera led – konkret risk för avbrott eller dataåtkomst under tredjelandsregler (t.ex. US CLOUD Act)."
+                : "Regionerna spänner över olika jurisdiktioner – verifiera dataflödet mellan ursprung, bearbetning och lagring."}
+            </p>
+          )}
+        </div>
+
+        {/* Risk read */}
+        <div className="mt-3 rounded-lg bg-white/80 px-2.5 py-2 ring-1 ring-white/70">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-foreground/55">
+            Riskprofil
+          </p>
+          <div className="mt-1.5 space-y-1.5">
+            <div className="flex items-start gap-1.5">
+              <AlertTriangle
+                className={`mt-0.5 h-3 w-3 flex-shrink-0 ${eu ? "text-emerald-600" : "text-rose-600"}`}
+              />
+              <p className="text-[11px] font-medium text-foreground/75">
+                <span className="font-bold text-foreground/80">Compliance-risk: </span>
+                <span className={eu ? "font-bold text-emerald-600" : "font-bold text-rose-600"}>
+                  {eu ? "Låg risk" : "Hög risk"}
+                </span>
+                <span className="text-foreground/65">
+                  {eu
+                    ? " – Jurisdiktion inom EU."
+                    : " – Jurisdiktion utanför EU (exponering mot CLOUD Act)."}
+                </span>
+              </p>
+            </div>
+            <div className="flex items-start gap-1.5">
+              <ShieldCheck
+                className={`mt-0.5 h-3 w-3 flex-shrink-0 ${
+                  status.tone === "ok"
+                    ? "text-emerald-600"
+                    : status.tone === "warn"
+                      ? "text-amber-600"
+                      : "text-rose-600"
+                }`}
+              />
+              <p className="text-[11px] font-medium text-foreground/75">
+                <span className="font-bold text-foreground/80">Säkerhetsrisk: </span>
+                <span
+                  className={`font-bold ${
                     status.tone === "ok"
                       ? "text-emerald-600"
                       : status.tone === "warn"
                         ? "text-amber-600"
                         : "text-rose-600"
                   }`}
-                />
-                <p className="text-[11px] font-medium text-foreground/75">
-                  <span className="font-bold text-foreground/80">Säkerhetsrisk: </span>
-                  <span
-                    className={`font-bold ${
-                      status.tone === "ok"
-                        ? "text-emerald-600"
-                        : status.tone === "warn"
-                          ? "text-amber-600"
-                          : "text-rose-600"
-                    }`}
-                  >
-                    {status.tone === "ok" ? "Låg risk" : status.tone === "warn" ? "Medel risk" : "Hög risk"}
-                  </span>
-                  <span className="text-foreground/65">
-                    {status.tone === "ok"
-                      ? " – Hög teknisk motståndskraft och regulatorisk beredskap (NIS2/DORA)."
-                      : status.tone === "warn"
-                        ? " – Acceptabel teknisk motståndskraft, vissa förbättringsområden."
-                        : " – Bristande teknisk motståndskraft, åtgärder rekommenderas."}
-                  </span>
-                </p>
-              </div>
+                >
+                  {status.tone === "ok" ? "Låg risk" : status.tone === "warn" ? "Medel risk" : "Hög risk"}
+                </span>
+                <span className="text-foreground/65">
+                  {status.tone === "ok"
+                    ? " – Hög teknisk motståndskraft och regulatorisk beredskap (NIS2/DORA)."
+                    : status.tone === "warn"
+                      ? " – Acceptabel teknisk motståndskraft, vissa förbättringsområden."
+                      : " – Bristande teknisk motståndskraft, åtgärder rekommenderas."}
+                </span>
+              </p>
             </div>
           </div>
+        </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-1.5">
+        {/* 2 — REGULATORY SUPPORT: certifications as secondary verification ("bevisbörda") */}
+        <div className="mt-3 rounded-lg bg-white/60 px-2.5 py-2 ring-1 ring-white/70">
+          <p className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-foreground/55">
+            <BadgeCheck className="h-3 w-3 text-blue-500" aria-hidden="true" />
+            Regulatoriskt stöd · Bevisbörda
+          </p>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
             {badges.map((b) => {
-              const BadgeIcon =
-                b.key === "datalagring"
-                  ? Database
-                  : b.key === "nis2"
-                    ? Network
-                    : b.key === "dora"
-                      ? ShieldCheck
-                      : Lock;
+              const pass = b.value >= 70;
+              const partial = b.value >= 40 && b.value < 70;
+              const Mark = pass ? CheckCircle2 : partial ? AlertTriangle : XCircle;
+              const markColor = pass ? "text-emerald-600" : partial ? "text-amber-600" : "text-rose-500";
               return (
                 <div
                   key={b.key}
                   title={b.evidence}
-                  className="rounded-lg bg-white/80 px-2 py-1.5 ring-1 ring-white/70"
+                  className="flex items-center gap-1.5 rounded-md bg-white/80 px-2 py-1 ring-1 ring-white/70"
                 >
-                  <p className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-foreground/55">
-                    <BadgeIcon className="h-3 w-3 text-blue-500" aria-hidden="true" />
-                    {b.label}
-                  </p>
-                  <p className="mt-0.5 text-xs font-bold text-foreground">{b.value}</p>
+                  <Mark className={`h-3.5 w-3.5 flex-shrink-0 ${markColor}`} aria-hidden="true" />
+                  <span className="truncate text-[10px] font-semibold text-foreground/75">{b.label}</span>
+                  <span className="ml-auto text-[10px] font-bold text-foreground/55">{b.value}</span>
                 </div>
               );
             })}
           </div>
+        </div>
 
-        </button>
-
+        {/* 3 — ACTIONABLE SOLUTION: European alternative */}
         {!eu && isOpen && (
           <div className="mt-4 animate-in fade-in slide-in-from-top-1 duration-200">
             <div className="rounded-lg bg-emerald-200/40 p-3 ring-1 ring-emerald-300/50">
@@ -2119,6 +2178,7 @@ const Step5Measurement = ({
       </div>
     );
   };
+
 
   return (
     <Card
