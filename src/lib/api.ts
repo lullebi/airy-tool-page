@@ -163,3 +163,44 @@ export async function rescore(
   });
   return (await asJson<{ vendors: RescoredVendor[] }>(r)).vendors;
 }
+
+/* =========================================================================
+   SCORE BREAKDOWN — "Så räknades poängen fram"
+   Backend förväntas leverera per-kategori-poäng, dynamisk vikt och en
+   dynamisk förklaring av varför kategorin fått just den vikten utifrån
+   klientens prioriteringar. Inga texter hårdkodas i frontend.
+   ========================================================================= */
+
+export interface ScoreBreakdownCategory {
+  key: string;
+  label: string;
+  score: number; // 0..100
+  weight: number; // 0..1 (procent = weight * 100)
+  explanation: string; // dynamisk förklaring från backend
+}
+
+export interface ScoreBreakdownResponse {
+  categories: ScoreBreakdownCategory[];
+  total: number; // 0..SCORE_CAP
+}
+
+// Kontext som backend använder för att generera dynamiska vikter/förklaringar.
+export interface ScoreBreakdownContext {
+  priorities: string[];
+  sector: string;
+  eu_data_weight: number | null;
+  readiness: string;
+}
+
+export async function fetchScoreBreakdown(payload: {
+  vendor_ids: string[];
+  weights: ScoreWeights;
+  context: ScoreBreakdownContext;
+}): Promise<ScoreBreakdownResponse> {
+  const r = await apiFetch("/score/breakdown", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return asJson<ScoreBreakdownResponse>(r);
+}
