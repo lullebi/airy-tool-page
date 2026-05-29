@@ -1747,7 +1747,7 @@ const Field = ({
 
 type ScoreBadge = { key: string; label: string; value: number; evidence: string };
 
-const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean): ScoreBadge[] => {
+const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean, eu: boolean): ScoreBadge[] => {
   const findQ = (id: string) => [...QUICK_SCAN, ...DEEP_DIVE].find((q) => q.id === id);
   const ans = (id: string) => (id in quick ? quick[id] : deep[id]) ?? "—";
   const score = (id: string) => {
@@ -1757,14 +1757,25 @@ const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean): ScoreBadg
     return scoreFor(q, a);
   };
 
+  // EU-suveränitetsmått: en leverantör utanför EU kan per definition inte
+  // garantera datalagring inom EU/EES eller GDPR utan tredjelandsrisk
+  // (US CLOUD Act). Dessa nollställs därför för icke-EU-leverantörer så att
+  // poängen inte motsäger "0 % EU"-mätningen.
+  const NON_EU_EVIDENCE_RESIDENCY =
+    "Leverantören saknar huvudkontor/datalagring inom EU/EES – data lagras eller bearbetas globalt (USA).";
+  const NON_EU_EVIDENCE_GDPR =
+    "Tredjelandsöverföring och US CLOUD Act-exponering omöjliggör fullständig GDPR-garanti.";
+
   const base: ScoreBadge[] = [
     {
       key: "data_residency",
       label: "Datalagring",
-      value: hasDeep ? score("dd_loc_eu") : score("qs_sensitive_data"),
-      evidence: hasDeep
-        ? `Mätt mot: "${findQ("dd_loc_eu")?.text}" → ${ans("dd_loc_eu")}`
-        : `Mätt mot: "${findQ("qs_sensitive_data")?.text}" → ${ans("qs_sensitive_data")}`,
+      value: eu ? (hasDeep ? score("dd_loc_eu") : score("qs_sensitive_data")) : 0,
+      evidence: !eu
+        ? NON_EU_EVIDENCE_RESIDENCY
+        : hasDeep
+          ? `Mätt mot: "${findQ("dd_loc_eu")?.text}" → ${ans("dd_loc_eu")}`
+          : `Mätt mot: "${findQ("qs_sensitive_data")?.text}" → ${ans("qs_sensitive_data")}`,
     },
     {
       key: "nis2",
@@ -1785,10 +1796,12 @@ const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean): ScoreBadg
     {
       key: "gdpr",
       label: "GDPR-garanti",
-      value: hasDeep ? score("dd_own_gdpr") : score("qs_certifications"),
-      evidence: hasDeep
-        ? `Mätt mot: "${findQ("dd_own_gdpr")?.text}" → ${ans("dd_own_gdpr")}`
-        : `Mätt mot: "${findQ("qs_certifications")?.text}" → ${ans("qs_certifications")}`,
+      value: eu ? (hasDeep ? score("dd_own_gdpr") : score("qs_certifications")) : 0,
+      evidence: !eu
+        ? NON_EU_EVIDENCE_GDPR
+        : hasDeep
+          ? `Mätt mot: "${findQ("dd_own_gdpr")?.text}" → ${ans("dd_own_gdpr")}`
+          : `Mätt mot: "${findQ("qs_certifications")?.text}" → ${ans("qs_certifications")}`,
     },
   ];
   return base;
