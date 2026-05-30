@@ -1552,44 +1552,18 @@ const Step6ScoreSummary = ({
               </p>
 
 
-              {/* Nivå 2: Regelverk */}
-              <Accordion type="multiple" className="space-y-2">
-                {card.regelverk.map((rv) => (
-                  <AccordionItem
-                    key={rv.name}
-                    value={`${card.key}-${rv.name}`}
-                    className="rounded-xl border-0 bg-[hsl(var(--sky-100))] ring-1 ring-[hsl(var(--sky-200))]"
-                  >
-                    <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                      <div className="flex items-center gap-2.5 text-left">
-                        <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
-                        <span className="text-sm font-bold text-foreground">{rv.name}</span>
-                        <span className="text-xs font-medium text-foreground/50">{rv.desc}</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      {/* Nivå 3: Kategorier → Kontroller */}
-                      <div className="space-y-3">
-                        {rv.categories.map((cat) => (
-                          <div
-                            key={cat.name}
-                            className="rounded-lg bg-white/80 p-3 ring-1 ring-border/50"
-                          >
-                            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-foreground/50">
-                              {cat.name}
-                            </p>
-                            <div>
-                              {cat.controls.map((c) => (
-                                <ControlRow key={c.id} c={c} />
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+              {/* Modell-features & kontroller (statiska, speglar backend-datasetet) */}
+              <div className="rounded-xl bg-white/80 p-4 ring-1 ring-border/50">
+                <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-foreground/50">
+                  Modell-features & kontroller
+                </p>
+                <div>
+                  {card.checkpoints.map((cp) => (
+                    <CheckpointRow key={cp.label} cp={cp} />
+                  ))}
+                </div>
+              </div>
+
 
               {/* EU-kort: telemetri + bötestabell */}
               {card.key === "eu" && (
