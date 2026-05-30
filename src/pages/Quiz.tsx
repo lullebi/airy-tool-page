@@ -1291,7 +1291,8 @@ const Step6ScoreSummary = ({
         <p className="max-w-3xl text-base leading-relaxed text-foreground/85">{profileText}</p>
       </div>
 
-      {/* BOTTOM CARD — Rekommenderat EU-Alternativ */}
+      {/* BOTTOM CARD — Rekommenderat EU-Alternativ (endast vid kontrollrisk) */}
+      {exposed && (
       <div className="rounded-3xl border border-primary/20 bg-white p-6 shadow-[var(--shadow-deep)] md:p-8">
         <div className="mb-1 flex items-center gap-2">
           <BadgeCheck className="h-4 w-4 text-primary" />
