@@ -704,7 +704,7 @@ const Quiz = () => {
               className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
               style={{ background: "var(--gradient-cta)" }}
             >
-              {["Gå till Resultat på mätning", "Visa poängberäkning"][stepIndex]}
+              {["Gå till Infrastruktur & Dataproveniens", "Visa poängberäkning"][stepIndex]}
               <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
             </Button>
           ) : (
