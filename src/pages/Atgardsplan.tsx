@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldAlert, Download, Loader2 } from "lucide-react";
+import { ArrowLeft, ShieldAlert, ShieldCheck, Download, Loader2 } from "lucide-react";
 import jsPDF from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { fetchAlternatives, type RescoredVendor } from "@/lib/api";
 import type { VendorLike } from "@/lib/vendorMapper";
