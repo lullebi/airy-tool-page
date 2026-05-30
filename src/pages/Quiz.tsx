@@ -1200,482 +1200,159 @@ const buildAdvisory = (step1: Step1State): string => {
 };
 
 
+// Exakt rådgivningstext för det kritiska scenariot (tredjelandsexponering +
+// omedelbart behov + publikt EU-moln + NIS2/DORA).
+const PROFILE_EXACT_TEXT =
+  "Leverantören uppvisar strukturella kontrollrisker gällande geopolitisk rådighet. Eftersom er organisation har ett omedelbart förändringsbehov under regulatorisk press (NIS2/DORA) samt kräver en europeisk molnlösning, innebär nuvarande infrastruktur en direkt strategisk verksamhetsrisk. En kontrollerad migrering bör inledas omgående.";
+
+// Genererar en sammanhängande sårbarhetsbedömning (ett stycke, inga punktlistor)
+// utifrån organisationens val i Step 1 samt leverantörens exponering.
+const buildVulnerabilityProfile = (step1: Step1State, exposed: boolean): string => {
+  if (
+    exposed &&
+    step1.timeHorizon === "A" &&
+    step1.infrastructure === "B" &&
+    step1.regulatoryFocus === "A"
+  ) {
+    return PROFILE_EXACT_TEXT;
+  }
+  const exposureClause = exposed
+    ? "Leverantören uppvisar strukturella kontrollrisker gällande geopolitisk rådighet, vilket utgör en strategisk verksamhetsrisk för er organisation"
+    : "Leverantören bedöms ha tillfredsställande geopolitisk rådighet utan akut kontrollrisk";
+  return `${exposureClause}. ${buildAdvisory(step1)}`;
+};
+
 const Step6ScoreSummary = ({
   vendors,
   step1,
-  quick,
-  deepByVendor,
-  activeDeepQuestions,
 }: {
   vendors: VendorLike[];
   step1: Step1State;
-  quick: Answers;
-  deepByVendor: Record<string, Answers>;
-  activeDeepQuestions: Question[];
-  scoredMap: ScoredMap;
+  quick?: Answers;
+  deepByVendor?: Record<string, Answers>;
+  activeDeepQuestions?: Question[];
+  scoredMap?: ScoredMap;
 }) => {
-  // Hämta full leverantörsdetalj (cert, regioner, böter) för EU-kortet.
-  const [detailsById, setDetailsById] = useState<Record<string, ApiVendorDetail>>({});
-  const [loading, setLoading] = useState(true);
-  const apiIdsKey = vendors.map((v) => v.apiId ?? "").filter(Boolean).join("|");
+  const navigate = useNavigate();
+
+  // "Aktiv" leverantör: prioritera den med tredjelandsexponering, annars första.
+  const activeVendor = useMemo(
+    () => vendors.find((v) => v.cloud_act_exposure === true || v.hq_in_eu === false) ?? vendors[0],
+    [vendors],
+  );
+
+  const exposed =
+    !!activeVendor && (activeVendor.cloud_act_exposure === true || activeVendor.hq_in_eu === false);
+
+  const profileText = buildVulnerabilityProfile(step1, exposed);
+
+  const category = activeVendor?.apiCategory ?? activeVendor?.type ?? null;
+
+  const [alt, setAlt] = useState<{ loading: boolean; eu: string[]; error?: string }>({
+    loading: true,
+    eu: [],
+  });
 
   useEffect(() => {
-    let active = true;
-    const ids = vendors.map((v) => v.apiId).filter((id): id is string => !!id);
-    if (ids.length === 0) {
-      setLoading(false);
+    if (!category) {
+      setAlt({ loading: false, eu: [] });
       return;
     }
-    setLoading(true);
-    Promise.allSettled(ids.map((id) => fetchVendor(id))).then((res) => {
-      if (!active) return;
-      const map: Record<string, ApiVendorDetail> = {};
-      res.forEach((r, i) => {
-        if (r.status === "fulfilled") map[ids[i]] = r.value;
-      });
-      setDetailsById(map);
-      setLoading(false);
-    });
+    let active = true;
+    setAlt({ loading: true, eu: [] });
+    fetchAlternatives(category)
+      .then((r) => active && setAlt({ loading: false, eu: r.eu_alternatives }))
+      .catch(
+        (e: unknown) =>
+          active &&
+          setAlt({
+            loading: false,
+            eu: [],
+            error: e instanceof Error ? e.message : "Kunde inte hämta alternativ",
+          }),
+      );
     return () => {
       active = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiIdsKey]);
+  }, [category]);
 
-  const details = useMemo(() => Object.values(detailsById), [detailsById]);
-
-  /* ---- Kort 1: Snabbanalys ---- */
-  const snabbScore = useMemo(() => weightedAverage(QUICK_SCAN, quick), [quick]);
-  const quickControl = (id: string): BreakdownControl => {
-    const q = QUICK_SCAN.find((x) => x.id === id);
-    if (!q) return { id, label: id, answer: "—", score: 0 };
-    return { id, label: q.text, answer: quick[id] ?? "Ej besvarad", score: scoreFor(q, quick) };
-  };
-  const snabbRegelverk: BreakdownRegelverk[] = [
-    {
-      name: "GDPR",
-      desc: "Dataskydd & personuppgifter",
-      categories: [
-        {
-          name: "Dataskydd",
-          controls: ["qs_sensitive_data", "qs_legal_agreements", "qs_encryption_keys"].map(
-            quickControl,
-          ),
-        },
-      ],
-    },
-    {
-      name: "NIS2",
-      desc: "Verksamhetskritikalitet",
-      categories: [
-        { name: "Kontinuitet", controls: [quickControl("qs_business_critical")] },
-      ],
-    },
-  ];
-
-  /* ---- Kort 2: Fördjupad analys ---- */
-  const deepAgg = useMemo(() => {
-    const map: Record<string, { scores: number[]; answers: string[] }> = {};
-    for (const ans of Object.values(deepByVendor)) {
-      for (const q of activeDeepQuestions) {
-        if (ans[q.id]) {
-          (map[q.id] ??= { scores: [], answers: [] }).scores.push(scoreFor(q, ans));
-          map[q.id].answers.push(ans[q.id]);
-        }
-      }
-    }
-    return map;
-  }, [deepByVendor, activeDeepQuestions]);
-
-  const deepControl = (q: Question): BreakdownControl => {
-    const agg = deepAgg[q.id];
-    if (!agg || agg.scores.length === 0)
-      return { id: q.id, label: q.text, answer: "Ej besvarad", score: 0 };
-    const score = Math.round(agg.scores.reduce((a, b) => a + b, 0) / agg.scores.length);
-    const uniq = Array.from(new Set(agg.answers));
-    const answer = uniq.length === 1 ? uniq[0] : `${uniq.length} olika svar`;
-    return { id: q.id, label: q.text, answer, score };
-  };
-
-  const deepScore = useMemo(() => {
-    const per = Object.values(deepByVendor)
-      .filter((a) => Object.keys(a).length > 0)
-      .map((a) => weightedAverage(activeDeepQuestions, a));
-    return per.length ? Math.round(per.reduce((a, b) => a + b, 0) / per.length) : 0;
-  }, [deepByVendor, activeDeepQuestions]);
-
-  const deepCat = (name: string): BreakdownCategory => ({
-    name,
-    controls: activeDeepQuestions.filter((q) => q.kategori === name).map(deepControl),
-  });
-
-  const deepRegelverk: BreakdownRegelverk[] = [
-    {
-      name: "GDPR",
-      desc: "Datalagring, jurisdiktion & ägarskap",
-      categories: [deepCat("Datalagring och jurisdiktion"), deepCat("Ägarskap och regelverk")],
-    },
-    {
-      name: "DORA",
-      desc: "Digital driftsmotståndskraft",
-      categories: [deepCat("Incidenthantering")],
-    },
-    {
-      name: "NIS2",
-      desc: "Cybersäkerhet för kritiska sektorer",
-      categories: [deepCat("Säkerhetsnivå")],
-    },
-  ].map((r) => ({ ...r, categories: r.categories.filter((c) => c.controls.length > 0) }));
-
-  /* ---- Kort 3: EU-efterlevnad & Suveränitet ---- */
-  const avgCert = (key: keyof ApiVendorDetail["features"]["certifications"]): number | null => {
-    const vals = details
-      .map((d) => d.features.certifications[key])
-      .filter((v): v is number => typeof v === "number");
-    if (!vals.length) return null;
-    return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100);
-  };
-  const fracTrue = (pick: (d: ApiVendorDetail) => boolean): number | null => {
-    if (!details.length) return null;
-    return Math.round((details.filter(pick).length / details.length) * 100);
-  };
-
-  const euCtrl = (label: string, score: number | null): BreakdownControl => ({
-    id: label,
-    label,
-    answer:
-      score === null
-        ? "Saknar data"
-        : score >= 75
-          ? "Uppfylls"
-          : score >= 50
-            ? "Delvis uppfyllt"
-            : "Brister",
-    score: score ?? 0,
-  });
-
-  const euRegelverk: BreakdownRegelverk[] = [
-    {
-      name: "GDPR",
-      desc: "Dataskydd & lagringsplats",
-      categories: [
-        {
-          name: "Dataskydd & lagring",
-          controls: [
-            euCtrl("GDPR-åtaganden", avgCert("gdpr_commitments")),
-            euCtrl("ISO 27001-certifiering", avgCert("iso27001")),
-            euCtrl("Lagring inom EU/EES", fracTrue((d) => d.features.storage_in_eu)),
-          ],
-        },
-      ],
-    },
-    {
-      name: "DORA",
-      desc: "Finansiell driftsmotståndskraft",
-      categories: [
-        {
-          name: "Driftskontroller",
-          controls: [
-            euCtrl("DORA-efterlevnad", avgCert("dora")),
-            euCtrl("SOC 2-attestering", avgCert("soc2")),
-          ],
-        },
-      ],
-    },
-    {
-      name: "NIS2",
-      desc: "Cybersäkerhetskrav",
-      categories: [
-        {
-          name: "Cybersäkerhet",
-          controls: [
-            euCtrl("NIS2-efterlevnad", avgCert("nis2")),
-            euCtrl("C5-attestering", avgCert("c5_attestation")),
-          ],
-        },
-      ],
-    },
-  ];
-
-  const euScore = useMemo(() => {
-    const all = euRegelverk
-      .flatMap((r) => r.categories.flatMap((c) => c.controls))
-      .map((c) => c.score);
-    if (step1.euDataWeight && !details.length) return Math.round((step1.euDataWeight / 5) * 100);
-    return all.length ? Math.round(all.reduce((a, b) => a + b, 0) / all.length) : 0;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [details, step1.euDataWeight]);
-
-  // Tidigare böter — sammanställs från leverantörsdata.
-  const fines = useMemo(
-    () =>
-      details
-        .filter((d) => d.features.gdpr_fines_count > 0 || (d.features.gdpr_fines_total_eur ?? 0) > 0)
-        .map((d) => ({
-          vendor: d.name,
-          breach: "GDPR-överträdelse",
-          count: d.features.gdpr_fines_count,
-          amount: d.features.gdpr_fines_total_eur ?? 0,
-        })),
-    [details],
-  );
-
-  const total = Math.round(
-    snabbScore * BREAKDOWN_WEIGHTS.snabb +
-      deepScore * BREAKDOWN_WEIGHTS.deep +
-      euScore * BREAKDOWN_WEIGHTS.eu,
-  );
-
-  const cards: {
-    key: string;
-    title: string;
-    weight: number;
-    score: number;
-    regelverk: BreakdownRegelverk[];
-    explanation: string;
-    checkpoints: { label: string; status: string; score: number }[];
-  }[] = [
-    {
-      key: "snabb",
-      title: "Teknisk Resiliens",
-      weight: 20,
-      score: snabbScore,
-      regelverk: snabbRegelverk,
-      explanation:
-        `Den tekniska infrastrukturen är robust och kan nå 100p – krypteringen är stark, drifttillgängligheten hög och leverantören bär stödjande certifieringar. Detta lager mäter dock enbart teknisk motståndskraft och är helt skilt från legal och geografisk suveränitet: även en tekniskt perfekt leverantör kan stängas av på jurisdiktionell grund.`,
-      checkpoints: [
-        { label: "Teknisk kryptering & Drifttillgänglighet", status: "Verifierad", score: 100 },
-        { label: "Stödjande certifieringar (ISO 27001, SOC2, C5)", status: "Aktiv", score: 100 },
-      ],
-    },
-    {
-      key: "deep",
-      title: "Regulatorisk Rådighet",
-      weight: 50,
-      score: deepScore,
-      regelverk: deepRegelverk,
-      explanation:
-        `Det regulatoriska ramverket väger tyngst i modellen. NIS2-beredskapen är fullt uppfylld med stark incidentrapportering och säkerhetskrav, medan DORA-motståndskraften endast är delvis täckt utifrån leverantörens finansiella ICT-riskprofil. Tillsammans håller dessa ramverk uppe den regulatoriska rådigheten, men eliminerar inte risken vid tredjelandsöverföring.`,
-      checkpoints: [
-        { label: "NIS2-beredskap (Incidentrapportering & Säkerhetskrav)", status: "Uppfylld", score: 100 },
-        { label: "DORA-motståndskraft (Finansiell ICT-riskprofil)", status: "Delvis", score: 50 },
-      ],
-    },
-    {
-      key: "eu",
-      title: "Geopolitisk Kontrollrisk",
-      weight: 30,
-      score: euScore,
-      regelverk: euRegelverk,
-      explanation:
-        `Detta är de geografiska särdrag som driver vår Random Forest-modells riskprediktion. Leverantören är exponerad mot US CLOUD Act, har sitt huvudkontor utanför EU och både lagrar och bearbetar data utanför unionen. Det är denna kontrollrisk som drar ned den samlade suveränitetspoängen – trots att den tekniska resiliensen kan vara 100p förlorar verksamheten omedelbart rådigheten över sin data om den geopolitiska kranen stängs.`,
-      checkpoints: [
-        { label: "US CLOUD Act Exposure (Jurisdiktionell risk)", status: "Hög risk / Exponerad", score: 0 },
-        { label: "Huvudkontor inom EU (hq_in_eu)", status: "Nej / USA", score: 0 },
-        { label: "Fysisk datalagring (storage_region)", status: "Utanför EU", score: 0 },
-        { label: "Geografisk bearbetning (process_region)", status: "Utanför EU / Globalt", score: 0 },
-      ],
-    },
-  ];
+  const recommended = alt.eu[0] ?? null;
 
   return (
-    <section className="rounded-3xl bg-[hsl(var(--sky-100))] p-6 ring-1 ring-[hsl(var(--sky-200))] shadow-[var(--shadow-deep)] md:p-8">
-      <header className="mb-6">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-          Analys & Åtgärdsplan
-        </h2>
-        <p className="mt-1 text-sm font-medium text-foreground/60">
-          Skräddarsydd rådgivning utifrån er verksamhetsanalys, följt av hur suveränitetspoängen räknades fram.
-        </p>
-      </header>
-
-      {/* Skräddarsydd åtgärdsrekommendation baserad på Step 1 (organisatorisk kontext) */}
-      <div className="mb-6 rounded-2xl border-l-4 border-primary bg-white/80 p-5 ring-1 ring-[hsl(var(--sky-200))]">
-        <div className="mb-2 flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <p className="text-sm font-bold uppercase tracking-wider text-primary">Rekommenderad åtgärdsplan</p>
+    <section className="space-y-6">
+      {/* TOP CARD — Sårbarhetsprofil för Ledningsgrupp */}
+      <div className="rounded-3xl bg-[hsl(var(--sky-100))] p-6 ring-1 ring-[hsl(var(--sky-200))] shadow-[var(--shadow-deep)] md:p-8">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 ring-1 ring-rose-200">
+            <ShieldAlert className="h-5 w-5 text-rose-600" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">
+              Sårbarhetsprofil för Ledningsgrupp
+            </h2>
+            {activeVendor && (
+              <p className="text-xs font-medium text-foreground/55">
+                Bedömd leverantör: {activeVendor.name}
+                {category ? ` · ${category}` : ""}
+              </p>
+            )}
+          </div>
         </div>
-        <p className="text-sm leading-relaxed text-foreground/80">{buildAdvisory(step1)}</p>
+        <p className="max-w-3xl text-base leading-relaxed text-foreground/85">{profileText}</p>
       </div>
 
-
-      {loading && (
-        <div className="mb-4 flex items-center gap-2 text-sm text-foreground/70">
-          <Loader2 className="h-4 w-4 animate-spin" /> Hämtar leverantörsdata…
-        </div>
-      )}
-
-      {/* Interaktiva, expanderbara kort */}
-      <Accordion type="multiple" className="space-y-3">
-        {cards.map((card) => (
-          <AccordionItem
-            key={card.key}
-            value={card.key}
-            className="overflow-hidden rounded-2xl border-0 bg-white/80 ring-1 ring-[hsl(var(--sky-200))] shadow-sm"
-          >
-            <AccordionTrigger className="px-5 py-4 hover:no-underline">
-              <div className="flex w-full items-center justify-between gap-3 pr-2">
-                <div className="flex items-center gap-3">
-                  <span className="text-base font-bold text-foreground">{card.title}</span>
-                  <span className="inline-flex items-center rounded-full bg-[hsl(var(--sky-200))] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-primary">
-                    Vikt {card.weight}%
-                  </span>
-                </div>
-                <span className="text-xl font-bold tabular-nums text-foreground">
-                  {card.score}
-                </span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-5">
-              <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-[hsl(var(--sky-200))]">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{ width: `${Math.min(100, card.score)}%`, background: "var(--gradient-cta)" }}
-                />
-              </div>
-
-              {/* Backend-driven sårbarhetsförklaring */}
-              <p className="mb-4 rounded-xl bg-white/80 p-4 text-sm leading-relaxed text-foreground/80 ring-1 ring-border/50">
-                {card.explanation}
-              </p>
-
-
-              {/* Modell-features & kontroller (statiska, speglar backend-datasetet) */}
-              <div className="rounded-xl bg-white/80 p-4 ring-1 ring-border/50">
-                <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-foreground/50">
-                  Modell-features & kontroller
-                </p>
-                <div>
-                  {card.checkpoints.map((cp) => (
-                    <CheckpointRow key={cp.label} cp={cp} />
-                  ))}
-                </div>
-              </div>
-
-
-              {/* EU-kort: telemetri + bötestabell */}
-              {card.key === "eu" && (
-                <div className="mt-4 space-y-4">
-                  {/* Leverantörstelemetri */}
-                  <div className="rounded-xl bg-white/80 p-4 ring-1 ring-border/50">
-                    <div className="mb-3 flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-primary" />
-                      <p className="text-sm font-bold text-foreground">Leverantörstelemetri</p>
-                    </div>
-                    {details.length === 0 ? (
-                      <p className="text-sm text-foreground/55">Ingen telemetridata tillgänglig.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {details.map((d) => {
-                          const t = telemetryFor(d);
-                          return (
-                            <div key={d.id}>
-                              <p className="mb-1.5 text-xs font-semibold text-foreground/70">
-                                {d.name}
-                              </p>
-                              <div className="grid grid-cols-3 gap-2">
-                                <RegionCell
-                                  icon={Globe}
-                                  label="Ursprung"
-                                  location={t.origin.text}
-                                  status={t.origin.status}
-                                />
-                                <RegionCell
-                                  icon={Cpu}
-                                  label="Bearbetning"
-                                  location={t.processing.text}
-                                  status={t.processing.status}
-                                />
-                                <RegionCell
-                                  icon={Server}
-                                  label="Lagring"
-                                  location={t.storage.text}
-                                  status={t.storage.status}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Tidigare böter */}
-                  <div className="rounded-xl bg-white/80 p-4 ring-1 ring-border/50">
-                    <div className="mb-3 flex items-center gap-2">
-                      <Gavel className="h-4 w-4 text-primary" />
-                      <p className="text-sm font-bold text-foreground">Tidigare böter</p>
-                    </div>
-                    {fines.length === 0 ? (
-                      <p className="text-sm text-foreground/55">
-                        Inga registrerade regulatoriska böter.
-                      </p>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="hover:bg-transparent">
-                            <TableHead className="text-xs">Regelöverträdelse</TableHead>
-                            <TableHead className="text-xs">Antal</TableHead>
-                            <TableHead className="text-right text-xs">Belopp</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {fines.map((f, i) => (
-                            <TableRow key={i} className="hover:bg-transparent">
-                              <TableCell className="py-2.5">
-                                <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-                                  <ScrollText className="h-3.5 w-3.5 text-rose-500" />
-                                  {f.vendor} — {f.breach}
-                                </span>
-                              </TableCell>
-                              <TableCell className="py-2.5 text-sm text-foreground/70">
-                                {f.count || "—"}
-                              </TableCell>
-                              <TableCell className="py-2.5 text-right text-sm font-semibold tabular-nums text-foreground">
-                                {f.amount > 0 ? eurFmt.format(f.amount) : "—"}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </div>
-                </div>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
-
-      {/* Totalpoäng — mörk navy-footer */}
-      <div className="mt-4 flex items-center justify-between rounded-2xl bg-foreground px-6 py-5 text-background shadow-[var(--shadow-deep)]">
-        <div>
-          <p className="text-base font-bold">Suveränitetspoäng</p>
-          <p className="text-[11px] font-medium text-background/60">
-            Teknisk Resiliens 20% · Regulatorisk Rådighet 50% · Geopolitisk Kontrollrisk 30%
+      {/* BOTTOM CARD — Rekommenderat EU-Alternativ */}
+      <div className="rounded-3xl border border-primary/20 bg-white p-6 shadow-[var(--shadow-deep)] md:p-8">
+        <div className="mb-1 flex items-center gap-2">
+          <BadgeCheck className="h-4 w-4 text-primary" />
+          <p className="text-[11px] font-bold uppercase tracking-wider text-primary">
+            Rekommenderat EU-Alternativ
           </p>
         </div>
-        <p className="text-4xl font-bold tabular-nums">{total}</p>
+
+        {alt.loading ? (
+          <p className="inline-flex items-center gap-2 py-4 text-sm text-foreground/60">
+            <Loader2 className="h-4 w-4 animate-spin" /> Hämtar suveränt europeiskt alternativ…
+          </p>
+        ) : recommended ? (
+          <div className="mt-3 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <p className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+                {recommended}
+              </p>
+              <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-foreground/65">
+                Suveränt europeiskt alternativ inom kategorin {category ?? "—"}, med datalagring och
+                bearbetning inom EU:s jurisdiktion och utan exponering mot tredjelandslagstiftning.
+              </p>
+              {alt.eu.length > 1 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {alt.eu.slice(1).map((name) => (
+                    <span
+                      key={name}
+                      className="rounded-full bg-[hsl(var(--sky-100))] px-2.5 py-0.5 text-xs font-medium text-foreground ring-1 ring-[hsl(var(--sky-200))]"
+                    >
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button
+              size="lg"
+              onClick={() => navigate("/atgardsplan", { state: { vendors } })}
+              className="group shrink-0 rounded-xl px-6 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
+              style={{ background: "var(--gradient-cta)" }}
+            >
+              Visa Migreringsunderlag
+              <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
+            </Button>
+          </div>
+        ) : (
+          <p className="py-4 text-sm text-foreground/60">
+            {alt.error ?? "Inga EU-alternativ taggade för denna kategori."}
+          </p>
+        )}
       </div>
-
-      {/* Sårbarhetsprofil — executive summary callout */}
-      <div className="mt-4 rounded-2xl border-l-4 border-rose-500 bg-rose-50 p-5 ring-1 ring-rose-200">
-        <div className="mb-2 flex items-center gap-2">
-          <ShieldAlert className="h-5 w-5 text-rose-600" />
-          <p className="text-sm font-bold uppercase tracking-wider text-rose-700">Sårbarhetsprofil</p>
-        </div>
-        <p className="text-sm leading-relaxed text-foreground/80">
-          <span className="font-bold text-foreground">Sårbarhetsprofil för ledningsgrupp:</span>{" "}
-          Leverantören har utmärkt teknisk säkerhet, men kritisk kontrollrisk. Om den geopolitiska
-          kranen stängs av förlorar verksamheten omedelbart rådigheten över sin data.
-        </p>
-      </div>
-
-
-      <p className="mt-5 text-xs text-foreground/55">
-        Mätning sker mot Eurostack-standard (DORA, NIS2, GDPR, Data Act, EU-suveränitet).
-        Kontrollerna poängsätts: Ja = 100, Delvis = 50, Nej = 0.
-      </p>
     </section>
   );
 };
