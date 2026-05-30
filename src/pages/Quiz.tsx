@@ -1962,13 +1962,9 @@ const Step5Measurement = ({
                       </span>
                     )}
                   </div>
-                  {(certScore !== null || euComplianceScore !== null) && (
-                    <p className="mt-3 text-[10px] font-medium text-foreground/55">
-                      {certScore !== null && `Cert-score ${Math.round(certScore)}`}
-                      {certScore !== null && euComplianceScore !== null && " · "}
-                      {euComplianceScore !== null && `EU-compliance ${Math.round(euComplianceScore)}`}
-                    </p>
-                  )}
+                  <p className={`mt-3 text-2xl font-extrabold leading-none ${techScore === 100 ? "text-blue-700" : "text-foreground/40"}`}>
+                    {techScore} <span className="text-sm font-bold text-foreground/40">/ 100p</span>
+                  </p>
                 </div>
               </div>
             </section>
