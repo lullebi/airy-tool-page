@@ -1171,6 +1171,35 @@ const eurFmt = new Intl.NumberFormat("sv-SE", {
   maximumFractionDigits: 0,
 });
 
+/* Tailored advisory paragraph driven by the organizational context captured in
+   Step 1 (Verksamhetsanalys & Strategi). Pure presentation — does not alter any
+   objective vendor scores or ML weights. */
+const buildAdvisory = (step1: Step1State): string => {
+  const urgent = step1.timeHorizon === "A";
+  const privateInfra = step1.infrastructure === "A";
+  const highCompetence = step1.techResource === "A";
+  const regNis2Dora = step1.regulatoryFocus === "A";
+
+  const horizonClause = urgent
+    ? "Eftersom ni har angett ett omedelbart behov av en alternativ lösning bör migreringen drivas som ett prioriterat projekt med ett tydligt 1–3 månaders fönster och en konkret exit-plan från nuvarande leverantör"
+    : "Med en strategisk tidshorisont på 6–12 månader rekommenderas en stegvis omställning där ni hinner utvärdera, pilotera och kontraktera europeiska alternativ utan att äventyra pågående drift";
+
+  const infraClause = privateInfra
+    ? "Er preferens för lokalt datacenter eller privat moln talar för en arkitektur där affärskritisk data hålls under egen eller europeisk drift med full kontroll över krypteringsnycklar"
+    : "Er preferens för publikt moln inom EU innebär att fokus bör ligga på leverantörer med verifierad datalagring och bearbetning strikt inom unionen samt avtalsmässig garanti mot tredjelandsöverföring";
+
+  const resourceClause = highCompetence
+    ? "Med hög intern teknisk kompetens kan ni själva leda migrering och underhåll, vilket ger utrymme att välja mer flexibla, självdriftade europeiska plattformar"
+    : "Med begränsade interna resurser bör ni prioritera paketerade Managed Services från europeiska leverantörer som tar ansvar för drift, support och löpande efterlevnad";
+
+  const regClause = regNis2Dora
+    ? "Då NIS2 och DORA sätter högst press ligger tyngdpunkten på driftsäkerhet, kontinuitet och incidentrapportering, vilket gör leverantörens motståndskraft och rapporteringsförmåga till avgörande urvalskriterier"
+    : "Då GDPR och dataskydd sätter högst press ligger tyngdpunkten på juridisk rådighet, datalokalisering och kryptering, vilket gör leverantörens EU-suveränitet och avtalsmässiga dataskydd till avgörande urvalskriterier";
+
+  return `${horizonClause}. ${infraClause}. ${resourceClause}. ${regClause}.`;
+};
+
+
 const Step6ScoreSummary = ({
   vendors,
   step1,
