@@ -305,6 +305,9 @@ const Index = () => {
               <Info className="h-5 w-5" />
             </span>
             <p className="text-sm leading-relaxed text-foreground/80 md:text-base">
+              <span className="mb-2 block text-lg font-bold text-foreground md:text-xl">
+                Vad är Eurostack
+              </span>
               I takt med att europeiska organisationer digitaliseras ökar kraven på datasuveränitet
               och regulatorisk efterlevnad. Eurostack har utvecklats för att belysa dolda
               kontrollrisker i leverantörskedjan och hjälpa verksamheter att navigera i det skärpta
