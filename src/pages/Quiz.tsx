@@ -471,6 +471,10 @@ const Quiz = () => {
   const [completionOpen, setCompletionOpen] = useState(false);
   const navigate = useNavigate();
   const [step1, setStep1] = useState<Step1State>({
+    timeHorizon: "",
+    infrastructure: "",
+    techResource: "",
+    regulatoryFocus: "",
     priorities: [],
     sector: "",
     euDataWeight: null,
