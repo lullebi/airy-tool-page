@@ -1751,7 +1751,228 @@ const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean, eu: boolea
   return base;
 };
 
+const CERT_LABELS: { key: keyof ApiVendorDetail["features"]["certifications"]; label: string }[] = [
+  { key: "iso27001", label: "ISO 27001" },
+  { key: "soc2", label: "SOC 2" },
+  { key: "dora", label: "DORA" },
+  { key: "nis2", label: "NIS2" },
+  { key: "c5_attestation", label: "C5" },
+  { key: "gdpr_commitments", label: "GDPR" },
+];
+
 const Step5Measurement = ({
+  vendors,
+}: {
+  vendors: VendorLike[];
+  step1: Step1State;
+  quick: Answers;
+  deepByVendor: Record<string, Answers>;
+  hasDeep: boolean;
+  scoredMap: ScoredMap;
+  scoring: boolean;
+  scoreError: string | null;
+}) => {
+  // Fetch full vendor detail (raw dataset features) per selected vendor.
+  const [detailsById, setDetailsById] = useState<Record<string, ApiVendorDetail>>({});
+  const apiIdsKey = vendors.map((v) => v.apiId ?? "").filter(Boolean).join("|");
+  useEffect(() => {
+    let active = true;
+    vendors.forEach((v) => {
+      if (!v.apiId) return;
+      fetchVendor(v.apiId)
+        .then((d) => {
+          if (active) setDetailsById((prev) => ({ ...prev, [v.apiId!]: d }));
+        })
+        .catch(() => {});
+    });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiIdsKey]);
+
+  // Resolve the three technical regions for a vendor from raw dataset columns.
+  const regionsFor = (v: VendorLike) => {
+    const d = detailsById[v.apiId ?? ""];
+    const f = d?.features;
+    const originStatus = regionStatus(undefined, f?.hq_in_eu ?? v.hq_in_eu);
+    const originText =
+      countryFromIso2(f?.hq_country_iso2) ||
+      v.country ||
+      (originStatus === "eu" ? "Inom EU" : originStatus === "noneu" ? "Utanför EU" : "—");
+    const procText = f?.processing_region || "—";
+    const procStatus = f
+      ? regionStatus(f.processing_region, f.cloud_act_exposure ? false : undefined)
+      : "unknown";
+    const storageText =
+      f?.storage_region || (typeof v.storage_in_eu === "boolean" ? (v.storage_in_eu ? "Inom EU" : "Utanför EU") : "—");
+    const storageStatus = regionStatus(undefined, f?.storage_in_eu ?? v.storage_in_eu);
+    return {
+      loading: !!v.apiId && !d,
+      origin: { text: originText, status: originStatus },
+      processing: { text: procText, status: procStatus },
+      storage: { text: storageText, status: storageStatus },
+    };
+  };
+
+  if (vendors.length === 0) {
+    return (
+      <Card title="Infrastruktur & Dataproveniens" subtitle="Inga leverantörer valda.">
+        <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+          <Inbox className="h-8 w-8 text-foreground/40" />
+          <p className="max-w-sm text-sm font-medium text-foreground/60">
+            Registrera minst en leverantör för att kartlägga dess geografiska dataproveniens och tekniska riskprofil.
+          </p>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card
+      title="Infrastruktur & Dataproveniens"
+      subtitle="En objektiv kartläggning av var era valda leverantörers data har sitt ursprung, bearbetas och lagras, samt deras juridiska och tekniska riskattribut direkt från datasetet."
+    >
+      <div className="grid gap-6">
+        {vendors.map((v) => {
+          const reg = regionsFor(v);
+          const d = detailsById[v.apiId ?? ""];
+          const f = d?.features;
+          const cloudAct = f?.cloud_act_exposure ?? v.cloud_act_exposure ?? false;
+          const hqInEu = f?.hq_in_eu ?? v.hq_in_eu ?? false;
+          const certScore = f?.cert_score ?? null;
+          const euComplianceScore = f?.eu_compliance_score ?? null;
+          const presentCerts = CERT_LABELS.filter((c) => {
+            const val = f?.certifications?.[c.key];
+            return typeof val === "number" && val > 0;
+          });
+
+          return (
+            <section
+              key={v.id}
+              className="rounded-2xl bg-white/70 p-5 ring-1 ring-white/70 shadow-[var(--shadow-deep)] md:p-6"
+            >
+              {/* Vendor header */}
+              <header className="mb-5 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-bold tracking-tight text-foreground md:text-xl">{v.name}</h3>
+                  {(v.apiCategory ?? v.type) && (
+                    <p className="text-xs font-medium text-foreground/55">{v.apiCategory ?? v.type}</p>
+                  )}
+                </div>
+                {reg.loading && <Loader2 className="h-4 w-4 animate-spin text-foreground/40" />}
+              </header>
+
+              {/* Geographic provenance pipeline */}
+              <div className="mb-6">
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/55">
+                  Geografisk dataproveniens
+                </p>
+                <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-stretch gap-1.5">
+                  <RegionCell icon={Globe} label="Ursprungsregion" location={reg.origin.text} status={reg.origin.status} />
+                  <FlowArrow />
+                  <RegionCell icon={Cpu} label="Processeringsregion" location={reg.processing.text} status={reg.processing.status} />
+                  <FlowArrow />
+                  <RegionCell icon={Server} label="Lagringsregion" location={reg.storage.text} status={reg.storage.status} />
+                </div>
+              </div>
+
+              {/* ML risk & compliance grid */}
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                {/* Column 1 — Jurisdiktionell Exponering */}
+                <div
+                  className={`flex flex-col rounded-xl p-4 ring-1 ${
+                    cloudAct ? "bg-rose-50/70 ring-rose-200" : "bg-emerald-50/70 ring-emerald-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {cloudAct ? (
+                      <ShieldAlert className="h-5 w-5 text-rose-600" />
+                    ) : (
+                      <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                    )}
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-foreground/55">
+                      Jurisdiktionell Exponering
+                    </p>
+                  </div>
+                  <div className="mt-3">
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
+                        cloudAct ? "bg-rose-600 text-white" : "bg-emerald-600 text-white"
+                      }`}
+                    >
+                      {cloudAct ? "CLOUD ACT EXPONERAD" : "SKYDDAD AV EU-LAG"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Column 2 — Äganderättslig Suveränitet */}
+                <div
+                  className={`flex flex-col rounded-xl p-4 ring-1 ${
+                    hqInEu ? "bg-emerald-50/70 ring-emerald-200" : "bg-amber-50/70 ring-amber-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Building2 className={`h-5 w-5 ${hqInEu ? "text-emerald-600" : "text-amber-600"}`} />
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-foreground/55">
+                      Äganderättslig Suveränitet
+                    </p>
+                  </div>
+                  <div className="mt-3">
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
+                        hqInEu ? "bg-emerald-600 text-white" : "bg-amber-500 text-white"
+                      }`}
+                    >
+                      {hqInEu ? "EU-REGISTRERAT MODERBOLAG" : "MODERBOLAG I TREDJELAND"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Column 3 — Teknisk Säkerhetsverifiering */}
+                <div className="flex flex-col rounded-xl bg-blue-50/60 p-4 ring-1 ring-blue-200">
+                  <div className="flex items-center gap-2">
+                    <Stamp className="h-5 w-5 text-blue-700" />
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-foreground/55">
+                      Teknisk Säkerhetsverifiering
+                    </p>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {presentCerts.length > 0 ? (
+                      presentCerts.map((c) => (
+                        <span
+                          key={c.key}
+                          className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-800 ring-1 ring-blue-200"
+                        >
+                          <BadgeCheck className="h-3 w-3" />
+                          {c.label}
+                        </span>
+                      ))
+                    ) : reg.loading ? (
+                      <span className="text-[11px] font-medium text-foreground/45">Hämtar verifieringar…</span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-foreground/45 ring-1 ring-foreground/15">
+                        <XCircle className="h-3 w-3" />
+                        Inga verifierade ramverk
+                      </span>
+                    )}
+                  </div>
+                  {(certScore !== null || euComplianceScore !== null) && (
+                    <p className="mt-3 text-[10px] font-medium text-foreground/55">
+                      {certScore !== null && `Cert-score ${Math.round(certScore)}`}
+                      {certScore !== null && euComplianceScore !== null && " · "}
+                      {euComplianceScore !== null && `EU-compliance ${Math.round(euComplianceScore)}`}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </Card>
+  );
+};
   vendors,
   step1,
   quick,
