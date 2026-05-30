@@ -679,8 +679,7 @@ const Quiz = () => {
           {stepIndex === 0 && (
             <Step1Konfig
               state={step1}
-              setState={setStep1}
-              togglePriority={togglePriority}
+              setStrategy={setStrategy}
               showErrors={showErrors}
               missing={step1Missing}
             />
