@@ -80,6 +80,7 @@ const Atgardsplan = () => {
   const step1: Step1Like = state.step1 ?? {};
 
   const [altsByCategory, setAltsByCategory] = useState<Record<string, AltState>>({});
+  const [completionOpen, setCompletionOpen] = useState(false);
 
   useEffect(() => {
     const categories = Array.from(
