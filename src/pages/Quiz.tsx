@@ -934,7 +934,7 @@ const Step3DeepDive = ({
       subtitle={
         enabled && vendor
           ? `Nu granskar vi säkerhet och jurisdiktion för ${vendor.name}`
-          : "Aktiveras för leverantörer där datasetet saknar information. Detaljerad granskning per leverantör."
+          : "Aktiveras för leverantörer där information saknas. Detaljerad granskning per leverantör."
       }
     >
       <div className="mb-5 rounded-xl bg-blue-50/80 px-4 py-3 ring-1 ring-blue-200">
@@ -1507,7 +1507,7 @@ const Step5Measurement = ({
   return (
     <Card
       title="Infrastruktur & Dataproveniens"
-      subtitle="En objektiv kartläggning av var era valda leverantörers data har sitt ursprung, bearbetas och lagras, samt deras juridiska och tekniska riskattribut direkt från datasetet."
+      subtitle="En objektiv kartläggning av var era valda leverantörers data har sitt ursprung, bearbetas och lagras, samt deras juridiska och tekniska riskattribut."
     >
       <div className="grid gap-6">
         {vendors.map((v) => {
