@@ -568,10 +568,10 @@ const Quiz = () => {
     [activeDeepQuestions, currentDeepAnswers],
   );
   const step1Missing = {
-    priorities: step1.priorities.length === 0,
-    sector: step1.sector === "",
-    euDataWeight: step1.euDataWeight === null,
-    readiness: step1.readiness === "",
+    timeHorizon: step1.timeHorizon === "",
+    infrastructure: step1.infrastructure === "",
+    techResource: step1.techResource === "",
+    regulatoryFocus: step1.regulatoryFocus === "",
   };
 
   const goNext = () => {
