@@ -293,7 +293,7 @@ type Answers = Record<string, string>; // questionId -> option label
 
 // VendorLike imported from "@/lib/vendorMapper"
 
-const STEPS = ["Verksamhetsanalys & Strategi", "Snabbanalys", "Fördjupad analys", "Resultat på mätning", "Så räknades poängen fram"] as const;
+const STEPS = ["Verksamhetsanalys & Strategi", "Resultat på mätning", "Så räknades poängen fram"] as const;
 
 // Canonical "European" check: hq_in_eu === true from GET /vendors.
 // No hardcoded country allowlists, no name-based heuristics.
@@ -497,9 +497,9 @@ const Quiz = () => {
   const [scoring, setScoring] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
 
-  // Trigger rescore when entering Resultat (step 3). Re-run if priorities change while on/after Resultat.
+  // Trigger rescore when entering Resultat (step 1). Re-run if priorities change while on/after Resultat.
   useEffect(() => {
-    if (stepIndex < 3) return;
+    if (stepIndex < 1) return;
     const apiIds = vendors.map((v) => v.apiId).filter((id): id is string => !!id);
     if (apiIds.length === 0) {
       setScoredMap(new Map());
@@ -551,13 +551,8 @@ const Quiz = () => {
   const canNext = useMemo(() => {
     if (stepIndex === 0)
       return step1.timeHorizon !== "" && step1.infrastructure !== "" && step1.techResource !== "" && step1.regulatoryFocus !== "";
-    if (stepIndex === 1) return QUICK_SCAN.every((q) => quickAnswers[q.id]);
-    if (stepIndex === 2) {
-      if (!deepDiveEnabled || deepVendors.length === 0) return true;
-      return activeDeepQuestions.every((q) => currentDeepAnswers[q.id]);
-    }
     return true;
-  }, [stepIndex, step1, quickAnswers, currentDeepAnswers, deepDiveEnabled, deepVendors.length, activeDeepQuestions]);
+  }, [stepIndex, step1]);
 
   const missingQuickIds = useMemo(
     () => QUICK_SCAN.filter((q) => !quickAnswers[q.id]).map((q) => q.id),
@@ -587,24 +582,9 @@ const Quiz = () => {
       });
       return;
     }
-    // Loop through vendors inside the Fördjupad analys step.
-    if (stepIndex === 2 && deepDiveEnabled && deepVendors.length > 0) {
-      const isLast = deepVendorIndex >= deepVendors.length - 1;
-      const name = currentDeepVendor?.name ?? "leverantör";
-      if (!isLast) {
-        toast.success(`Data sparad för ${name}`, { description: "Går vidare till nästa..." });
-        setDeepVendorIndex((i) => i + 1);
-        return;
-      }
-      toast.success(`Data sparad för ${name}`, { description: "Går vidare till Resultat" });
-    }
     setStepIndex((i) => Math.min(STEPS.length - 1, i + 1));
   };
   const goBack = () => {
-    if (stepIndex === 2 && deepDiveEnabled && deepVendorIndex > 0) {
-      setDeepVendorIndex((i) => i - 1);
-      return;
-    }
     setStepIndex((i) => Math.max(0, i - 1));
   };
 
@@ -685,32 +665,6 @@ const Quiz = () => {
             />
           )}
           {stepIndex === 1 && (
-            <StepQuestions
-              title="Snabbanalys"
-              subtitle="Generella frågor som gäller alla nuvarande leverantörer."
-              questions={QUICK_SCAN}
-              answers={quickAnswers}
-              setAnswers={setQuickAnswers}
-              missingIds={showErrors ? missingQuickIds : []}
-            />
-          )}
-          {stepIndex === 2 && (
-            <Step3DeepDive
-              enabled={deepDiveEnabled}
-              setEnabled={setDeepDiveEnabled}
-              vendor={currentDeepVendor}
-              vendorIndex={deepVendorIndex}
-              vendorTotal={deepVendors.length}
-              answers={currentDeepAnswers}
-              setAnswers={setCurrentDeepAnswers}
-              activeQuestions={activeDeepQuestions}
-              skippedCertNotice={skipCerts}
-              onPrevVendor={() => setDeepVendorIndex((i) => Math.max(0, i - 1))}
-              canPrevVendor={deepVendorIndex > 0}
-              missingIds={showErrors ? missingDeepIds : []}
-            />
-          )}
-          {stepIndex === 3 && (
             <Step5Measurement
               vendors={vendors}
               step1={step1}
@@ -722,7 +676,7 @@ const Quiz = () => {
               scoreError={scoreError}
             />
           )}
-          {stepIndex === 4 && (
+          {stepIndex === 2 && (
             <Step6ScoreSummary
               vendors={vendors}
               step1={step1}
@@ -750,9 +704,7 @@ const Quiz = () => {
               className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
               style={{ background: "var(--gradient-cta)" }}
             >
-              {stepIndex === 2 && deepDiveEnabled && deepVendors.length > 1 && deepVendorIndex < deepVendors.length - 1
-                ? "Nästa"
-                : ["Gå till snabbanalys", "Gå till fördjupad analys", "Gå till resultat på mätning", "Visa poängberäkning"][stepIndex]}
+              {["Gå till Resultat på mätning", "Visa poängberäkning"][stepIndex]}
               <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
             </Button>
           ) : (
