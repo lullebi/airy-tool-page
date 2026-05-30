@@ -1906,6 +1906,9 @@ const Step5Measurement = ({
                       {cloudAct ? "CLOUD ACT EXPONERAD" : "SKYDDAD AV EU-LAG"}
                     </span>
                   </div>
+                  <p className={`mt-3 text-2xl font-extrabold leading-none ${jurisScore === 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                    {jurisScore} <span className="text-sm font-bold text-foreground/40">/ 100p</span>
+                  </p>
                 </div>
 
                 {/* Column 2 — Äganderättslig Suveränitet */}
