@@ -1196,6 +1196,31 @@ const ControlRow = ({ c }: { c: BreakdownControl }) => {
   );
 };
 
+// Statisk "checkpoint"-rad som speglar ML-modellens features (ej quiz-svar).
+const CheckpointRow = ({
+  cp,
+}: {
+  cp: { label: string; status: string; score: number };
+}) => {
+  const tone =
+    cp.score >= 75
+      ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+      : cp.score <= 25
+        ? "bg-rose-50 text-rose-700 ring-rose-200"
+        : "bg-amber-50 text-amber-700 ring-amber-200";
+  return (
+    <div className="flex items-start justify-between gap-3 border-b border-border/40 py-2.5 last:border-0">
+      <p className="min-w-0 text-sm font-medium leading-snug text-foreground">{cp.label}</p>
+      <span
+        className={`mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ${tone}`}
+      >
+        {cp.status}
+        <span className="tabular-nums opacity-70">· {cp.score}p</span>
+      </span>
+    </div>
+  );
+};
+
 // Telemetri-uppslag per leverantör (origin / processing / storage).
 const telemetryFor = (d?: ApiVendorDetail) => {
   const f = d?.features;
@@ -1448,7 +1473,15 @@ const Step6ScoreSummary = ({
       euScore * BREAKDOWN_WEIGHTS.eu,
   );
 
-  const cards = [
+  const cards: {
+    key: string;
+    title: string;
+    weight: number;
+    score: number;
+    regelverk: BreakdownRegelverk[];
+    explanation: string;
+    checkpoints: { label: string; status: string; score: number }[];
+  }[] = [
     {
       key: "snabb",
       title: "Teknisk Resiliens",
@@ -1456,7 +1489,11 @@ const Step6ScoreSummary = ({
       score: snabbScore,
       regelverk: snabbRegelverk,
       explanation:
-        `Den tekniska infrastrukturen är mycket säker (${snabbScore}p) med hög motståndskraft mot avbrott och cyberattacker. Men teknisk säkerhet hindrar inte att åtkomsten till data stängs av på legal eller geopolitisk grund.`,
+        `Den tekniska infrastrukturen är robust och kan nå 100p – krypteringen är stark, drifttillgängligheten hög och leverantören bär stödjande certifieringar. Detta lager mäter dock enbart teknisk motståndskraft och är helt skilt från legal och geografisk suveränitet: även en tekniskt perfekt leverantör kan stängas av på jurisdiktionell grund.`,
+      checkpoints: [
+        { label: "Teknisk kryptering & Drifttillgänglighet", status: "Verifierad", score: 100 },
+        { label: "Stödjande certifieringar (ISO 27001, SOC2, C5)", status: "Aktiv", score: 100 },
+      ],
     },
     {
       key: "deep",
@@ -1465,7 +1502,11 @@ const Step6ScoreSummary = ({
       score: deepScore,
       regelverk: deepRegelverk,
       explanation:
-        `Ett starkt NIS2-ramverk förhindrar lokala efterlevnadsstopp och säkrar driftskontinuitet. Risken kvarstår dock vid tredjelandsöverföring – data kan lämna EU i ett eller flera led, vilket urholkar den regulatoriska rådigheten.`,
+        `Det regulatoriska ramverket väger tyngst i modellen. NIS2-beredskapen är fullt uppfylld med stark incidentrapportering och säkerhetskrav, medan DORA-motståndskraften endast är delvis täckt utifrån leverantörens finansiella ICT-riskprofil. Tillsammans håller dessa ramverk uppe den regulatoriska rådigheten, men eliminerar inte risken vid tredjelandsöverföring.`,
+      checkpoints: [
+        { label: "NIS2-beredskap (Incidentrapportering & Säkerhetskrav)", status: "Uppfylld", score: 100 },
+        { label: "DORA-motståndskraft (Finansiell ICT-riskprofil)", status: "Delvis", score: 50 },
+      ],
     },
     {
       key: "eu",
@@ -1474,7 +1515,13 @@ const Step6ScoreSummary = ({
       score: euScore,
       regelverk: euRegelverk,
       explanation:
-        `Poängen straffas hårt eftersom datalokaliseringen verifierats till 0% EU på föregående sida. Om den geopolitiska kranen stängs (t.ex. via US CLOUD Act) förlorar verksamheten omedelbart rådigheten över sin egen data.`,
+        `Detta är de geografiska särdrag som driver vår Random Forest-modells riskprediktion. Leverantören är exponerad mot US CLOUD Act, har sitt huvudkontor utanför EU och både lagrar och bearbetar data utanför unionen. Det är denna kontrollrisk som drar ned den samlade suveränitetspoängen – trots att den tekniska resiliensen kan vara 100p förlorar verksamheten omedelbart rådigheten över sin data om den geopolitiska kranen stängs.`,
+      checkpoints: [
+        { label: "US CLOUD Act Exposure (Jurisdiktionell risk)", status: "Hög risk / Exponerad", score: 0 },
+        { label: "Huvudkontor inom EU (hq_in_eu)", status: "Nej / USA", score: 0 },
+        { label: "Fysisk datalagring (storage_region)", status: "Utanför EU", score: 0 },
+        { label: "Geografisk bearbetning (process_region)", status: "Utanför EU / Globalt", score: 0 },
+      ],
     },
   ];
 
@@ -1530,44 +1577,18 @@ const Step6ScoreSummary = ({
               </p>
 
 
-              {/* Nivå 2: Regelverk */}
-              <Accordion type="multiple" className="space-y-2">
-                {card.regelverk.map((rv) => (
-                  <AccordionItem
-                    key={rv.name}
-                    value={`${card.key}-${rv.name}`}
-                    className="rounded-xl border-0 bg-[hsl(var(--sky-100))] ring-1 ring-[hsl(var(--sky-200))]"
-                  >
-                    <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                      <div className="flex items-center gap-2.5 text-left">
-                        <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
-                        <span className="text-sm font-bold text-foreground">{rv.name}</span>
-                        <span className="text-xs font-medium text-foreground/50">{rv.desc}</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      {/* Nivå 3: Kategorier → Kontroller */}
-                      <div className="space-y-3">
-                        {rv.categories.map((cat) => (
-                          <div
-                            key={cat.name}
-                            className="rounded-lg bg-white/80 p-3 ring-1 ring-border/50"
-                          >
-                            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-foreground/50">
-                              {cat.name}
-                            </p>
-                            <div>
-                              {cat.controls.map((c) => (
-                                <ControlRow key={c.id} c={c} />
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+              {/* Modell-features & kontroller (statiska, speglar backend-datasetet) */}
+              <div className="rounded-xl bg-white/80 p-4 ring-1 ring-border/50">
+                <p className="mb-2.5 text-[11px] font-bold uppercase tracking-wider text-foreground/50">
+                  Modell-features & kontroller
+                </p>
+                <div>
+                  {card.checkpoints.map((cp) => (
+                    <CheckpointRow key={cp.label} cp={cp} />
+                  ))}
+                </div>
+              </div>
+
 
               {/* EU-kort: telemetri + bötestabell */}
               {card.key === "eu" && (
