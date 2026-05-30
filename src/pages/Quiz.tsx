@@ -497,9 +497,9 @@ const Quiz = () => {
   const [scoring, setScoring] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
 
-  // Trigger rescore when entering Resultat (step 3). Re-run if priorities change while on/after Resultat.
+  // Trigger rescore when entering Resultat (step 1). Re-run if priorities change while on/after Resultat.
   useEffect(() => {
-    if (stepIndex < 3) return;
+    if (stepIndex < 1) return;
     const apiIds = vendors.map((v) => v.apiId).filter((id): id is string => !!id);
     if (apiIds.length === 0) {
       setScoredMap(new Map());
