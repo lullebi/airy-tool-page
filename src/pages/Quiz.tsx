@@ -1344,6 +1344,7 @@ const Step6ScoreSummary = ({
           </p>
         )}
       </div>
+      )}
     </section>
   );
 };
