@@ -1666,7 +1666,7 @@ const Step6ScoreSummary = ({
       {/* Totalpoäng — mörk navy-footer */}
       <div className="mt-4 flex items-center justify-between rounded-2xl bg-foreground px-6 py-5 text-background shadow-[var(--shadow-deep)]">
         <div>
-          <p className="text-base font-bold">Totalpoäng</p>
+          <p className="text-base font-bold">Suveränitetspoäng</p>
           <p className="text-[11px] font-medium text-background/60">
             Teknisk Resiliens 20% · Regulatorisk Rådighet 50% · Geopolitisk Kontrollrisk 30%
           </p>
@@ -1681,10 +1681,9 @@ const Step6ScoreSummary = ({
           <p className="text-sm font-bold uppercase tracking-wider text-rose-700">Sårbarhetsprofil</p>
         </div>
         <p className="text-sm leading-relaxed text-foreground/80">
-          <span className="font-bold text-foreground">Sårbarhetsanalys för ledningsgrupp:</span> En
-          totalpoäng på {total}/100 indikerar hög teknisk säkerhet, men kritisk sårbarhet gällande
-          kontrollrisk. Svaret på frågan "Vad händer om vi blir nedstängda?" är att verksamheten
-          saknar geografisk och legal suveränitet vid en extrem händelse.
+          <span className="font-bold text-foreground">Sårbarhetsprofil för ledningsgrupp:</span>{" "}
+          Leverantören har utmärkt teknisk säkerhet, men kritisk kontrollrisk. Om den geopolitiska
+          kranen stängs av förlorar verksamheten omedelbart rådigheten över sin data.
         </p>
       </div>
 
