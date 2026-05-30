@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
+  ChevronRight,
   Globe,
   Cpu,
   Server,
@@ -15,6 +16,7 @@ import {
   Loader2,
   AlertTriangle,
   Search,
+  FileText,
 } from "lucide-react";
 import {
   fetchVendors,
@@ -44,10 +46,16 @@ import jsPDF from "jspdf";
 
 type Tone = "ok" | "warn" | "risk";
 
-const TONE_STYLES: Record<Tone, { chip: string; dot: string; text: string }> = {
-  ok: { chip: "bg-emerald-100 text-emerald-800 ring-emerald-200", dot: "bg-emerald-500", text: "text-emerald-700" },
-  warn: { chip: "bg-amber-100 text-amber-800 ring-amber-200", dot: "bg-amber-500", text: "text-amber-700" },
-  risk: { chip: "bg-rose-100 text-rose-800 ring-rose-200", dot: "bg-rose-500", text: "text-rose-700" },
+const TONE_STYLES: Record<Tone, { chip: string; dot: string; text: string; icon: string }> = {
+  ok: { chip: "bg-emerald-100 text-emerald-800 ring-emerald-200", dot: "bg-emerald-500", text: "text-emerald-700", icon: "bg-emerald-100 text-emerald-700" },
+  warn: { chip: "bg-amber-100 text-amber-800 ring-amber-200", dot: "bg-amber-500", text: "text-amber-700", icon: "bg-amber-100 text-amber-700" },
+  risk: { chip: "bg-rose-100 text-rose-700 ring-rose-200", dot: "bg-rose-500", text: "text-rose-700", icon: "bg-rose-100 text-rose-600" },
+};
+
+const TONE_DARK_TEXT: Record<Tone, string> = {
+  ok: "text-emerald-300",
+  warn: "text-amber-300",
+  risk: "text-rose-300",
 };
 
 function prettifyId(id: string): string {
@@ -65,78 +73,97 @@ function processingInEu(region: string | null, hqInEu: boolean): boolean {
   return hqInEu;
 }
 
-function ToneChip({ tone, children }: { tone: Tone; children: React.ReactNode }) {
-  const s = TONE_STYLES[tone];
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${s.chip}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-      {children}
-    </span>
-  );
-}
+/* ---- Section 1: geographic provenance breadcrumb badge ---- */
+const REGION_STATE = {
+  in: {
+    wrap: "border-emerald-200/80 bg-emerald-50/60",
+    icon: "bg-emerald-100 text-emerald-700",
+    pill: "bg-emerald-100 text-emerald-800",
+    dot: "bg-emerald-500",
+    label: "Inom EU",
+  },
+  out: {
+    wrap: "border-amber-200/80 bg-amber-50/70",
+    icon: "bg-amber-100 text-amber-700",
+    pill: "bg-amber-100 text-amber-800",
+    dot: "bg-amber-500",
+    label: "Utanför EU",
+  },
+};
 
-function RegionCard({
+function RegionBadge({
   icon: Icon,
   label,
-  description,
-  region,
-  tone,
+  code,
+  value,
+  inEu,
 }: {
   icon: typeof Globe;
   label: string;
-  description: string;
-  region: string;
-  tone: Tone;
+  code: string;
+  value: string;
+  inEu: boolean;
 }) {
-  const s = TONE_STYLES[tone];
+  const s = inEu ? REGION_STATE.in : REGION_STATE.out;
   return (
-    <div className="glass flex-1 rounded-2xl p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${s.chip} ring-1`}>
+    <div className={`flex-1 rounded-2xl border ${s.wrap} p-5 shadow-[var(--shadow-soft)]`}>
+      <div className="flex items-center justify-between">
+        <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${s.icon}`}>
           <Icon className="h-5 w-5" />
         </span>
-        <ToneChip tone={tone}>{tone === "ok" ? "Inom EU" : tone === "warn" ? "Delvis" : "Utanför EU"}</ToneChip>
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${s.pill}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
+          {s.label}
+        </span>
       </div>
-      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/55">{label}</p>
-      <p className="mt-1 text-lg font-bold leading-tight text-foreground">{region}</p>
-      <p className="mt-1.5 text-xs leading-relaxed text-foreground/60">{description}</p>
+      <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-foreground/45">{label}</p>
+      <p className="mt-0.5 text-xl font-bold leading-tight text-foreground">{value}</p>
+      <code className="mt-1 block text-[11px] font-semibold text-foreground/40">{code}</code>
     </div>
   );
 }
 
-function Checkpoint({
+function FlowConnector() {
+  return (
+    <div className="flex shrink-0 items-center justify-center py-1 md:py-0">
+      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/70 ring-1 ring-border/60">
+        <ChevronRight className="h-4 w-4 rotate-90 text-foreground/40 md:rotate-0" />
+      </span>
+    </div>
+  );
+}
+
+/* ---- Section 2: ML feature card ---- */
+function FeatureCard({
   icon: Icon,
-  feature,
   title,
-  verdict,
+  code,
+  badge,
   tone,
-  body,
+  children,
 }: {
   icon: typeof Globe;
-  feature: string;
   title: string;
-  verdict: string;
+  code: string;
+  badge: string;
   tone: Tone;
-  body: string;
+  children: React.ReactNode;
 }) {
   const s = TONE_STYLES[tone];
   return (
-    <div className="glass rounded-2xl p-5">
-      <div className="flex items-start gap-4">
-        <span className={`mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${s.chip}`}>
+    <div className="flex flex-col rounded-2xl border border-white/70 bg-white/80 p-6 shadow-[var(--shadow-soft)] backdrop-blur-sm transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-deep)]">
+      <div className="flex items-center justify-between">
+        <span className={`inline-flex h-11 w-11 items-center justify-center rounded-xl ${s.icon}`}>
           <Icon className="h-5 w-5" />
         </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="text-base font-bold leading-tight text-foreground">{title}</p>
-              <code className="text-[11px] font-semibold text-foreground/45">{feature}</code>
-            </div>
-            <ToneChip tone={tone}>{verdict}</ToneChip>
-          </div>
-          <p className="mt-2.5 text-sm leading-relaxed text-foreground/70">{body}</p>
-        </div>
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide ring-1 ${s.chip}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
+          {badge}
+        </span>
       </div>
+      <p className="mt-5 text-base font-bold leading-tight text-foreground">{title}</p>
+      <code className="text-[11px] font-semibold text-foreground/40">{code}</code>
+      <div className="mt-3 flex-1 text-sm leading-relaxed text-foreground/70">{children}</div>
     </div>
   );
 }
@@ -216,11 +243,11 @@ const Quiz = () => {
     const processTone: Tone = procEu ? "ok" : f.hq_in_eu ? "warn" : "risk";
 
     const jurisdictionTone: Tone = f.cloud_act_exposure ? "risk" : "ok";
-    const ownershipTone: Tone = f.hq_in_eu ? "ok" : "risk";
+    const ownershipTone: Tone = f.hq_in_eu ? "ok" : "warn";
 
     const certs = Object.entries(f.certifications).filter(([, v]) => v != null).map(([k]) => CERT_LABELS[k] ?? k);
     const techStrong = (f.cert_score ?? 0) >= 0.66 || (f.eu_compliance_score ?? 0) >= 0.66;
-    const techTone: Tone = techStrong ? (f.hq_in_eu ? "ok" : "warn") : "warn";
+    const techTone: Tone = techStrong ? "ok" : "warn";
 
     const altMap = alternatives[detail.category ?? ""];
     const euAlts = (altMap?.eu_alternatives ?? []).filter((id) => id !== detail.id);
@@ -277,6 +304,10 @@ const Quiz = () => {
     }
   };
 
+  const scoreTone: Tone = analysis ? (analysis.isLow ? "risk" : analysis.score < 60 ? "warn" : "ok") : "ok";
+  const primaryAlt = analysis?.euAlts[0];
+  const otherAlts = analysis?.euAlts.slice(1) ?? [];
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="pointer-events-none absolute -top-32 -left-32 h-[520px] w-[520px] rounded-full bg-blue-300/30 blur-3xl" />
@@ -300,23 +331,19 @@ const Quiz = () => {
         </nav>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-5xl px-4 pb-24 pt-8 md:px-8 md:pt-12">
+      <main className="relative z-10 mx-auto max-w-5xl px-4 pb-24 pt-10 md:px-8 md:pt-14">
         {/* ===== SECTION 1: TEKNISK PROVENIENS ===== */}
         <section>
-          <div className="mb-5 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">01 · Teknisk proveniens</p>
-              <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground md:text-4xl">Geografisk dataspårning</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/65">
-                Välj en leverantör för att spåra var data uppstår, bearbetas och lagras. Geografisk rådighet väger tyngst i modellen.
-              </p>
-            </div>
-          </div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">01 · Teknisk proveniens</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground md:text-4xl">Geografisk dataspårning</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground/65">
+            Välj en leverantör för att spåra var data uppstår, bearbetas och lagras. Geografisk rådighet väger tyngst i modellen.
+          </p>
 
-          <div className="glass rounded-2xl p-5">
+          <div className="mt-6 rounded-2xl border border-white/70 bg-white/80 p-5 shadow-[var(--shadow-soft)] backdrop-blur-sm">
             <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/55">Leverantör</label>
             <Select value={selectedId} onValueChange={setSelectedId} disabled={loadingList}>
-              <SelectTrigger className="h-12 rounded-xl border-border/60 bg-white/60 text-base font-semibold">
+              <SelectTrigger className="h-12 rounded-xl border-border/60 bg-white text-base font-semibold">
                 <span className="flex items-center gap-2 truncate">
                   <Search className="h-4 w-4 shrink-0 text-foreground/50" />
                   <SelectValue placeholder={loadingList ? "Laddar leverantörer…" : "Sök och välj leverantör…"} />
@@ -333,35 +360,35 @@ const Quiz = () => {
           </div>
 
           {loadingDetail && (
-            <div className="mt-5 flex items-center justify-center gap-2 rounded-2xl py-10 text-sm font-medium text-foreground/60">
+            <div className="mt-6 flex items-center justify-center gap-2 rounded-2xl py-12 text-sm font-medium text-foreground/60">
               <Loader2 className="h-4 w-4 animate-spin" /> Hämtar feature-data…
             </div>
           )}
 
           {detail && analysis && !loadingDetail && (
-            <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-stretch">
-              <RegionCard
+            <div className="mt-6 flex flex-col items-stretch gap-3 md:flex-row md:items-center">
+              <RegionBadge
                 icon={Globe}
-                label="origin_region"
-                description={`Huvudkontorets jurisdiktion (${analysis.hqCountry}) styr vilka lagar som gäller.`}
-                region={analysis.hqCountry}
-                tone={analysis.originTone}
+                label="Ursprung"
+                code="origin_region"
+                value={analysis.hqCountry}
+                inEu={detail.features.hq_in_eu}
               />
-              <div className="hidden items-center md:flex"><ArrowRight className="h-5 w-5 text-foreground/40" /></div>
-              <RegionCard
+              <FlowConnector />
+              <RegionBadge
                 icon={Cpu}
-                label="process_region"
-                description="Där data aktivt beräknas och bearbetas i drift."
-                region={detail.features.processing_region ?? "Okänt"}
-                tone={analysis.processTone}
+                label="Bearbetning"
+                code="process_region"
+                value={detail.features.processing_region ?? "Okänt"}
+                inEu={analysis.procEu}
               />
-              <div className="hidden items-center md:flex"><ArrowRight className="h-5 w-5 text-foreground/40" /></div>
-              <RegionCard
+              <FlowConnector />
+              <RegionBadge
                 icon={Server}
-                label="storage_region"
-                description="Där data fysiskt vilar och lagras."
-                region={detail.features.storage_region ?? "Okänt"}
-                tone={analysis.storageTone}
+                label="Lagring"
+                code="storage_region"
+                value={detail.features.storage_region ?? "Okänt"}
+                inEu={detail.features.storage_in_eu}
               />
             </div>
           )}
@@ -369,128 +396,156 @@ const Quiz = () => {
 
         {/* ===== SECTION 2: ML SÅRBARHETSPROFIL ===== */}
         {detail && analysis && !loadingDetail && (
-          <section className="mt-14">
+          <section className="mt-20">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">02 · ML-sårbarhetsprofil</p>
-            <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground md:text-3xl">Feature-driven riskbedömning</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/65">
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">Feature-driven riskbedömning</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground/65">
               Random Forest-modellen väger råa features. Geografisk åtkomstrisk dominerar — tekniska certifikat är stödjande bevis, inte motvikt.
             </p>
 
-            <div className="mt-5 flex flex-col gap-3">
-              <Checkpoint
+            <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
+              <FeatureCard
                 icon={Gavel}
-                feature="cloud_act_exposure"
                 title="Jurisdiktionell exponering"
-                verdict={detail.features.cloud_act_exposure ? "Hög risk" : "Ingen risk"}
+                code="cloud_act_exposure"
+                badge={detail.features.cloud_act_exposure ? "Hög risk" : "Ingen risk"}
                 tone={analysis.jurisdictionTone}
-                body={
-                  detail.features.cloud_act_exposure
-                    ? `${detail.name} omfattas av utländsk övervakningslagstiftning (US CLOUD Act). Myndigheter kan begära ut data oavsett var den lagras.`
-                    : `${detail.name} omfattas inte av US CLOUD Act eller motsvarande tredjelandslagar — data skyddas av EU:s jurisdiktion.`
-                }
-              />
-              <Checkpoint
+              >
+                {detail.features.cloud_act_exposure
+                  ? `${detail.name} omfattas av utländsk övervakningslagstiftning genom US CLOUD Act. Amerikanska myndigheter kan begära ut data oavsett var den fysiskt lagras, vilket innebär en kontrollrisk som tekniska skydd inte kan upphäva.`
+                  : `${detail.name} omfattas inte av US CLOUD Act eller motsvarande tredjelandslagar. Data skyddas av EU:s jurisdiktion och kan inte begäras ut av utländska myndigheter.`}
+              </FeatureCard>
+
+              <FeatureCard
                 icon={Building2}
-                feature="hq_in_eu"
                 title="Äganderättslig suveränitet"
-                verdict={detail.features.hq_in_eu ? "EU-ägd" : "Utländskt ägande"}
+                code="hq_in_eu"
+                badge={detail.features.hq_in_eu ? "EU-ägd" : "Utländskt ägande"}
                 tone={analysis.ownershipTone}
-                body={
-                  detail.features.hq_in_eu
-                    ? `Huvudkontor inom EU (${analysis.hqCountry}). Bolaget lyder primärt under europeisk lagstiftning.`
-                    : `Huvudkontor utanför EU (${analysis.hqCountry}). Moderbolaget lyder under utländsk lagstiftning, vilket geografisk datalagring inte upphäver.`
-                }
-              />
-              <Checkpoint
+              >
+                {detail.features.hq_in_eu
+                  ? `Huvudkontoret ligger inom EU (${analysis.hqCountry}). Bolaget lyder primärt under europeisk lagstiftning, vilket ger förutsägbar rådighet över data och avtal.`
+                  : `Huvudkontoret ligger utanför EU (${analysis.hqCountry}). Moderbolaget lyder under utländsk lagstiftning, något som geografisk datalagring inom EU inte upphäver.`}
+              </FeatureCard>
+
+              <FeatureCard
                 icon={analysis.techTone === "ok" ? ShieldCheck : ShieldAlert}
-                feature="cert_score / eu_compliance_score"
-                title="Teknisk resiliens & bevisbörda"
-                verdict={analysis.certs.length ? "Verifierad" : "Svag"}
+                title="Teknisk resiliens"
+                code="cert_score"
+                badge={analysis.techTone === "ok" ? "Verifierad" : "Svag"}
                 tone={analysis.techTone}
-                body={`Verifierade attribut: ${analysis.certs.length ? analysis.certs.join(", ") : "inga"}. Robust teknisk säkerhet (NIS2, DORA, ISO 27001, SOC 2) styrker driften men neutraliserar inte den geografiska åtkomstrisken ovan.`}
-              />
-              {analysis.certs.length > 0 && (
-                <div className="flex flex-wrap gap-2 px-1 pt-1">
-                  {analysis.certs.map((c) => (
-                    <span key={c} className="inline-flex items-center gap-1.5 rounded-full bg-white/60 px-3 py-1 text-xs font-bold text-foreground/70 ring-1 ring-border/60">
-                      <BadgeCheck className="h-3.5 w-3.5 text-emerald-600" /> {c}
-                    </span>
-                  ))}
-                </div>
-              )}
+              >
+                {analysis.techTone === "ok"
+                  ? `Leverantören uppvisar robust teknisk säkerhet och driftberedskap. Dessa kontroller styrker driften men neutraliserar inte den geografiska åtkomstrisken.`
+                  : `Leverantören saknar tillräckliga verifierade säkerhetsattribut för att styrka teknisk resiliens.`}
+                {analysis.certs.length > 0 && (
+                  <span className="mt-3 block text-[11px] font-semibold uppercase tracking-wide text-foreground/45">
+                    {analysis.certs.join(" · ")}
+                  </span>
+                )}
+              </FeatureCard>
             </div>
           </section>
         )}
 
         {/* ===== SECTION 3: SOVEREIGNTY SCORE & ALTERNATIVES ===== */}
         {detail && analysis && !loadingDetail && (
-          <section className="mt-14">
+          <section className="mt-20">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">03 · Sovereignty Score</p>
-            <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground md:text-3xl">Resultat & handlingsbara alternativ</h2>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">Resultat & handlingsbara alternativ</h2>
 
-            <div className="mt-5 glass rounded-2xl p-6 md:p-8">
-              <div className="flex flex-wrap items-end justify-between gap-4">
+            {/* Dark hero score card */}
+            <div
+              className="mt-6 overflow-hidden rounded-3xl p-7 text-white md:p-10"
+              style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-deep)" }}
+            >
+              <div className="grid gap-8 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:items-center">
+                {/* Score */}
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/55">Suveränitetspoäng</p>
-                  <div className="mt-1 flex items-baseline gap-1.5">
-                    <span className={`text-6xl font-bold leading-none ${TONE_STYLES[analysis.isLow ? "risk" : analysis.score < 60 ? "warn" : "ok"].text}`}>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/55">Suveränitetspoäng</p>
+                    <span className={`inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold ${TONE_DARK_TEXT[scoreTone]}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${TONE_STYLES[scoreTone].dot}`} />
+                      {analysis.isLow ? "Kritisk kontrollrisk" : analysis.score < 60 ? "Medel kontrollrisk" : "Låg kontrollrisk"}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <span className={`text-7xl font-bold leading-none tracking-tight md:text-8xl ${TONE_DARK_TEXT[scoreTone]}`}>
                       {analysis.score}
                     </span>
-                    <span className="text-2xl font-bold text-foreground/40">/ {SCORE_CAP}</span>
+                    <span className="text-3xl font-bold text-white/40">/ {SCORE_CAP}</span>
                   </div>
+                  <div className="mt-5 h-2.5 w-full overflow-hidden rounded-full bg-white/15">
+                    <div
+                      className={`h-full rounded-full transition-all ${analysis.isLow ? "bg-rose-400" : analysis.score < 60 ? "bg-amber-400" : "bg-emerald-400"}`}
+                      style={{ width: `${Math.max(2, (analysis.score / SCORE_CAP) * 100)}%` }}
+                    />
+                  </div>
+                  <p className="mt-2.5 text-xs font-medium text-white/45">
+                    Skalan är medvetet kapad vid {SCORE_CAP} — ingen leverantör är 100 % suverän.
+                  </p>
                 </div>
-                <ToneChip tone={analysis.isLow ? "risk" : analysis.score < 60 ? "warn" : "ok"}>
-                  {analysis.isLow ? "Kritisk kontrollrisk" : analysis.score < 60 ? "Medel kontrollrisk" : "Låg kontrollrisk"}
-                </ToneChip>
-              </div>
-              <div className="mt-4 h-3 w-full overflow-hidden rounded-full bg-foreground/10">
-                <div
-                  className={`h-full rounded-full transition-all ${analysis.isLow ? "bg-rose-500" : analysis.score < 60 ? "bg-amber-500" : "bg-emerald-500"}`}
-                  style={{ width: `${Math.max(2, (analysis.score / SCORE_CAP) * 100)}%` }}
-                />
-              </div>
-              <p className="mt-2 text-xs font-medium text-foreground/50">
-                Skalan är medvetet kapad vid {SCORE_CAP} — ingen leverantör är 100 % suverän.
-              </p>
 
-              {analysis.isLow && (
-                <div className="mt-5 rounded-2xl bg-rose-50 p-5 ring-1 ring-rose-200">
-                  <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-rose-700">
-                    <AlertTriangle className="h-4 w-4" /> Sårbarhetsprofil för ledningsgrupp
+                {/* Executive summary */}
+                <div className="rounded-2xl bg-white/[0.07] p-6 ring-1 ring-white/10">
+                  <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-white/60">
+                    {analysis.isLow ? <AlertTriangle className="h-4 w-4 text-rose-300" /> : <ShieldCheck className="h-4 w-4 text-emerald-300" />}
+                    Sårbarhetsprofil för ledningsgrupp
                   </p>
-                  <p className="mt-2 text-sm leading-relaxed text-rose-900/80">
-                    {detail.name} kan ha utmärkt teknisk säkerhet, men en kritisk kontrollrisk kvarstår. Data lämnar EU:s
-                    jurisdiktion och omfattas av utländsk lagstiftning. Om den geopolitiska kranen stängs av förlorar
-                    verksamheten omedelbart rådigheten över sin egen data — oavsett krypterings- och certifieringsnivå.
+                  <p className="mt-3 text-sm leading-relaxed text-white/80">
+                    {analysis.isLow
+                      ? `${detail.name} kan ha utmärkt teknisk säkerhet, men en kritisk kontrollrisk kvarstår. Data lämnar EU:s jurisdiktion och omfattas av utländsk lagstiftning. Om den geopolitiska kranen stängs av förlorar verksamheten omedelbart rådigheten över sin egen data — oavsett krypterings- och certifieringsnivå.`
+                      : `${detail.name} uppvisar stark digital rådighet. Data stannar inom EU:s jurisdiktion och omfattas av europeisk lagstiftning, vilket ger ledningsgruppen bevarad kontroll även vid geopolitisk osäkerhet.`}
                   </p>
                 </div>
-              )}
+              </div>
             </div>
 
-            {analysis.euAlts.length > 0 && (
+            {/* Recommendation panel */}
+            {primaryAlt && (
               <div className="mt-6">
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/55">
-                    Verifierade EU-alternativ · {detail.category}
-                  </p>
-                  <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {analysis.euAlts.map((id) => (
-                    <button
-                      key={id}
-                      onClick={() => setSelectedId(vendors.some((v) => v.id === id) ? id : selectedId)}
-                      className="glass group flex items-center justify-between rounded-2xl p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-deep)]"
+                <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-6 shadow-[var(--shadow-soft)] md:p-7">
+                  <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                    <div className="min-w-0">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-800">
+                        <ShieldCheck className="h-3.5 w-3.5" /> Rekommenderat EU-alternativ
+                      </span>
+                      <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
+                        {nameById.get(primaryAlt) ?? prettifyId(primaryAlt)}
+                      </p>
+                      <p className="mt-1 max-w-xl text-sm leading-relaxed text-foreground/65">
+                        Verifierad europeisk ersättare inom samma produktkategori ({detail.category}). Migrering bevarar funktionaliteten samtidigt som data hålls inom EU:s jurisdiktion.
+                      </p>
+                    </div>
+                    <Button
+                      asChild
+                      size="lg"
+                      className="shrink-0 rounded-xl px-6 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
+                      style={{ background: "var(--gradient-cta)" }}
                     >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-foreground">{nameById.get(id) ?? prettifyId(id)}</p>
-                        <p className="text-xs font-medium text-emerald-700">EU-baserat alternativ</p>
+                      <Link to="/atgardsplan">
+                        <FileText className="h-4 w-4" /> Visa migreringsunderlag
+                      </Link>
+                    </Button>
+                  </div>
+
+                  {otherAlts.length > 0 && (
+                    <div className="mt-5 border-t border-emerald-200/60 pt-4">
+                      <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-foreground/45">Fler EU-alternativ</p>
+                      <div className="flex flex-wrap gap-2">
+                        {otherAlts.map((id) => (
+                          <button
+                            key={id}
+                            onClick={() => vendors.some((v) => v.id === id) && setSelectedId(id)}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-foreground/75 ring-1 ring-border/60 transition hover:bg-emerald-50 hover:text-emerald-800"
+                          >
+                            {nameById.get(id) ?? prettifyId(id)}
+                            {vendors.some((v) => v.id === id) && <ArrowRight className="h-3 w-3 text-foreground/35" />}
+                          </button>
+                        ))}
                       </div>
-                      {vendors.some((v) => v.id === id) && (
-                        <ArrowRight className="h-4 w-4 shrink-0 text-foreground/40 transition group-hover:translate-x-1" />
-                      )}
-                    </button>
-                  ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -498,7 +553,7 @@ const Quiz = () => {
         )}
 
         {!detail && !loadingDetail && !loadingList && (
-          <div className="mt-10 glass rounded-2xl p-10 text-center">
+          <div className="mt-10 rounded-2xl border border-white/70 bg-white/70 p-12 text-center shadow-[var(--shadow-soft)] backdrop-blur-sm">
             <Globe className="mx-auto h-8 w-8 text-foreground/40" />
             <p className="mt-3 text-sm font-medium text-foreground/60">Välj en leverantör ovan för att starta analysen.</p>
           </div>
