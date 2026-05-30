@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp, ClipboardList, SlidersHorizontal, ScanSearch, ShieldCheck, LineChart, Database, Network, Lock, Landmark, FileText, BadgeCheck, ChevronDown } from "lucide-react";
+import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp, SlidersHorizontal, ShieldCheck, Database, Network, Lock, Landmark, FileText, BadgeCheck, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
