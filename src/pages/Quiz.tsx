@@ -814,151 +814,69 @@ const Quiz = () => {
 };
 
 /* =========================================================================
-   STEP 1 — Konfiguration
+   STEP 1 — Verksamhetsanalys & Strategi
    ========================================================================= */
 const Step1Konfig = ({
   state,
-  setState,
-  togglePriority,
+  setStrategy,
   showErrors,
   missing,
 }: {
   state: Step1State;
-  setState: React.Dispatch<React.SetStateAction<Step1State>>;
-  togglePriority: (label: string) => void;
+  setStrategy: (key: StrategyKey, value: "A" | "B") => void;
   showErrors: boolean;
-  missing: { priorities: boolean; sector: boolean; euDataWeight: boolean; readiness: boolean };
+  missing: { timeHorizon: boolean; infrastructure: boolean; techResource: boolean; regulatoryFocus: boolean };
 }) => {
   const errCls = (bad: boolean) =>
-    showErrors && bad ? "rounded-xl ring-2 ring-rose-500 ring-offset-2 ring-offset-transparent p-3 -m-3" : "";
+    showErrors && bad ? "rounded-2xl ring-2 ring-rose-500 ring-offset-2 ring-offset-transparent p-3 -m-3" : "";
   return (
-  <Card title="Konfiguration" subtitle="Här sätter vi vikt och kontext för analysen.">
-    <div className="grid gap-8">
-      {/* Priorities */}
-      <div className={errCls(missing.priorities)} data-missing={showErrors && missing.priorities}>
-      <Field label="Vad är viktigast för er?" hint="Välj upp till 3 prioriteringar">
-        <div className="flex flex-wrap gap-2">
-          {STEP1_PRIORITIES.map((p) => {
-            const active = state.priorities.includes(p.label);
-            const unsupported = p.label === "Kostnad";
-            const disabled = unsupported || (!active && state.priorities.length >= 3);
-            return (
-              <button
-                key={p.label}
-                type="button"
-                onClick={() => !unsupported && togglePriority(p.label)}
-                disabled={disabled}
-                aria-pressed={active}
-                title={unsupported ? "Saknas i modellen — kommer i framtida version" : undefined}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ring-1 ${
-                  active
-                    ? "bg-foreground text-background ring-foreground"
-                    : "bg-white/70 text-foreground/80 ring-white/70 hover:bg-white"
-                } ${disabled ? "opacity-40 cursor-not-allowed hover:bg-white/70" : ""}`}
-              >
-                {p.label}
-                {unsupported && <span className="ml-1 text-xs">(ej i modell)</span>}
-              </button>
-            );
-          })}
-        </div>
-        {showErrors && missing.priorities && (
-          <p className="mt-2 text-xs font-semibold text-rose-600">Välj minst en prioritering.</p>
-        )}
-      </Field>
+    <Card
+      title="Verksamhetsanalys & Strategi"
+      subtitle="Fyra strategiska frågor om er organisations behov och förutsättningar. Svaren formar er framtida åtgärdsplan, men påverkar inte de objektiva leverantörspoängen."
+    >
+      <div className="grid gap-8">
+        {STRATEGY_QUESTIONS.map((q, i) => {
+          const selected = state[q.key];
+          const isMissing = missing[q.key];
+          return (
+            <div key={q.key} className={errCls(isMissing)} data-missing={showErrors && isMissing}>
+              <div className="mb-3">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/55">
+                  Fråga {i + 1} · {q.eyebrow}
+                </p>
+                <p className="mt-1.5 text-base font-semibold leading-snug text-foreground">{q.text}</p>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {q.options.map((opt) => {
+                  const active = selected === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setStrategy(q.key, opt.value)}
+                      aria-pressed={active}
+                      className={`rounded-2xl px-5 py-4 text-left transition ring-1 ${
+                        active
+                          ? "bg-foreground text-background ring-foreground shadow-[var(--shadow-deep)]"
+                          : "bg-white/70 text-foreground/80 ring-white/70 hover:bg-white"
+                      }`}
+                    >
+                      <div className="text-[15px] font-bold leading-tight">{opt.label}</div>
+                      <div className={`mt-1.5 text-xs leading-relaxed ${active ? "text-background/80" : "text-foreground/60"}`}>
+                        {opt.description}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {showErrors && isMissing && (
+                <p className="mt-2 text-xs font-semibold text-rose-600">Välj ett alternativ.</p>
+              )}
+            </div>
+          );
+        })}
       </div>
-
-      {/* Sector */}
-      <div className={errCls(missing.sector)} data-missing={showErrors && missing.sector}>
-      <Field label="Vilken sektor verkar ni inom?">
-        <Select
-          value={state.sector}
-          onValueChange={(v) => setState((s) => ({ ...s, sector: v }))}
-        >
-          <SelectTrigger className={`h-11 rounded-xl bg-white/80 ${showErrors && missing.sector ? "ring-2 ring-rose-500" : ""}`}>
-            <SelectValue placeholder="Välj sektor" />
-          </SelectTrigger>
-          <SelectContent>
-            {STEP1_SECTORS.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {showErrors && missing.sector && (
-          <p className="mt-2 text-xs font-semibold text-rose-600">Välj en sektor.</p>
-        )}
-      </Field>
-      </div>
-
-      {/* EU data weight */}
-      <div className={errCls(missing.euDataWeight)} data-missing={showErrors && missing.euDataWeight}>
-      <Field label="Hur viktig är EU-datalagring för er?">
-        <div className="flex flex-wrap gap-2">
-          {[
-            { label: "Inte viktigt", value: 1 },
-            { label: "Lite viktigt", value: 2 },
-            { label: "Ganska viktigt", value: 3 },
-            { label: "Mycket viktigt", value: 4 },
-            { label: "Avgörande", value: 5 },
-          ].map((opt) => {
-            const active = state.euDataWeight === opt.value;
-            return (
-              <button
-                key={opt.label}
-                type="button"
-                onClick={() => setState((s) => ({ ...s, euDataWeight: opt.value }))}
-                aria-pressed={active}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ring-1 ${
-                  active
-                    ? "bg-foreground text-background ring-foreground"
-                    : "bg-white/70 text-foreground/80 ring-white/70 hover:bg-white"
-                }`}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
-        {showErrors && missing.euDataWeight && (
-          <p className="mt-2 text-xs font-semibold text-rose-600">Välj ett alternativ.</p>
-        )}
-      </Field>
-      </div>
-
-      {/* Readiness */}
-      <div className={errCls(missing.readiness)} data-missing={showErrors && missing.readiness}>
-      <Field label="Hur bedömer ni er förmåga att upprätthålla verksamheten vid ett plötsligt avbrott i leverantörens tjänster?">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {STEP1_READINESS.map((r) => {
-            const active = state.readiness === r.label;
-            return (
-              <button
-                key={r.label}
-                type="button"
-                onClick={() => setState((s) => ({ ...s, readiness: r.label }))}
-                className={`rounded-xl px-4 py-3 text-left transition ring-1 ${
-                  active
-                    ? "bg-foreground text-background ring-foreground"
-                    : "bg-white/70 text-foreground/80 ring-white/70 hover:bg-white"
-                }`}
-              >
-                <div className="text-base font-semibold">{r.label}</div>
-                <div className={`mt-1 text-xs ${active ? "text-background/80" : "text-foreground/60"}`}>
-                  {r.description}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        {showErrors && missing.readiness && (
-          <p className="mt-2 text-xs font-semibold text-rose-600">Välj ett alternativ.</p>
-        )}
-      </Field>
-      </div>
-    </div>
-  </Card>
+    </Card>
   );
 };
 
