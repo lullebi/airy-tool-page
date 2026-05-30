@@ -1840,12 +1840,14 @@ const Step5Measurement = ({
           const f = d?.features;
           const cloudAct = f?.cloud_act_exposure ?? v.cloud_act_exposure ?? false;
           const hqInEu = f?.hq_in_eu ?? v.hq_in_eu ?? false;
-          const certScore = f?.cert_score ?? null;
-          const euComplianceScore = f?.eu_compliance_score ?? null;
           const presentCerts = CERT_LABELS.filter((c) => {
             const val = f?.certifications?.[c.key];
             return typeof val === "number" && val > 0;
           });
+          // Datapoäng per pelare (objektiv mappning från datasetlogiken).
+          const jurisScore = cloudAct ? 0 : 100;
+          const ownerScore = hqInEu ? 100 : 0;
+          const techScore = presentCerts.length > 0 ? 100 : 0;
 
           return (
             <section
