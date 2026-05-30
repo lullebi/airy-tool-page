@@ -1,38 +1,61 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldAlert, CheckCircle2, AlertTriangle, Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { fetchAlternatives, type RescoredVendor } from "@/lib/api";
-import { RISK_DRIVER_SV } from "@/lib/scoringConstants";
 import type { VendorLike } from "@/lib/vendorMapper";
-
 import { isEuropean as isEU } from "@/lib/vendorMapper";
 
 const NO_ALT_MESSAGE = "Inga EU-alternativ taggade för denna kategori";
 
 type AltState = { loading: boolean; eu: string[]; error?: string };
 
+// Organisatorisk kontext från Step 1 (Verksamhetsanalys & Strategi).
+type Step1Like = {
+  timeHorizon?: string;
+  infrastructure?: string;
+  techResource?: string;
+  regulatoryFocus?: string;
+};
+
 type VendorRow = {
   vendor: VendorLike;
-  score: number;
-  risks: string[];
+  eu: boolean;
+  riskParagraph: string;
   alt: AltState;
 };
 
-const riskLabel = (score: number) => {
-  if (score >= 70) return { label: "Låg risk", tone: "ok" as const };
-  if (score >= 45) return { label: "Medel risk", tone: "warn" as const };
-  return { label: "Hög risk", tone: "bad" as const };
-};
+// Exakt strategisk bedömning för det kritiska scenariot.
+const PROFILE_EXACT_TEXT =
+  "Analysen visar att er nuvarande infrastruktur uppvisar kritiska kontrollrisker gällande geopolitisk rådighet och dataägande. Eftersom er verksamhet står under omedelbar regulatorisk press från NIS2/DORA samt har ett uttalat behov av publika molntjänster inom EU, innebär nuvarande leverantörsberoende en direkt strategisk verksamhetsrisk. En kontrollerad migration till godkända europeiska ekosystem bör inledas omedelbart för att säkra kontinuiteten.";
 
-const toneClasses = (tone: "ok" | "warn" | "bad") =>
-  tone === "ok"
-    ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-    : tone === "warn"
-      ? "bg-amber-50 text-amber-700 ring-amber-200"
-      : "bg-rose-50 text-rose-700 ring-rose-200";
+// Genererar en sammanhängande strategisk sårbarhetsbedömning (ett stycke).
+const buildExecutiveProfile = (step1: Step1Like, anyThirdCountry: boolean): string => {
+  if (
+    anyThirdCountry &&
+    step1.timeHorizon === "A" &&
+    step1.infrastructure === "B" &&
+    step1.regulatoryFocus === "A"
+  ) {
+    return PROFILE_EXACT_TEXT;
+  }
+
+  if (anyThirdCountry) {
+    const urgency =
+      step1.timeHorizon === "A"
+        ? "Med ert uttalade behov av omedelbar förändring"
+        : "Inom en strategisk omställningshorisont";
+    const reg =
+      step1.regulatoryFocus === "A"
+        ? "och den regulatoriska pressen från NIS2/DORA"
+        : "och era krav på dataskydd enligt GDPR";
+    return `Analysen visar att delar av er leverantörsportfölj lyder under tredjelandsjurisdiktion, vilket innebär strukturella kontrollrisker gällande geopolitisk rådighet och dataägande. ${urgency} ${reg} bör en kontrollerad migration till europeiska alternativ prioriteras för att säkra långsiktig kontinuitet och juridisk rådighet över verksamhetens data.`;
+  }
+
+  return "Analysen visar att er nuvarande leverantörsportfölj i huvudsak vilar på europeisk infrastruktur med god juridisk rådighet. Inga akuta kontrollrisker har identifierats, men en löpande uppföljning av leverantörernas efterlevnad rekommenderas för att bibehålla suveränitet och regelefterlevnad över tid.";
+};
 
 const Atgardsplan = () => {
   const location = useLocation();
@@ -41,11 +64,12 @@ const Atgardsplan = () => {
     vendors?: VendorLike[];
     scores?: Record<string, number>;
     scored?: RescoredVendor[];
+    step1?: Step1Like;
   };
 
   const vendors: VendorLike[] = state.vendors ?? [];
+  const step1: Step1Like = state.step1 ?? {};
 
-  // Fetch EU alternatives per category once.
   const [altsByCategory, setAltsByCategory] = useState<Record<string, AltState>>({});
 
   useEffect(() => {
@@ -53,15 +77,10 @@ const Atgardsplan = () => {
       new Set(vendors.map((v) => v.apiCategory ?? v.type).filter((t): t is string => !!t)),
     );
     categories.forEach((cat) => {
-      setAltsByCategory((prev) =>
-        prev[cat] ? prev : { ...prev, [cat]: { loading: true, eu: [] } },
-      );
+      setAltsByCategory((prev) => (prev[cat] ? prev : { ...prev, [cat]: { loading: true, eu: [] } }));
       fetchAlternatives(cat)
         .then((r) =>
-          setAltsByCategory((prev) => ({
-            ...prev,
-            [cat]: { loading: false, eu: r.eu_alternatives },
-          })),
+          setAltsByCategory((prev) => ({ ...prev, [cat]: { loading: false, eu: r.eu_alternatives } })),
         )
         .catch((e: unknown) =>
           setAltsByCategory((prev) => ({
@@ -77,45 +96,55 @@ const Atgardsplan = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vendors.map((v) => v.apiCategory ?? v.type).join("|")]);
 
+  const anyThirdCountry = useMemo(
+    () => vendors.some((v) => v.cloud_act_exposure === true || v.hq_in_eu === false),
+    [vendors],
+  );
+
+  const profileText = buildExecutiveProfile(step1, anyThirdCountry);
+
   const rows: VendorRow[] = useMemo(
     () =>
       vendors.map((v) => {
         const eu = isEU(v);
-        const score = state.scores?.[v.id] ?? (eu ? 75 : 38);
-        let risks: string[] = [];
-
-        if (v.top_risk_drivers && v.top_risk_drivers.length > 0) {
-          risks = v.top_risk_drivers.map(
-            (driver) => RISK_DRIVER_SV[driver] ?? driver,
-          );
-        } else {
-          if (!eu) {
-            risks.push("Tredjelandsöverföring (utanför EU/EES)");
-            risks.push("Exponering mot US CLOUD Act");
-          }
-          if (score < 70) risks.push("Begränsad regulatorisk dokumentation enligt självskattning");
-          if (score < 45) risks.push("Begränsade kontraktsmässiga skyddsåtgärder (DPA/SLA)");
-        }
-
-        if (risks.length === 0) risks.push("Inga väsentliga risker identifierade");
+        const riskParagraph = eu
+          ? "Leverantören har huvudkontor och datalagring inom EU, vilket ger full juridisk rådighet och efterlevnad av europeiska dataskyddskrav utan exponering mot tredjelandslagstiftning."
+          : "Leverantören lyder under utländsk jurisdiktion (US CLOUD Act), vilket medför bristande juridisk rådighet och lagring utanför EU:s suveränitetszon.";
         const altCat = v.apiCategory ?? v.type;
         const alt: AltState = altCat
           ? altsByCategory[altCat] ?? { loading: true, eu: [] }
           : { loading: false, eu: [] };
-        return { vendor: v, score, risks, alt };
+        return { vendor: v, eu, riskParagraph, alt };
       }),
-    [vendors, state.scores, altsByCategory],
+    [vendors, altsByCategory],
   );
 
-  const high = rows.filter((r) => r.score < 45);
-  const med = rows.filter((r) => r.score >= 45 && r.score < 70);
-  const low = rows.filter((r) => r.score >= 70);
+  const handleExport = () => {
+    const blocks = rows.map((r) => {
+      const status = r.eu ? "Regulatoriskt Säker" : "Strukturell Kontrollrisk";
+      const alts = r.alt.eu.length ? r.alt.eu.join(", ") : "Inga taggade EU-alternativ";
+      return `${r.vendor.name} (${r.vendor.type ?? "Tjänst"})\nStatus: ${status}\nBedömning: ${r.riskParagraph}\nRekommenderade EU-alternativ: ${alts}`;
+    });
+    const content = `MIGRERINGSUNDERLAG — Eurostack\n\nSårbarhetsprofil för ledningsgrupp:\n${profileText}\n\n— Leverantörsanalys —\n\n${blocks.join("\n\n")}\n`;
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "migreringsunderlag.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto w-full max-w-5xl px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/quiz", { state: { vendors: state.vendors, stepIndex: 4 } })} className="text-foreground/70">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/quiz", { state: { vendors: state.vendors, stepIndex: 2 } })}
+            className="text-foreground/70"
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Tillbaka
           </Button>
@@ -124,207 +153,119 @@ const Atgardsplan = () => {
           </Link>
         </div>
 
-        {/* SECTION 1 — Summary */}
+        {/* HEADER */}
         <header className="mb-8">
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary ring-1 ring-primary/20">
-            <Sparkles className="h-3.5 w-3.5" />
-            Åtgärdsplan
-          </div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Rekommenderade åtgärder</h1>
           <p className="mt-2 max-w-2xl text-sm text-foreground/65">
-            Baserat på analysen rekommenderas följande åtgärder och alternativa leverantörer.
+            En strategisk åtgärdsplan baserad på er verksamhetsanalys och leverantörernas faktiska
+            jurisdiktion och dataprovenans.
           </p>
         </header>
 
-        {/* SECTION 2 — Current vs Alternatives */}
+        {/* SÅRBARHETSPROFIL — top advisory card */}
         <section className="mb-10">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground/55">
-            Nuvarande leverantörer & EU-alternativ
-          </h2>
-          <div className="grid gap-3 md:grid-cols-2">
-            {rows.map((r) => {
-              const status = riskLabel(r.score);
-              return (
-                <Card key={r.vendor.id} className="border-border/70">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <CardTitle className="text-base font-semibold">{r.vendor.name}</CardTitle>
-                        <p className="mt-0.5 text-xs text-foreground/55">
-                          {r.vendor.type ?? "Tjänst"} · {r.vendor.country ?? "—"}
-                        </p>
-                      </div>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ${toneClasses(status.tone)}`}
-                      >
-                        {status.label} · {r.score}
-                      </span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3 pt-0">
-                    <div>
-                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-foreground/50">
-                        Identifierade risker
-                      </p>
-                      <ul className="space-y-1">
-                        {r.risks.map((risk, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs text-foreground/75">
-                            <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-amber-500" />
-                            <span>{risk}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <Separator />
-                    <div className="rounded-md bg-primary/5 p-3 ring-1 ring-primary/15">
-                      <div className="mb-1 flex items-center gap-2">
-                        <ArrowRight className="h-3.5 w-3.5 text-primary" />
-                        <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-                          Rekommenderat EU-alternativ
-                        </p>
-                      </div>
-                      {r.alt.loading ? (
-                        <p className="inline-flex items-center gap-2 text-xs text-foreground/60">
-                          <Loader2 className="h-3 w-3 animate-spin" /> Hämtar alternativ…
-                        </p>
-                      ) : r.alt.eu.length === 0 ? (
-                        <p className="text-xs text-foreground/60">{NO_ALT_MESSAGE}</p>
-                      ) : (
-                        <ul className="flex flex-wrap gap-1.5">
-                          {r.alt.eu.map((name) => (
-                            <li
-                              key={name}
-                              className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-foreground ring-1 ring-primary/20"
-                            >
-                              {name}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* SECTION 3 — Action Priority */}
-        <section className="mb-10">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground/55">
-            Åtgärdsprioritet
-          </h2>
-          <div className="grid gap-3 md:grid-cols-3">
-            <PriorityCard
-              title="Hög prioritet"
-              tone="bad"
-              icon={<ShieldAlert className="h-4 w-4" />}
-              items={
-                high.length > 0
-                  ? high.map((r) => `Ersätt eller migrera ${r.vendor.name}${r.alt.eu[0] ? ` till ${r.alt.eu[0]}` : ""}`)
-                  : ["Inga akuta åtgärder identifierade."]
-              }
-            />
-            <PriorityCard
-              title="Medel prioritet"
-              tone="warn"
-              icon={<AlertTriangle className="h-4 w-4" />}
-              items={
-                med.length > 0
-                  ? med.map((r) => `Granska avtal och DPA för ${r.vendor.name}`)
-                  : ["Inga åtgärder med medelhög prioritet."]
-              }
-            />
-            <PriorityCard
-              title="Låg prioritet"
-              tone="ok"
-              icon={<CheckCircle2 className="h-4 w-4" />}
-              items={
-                low.length > 0
-                  ? low.map((r) => `Fortsatt övervakning av ${r.vendor.name}`)
-                  : ["Inga lågprioriterade åtgärder."]
-              }
-            />
-          </div>
-        </section>
-
-        {/* SECTION 4 — Next Steps */}
-        <section className="mb-10">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground/55">
-            Rekommenderade nästa steg
-          </h2>
-          <Card className="border-border/70">
-            <CardContent className="p-5">
-              <ol className="space-y-3">
-                {[
-                  "Granska efterlevnadsavtal (DPA, SLA, SCC) för samtliga icke-EU-leverantörer.",
-                  "Utvärdera EU-baserade alternativ enligt rekommendationerna ovan.",
-                  "Minska beroendet av affärskritiska leverantörer genom exit-plan och datamigreringsstrategi.",
-                  "Dokumentera incidenthantering och rapporteringsrutiner enligt NIS2 och DORA.",
-                  "Planera in en kvartalsvis uppföljning av leverantörsportföljen.",
-                ].map((step, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20">
-                      {i + 1}
-                    </span>
-                    <span className="text-sm text-foreground/80">{step}</span>
-                  </li>
-                ))}
-              </ol>
+          <Card className="border-l-4 border-l-rose-500 border-border/70 shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 ring-1 ring-rose-200">
+                  <ShieldAlert className="h-5 w-5 text-rose-600" />
+                </span>
+                <CardTitle className="text-xl font-bold tracking-tight">
+                  Sårbarhetsprofil för Ledningsgrupp
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="max-w-3xl text-base leading-relaxed text-foreground/85">{profileText}</p>
             </CardContent>
           </Card>
         </section>
 
+        {/* LEVERANTÖRSANALYS & EU-ALTERNATIV */}
+        <section className="mb-10">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-foreground/55">
+            Leverantörsanalys & EU-alternativ
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {rows.map((r) => (
+              <Card key={r.vendor.id} className="border-border/70">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <CardTitle className="text-base font-semibold">{r.vendor.name}</CardTitle>
+                      <p className="mt-0.5 text-xs text-foreground/55">
+                        {r.vendor.type ?? "Tjänst"} · {r.vendor.country ?? "—"}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 text-xs font-semibold ${
+                        r.eu ? "text-emerald-600" : "text-rose-600"
+                      }`}
+                    >
+                      {r.eu ? "Regulatoriskt Säker" : "Strukturell Kontrollrisk"}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4 pt-0">
+                  <div>
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/50">
+                      Identifierade risker
+                    </p>
+                    <p className="text-sm leading-relaxed text-foreground/75">{r.riskParagraph}</p>
+                  </div>
+                  <Separator />
+                  <div>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-primary">
+                      Rekommenderade EU-alternativ
+                    </p>
+                    {r.alt.loading ? (
+                      <p className="inline-flex items-center gap-2 text-xs text-foreground/60">
+                        <Loader2 className="h-3 w-3 animate-spin" /> Hämtar alternativ…
+                      </p>
+                    ) : r.alt.eu.length === 0 ? (
+                      <p className="text-xs text-foreground/60">{r.alt.error ?? NO_ALT_MESSAGE}</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {r.alt.eu.map((name) => (
+                          <span
+                            key={name}
+                            className="rounded-full bg-primary/5 px-2.5 py-0.5 text-xs font-medium text-foreground ring-1 ring-primary/20"
+                          >
+                            {name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <Button
+              size="lg"
+              onClick={handleExport}
+              className="group rounded-xl px-6 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
+              style={{ background: "var(--gradient-cta)" }}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Exportera Migreringsunderlag
+            </Button>
+          </div>
+        </section>
+
         <div className="flex justify-center pt-2">
-          <Button variant="outline" onClick={() => navigate("/quiz", { state: { vendors: state.vendors, stepIndex: 4 } })} className="rounded-xl">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Tillbaka till mätning
+          <Button
+            variant="outline"
+            onClick={() => navigate("/quiz", { state: { vendors: state.vendors, stepIndex: 2 } })}
+            className="rounded-xl"
+          >
+            Slutför Konsultation
           </Button>
         </div>
       </div>
     </div>
-  );
-};
-
-const PriorityCard = ({
-  title,
-  tone,
-  icon,
-  items,
-}: {
-  title: string;
-  tone: "ok" | "warn" | "bad";
-  icon: React.ReactNode;
-  items: string[];
-}) => {
-  const ring =
-    tone === "ok"
-      ? "ring-emerald-200"
-      : tone === "warn"
-        ? "ring-amber-200"
-        : "ring-rose-200";
-  const text =
-    tone === "ok" ? "text-emerald-700" : tone === "warn" ? "text-amber-700" : "text-rose-700";
-  const bg =
-    tone === "ok" ? "bg-emerald-50" : tone === "warn" ? "bg-amber-50" : "bg-rose-50";
-  return (
-    <Card className={`border-border/70`}>
-      <CardHeader className="pb-2">
-        <div className={`inline-flex w-fit items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${bg} ${text} ${ring}`}>
-          {icon}
-          {title}
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <ul className="space-y-2">
-          {items.map((item, i) => (
-            <li key={i} className="text-xs text-foreground/75">
-              • {item}
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
   );
 };
 
