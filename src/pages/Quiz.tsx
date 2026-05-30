@@ -551,13 +551,8 @@ const Quiz = () => {
   const canNext = useMemo(() => {
     if (stepIndex === 0)
       return step1.timeHorizon !== "" && step1.infrastructure !== "" && step1.techResource !== "" && step1.regulatoryFocus !== "";
-    if (stepIndex === 1) return QUICK_SCAN.every((q) => quickAnswers[q.id]);
-    if (stepIndex === 2) {
-      if (!deepDiveEnabled || deepVendors.length === 0) return true;
-      return activeDeepQuestions.every((q) => currentDeepAnswers[q.id]);
-    }
     return true;
-  }, [stepIndex, step1, quickAnswers, currentDeepAnswers, deepDiveEnabled, deepVendors.length, activeDeepQuestions]);
+  }, [stepIndex, step1]);
 
   const missingQuickIds = useMemo(
     () => QUICK_SCAN.filter((q) => !quickAnswers[q.id]).map((q) => q.id),
