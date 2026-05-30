@@ -2570,8 +2570,8 @@ const Step5Measurement = ({
           </svg>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-2xl font-bold text-foreground">{euPct}%</span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground/60">
-              EU
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-foreground/60 text-center leading-tight">
+              EU-rådighet
             </span>
           </div>
         </div>
