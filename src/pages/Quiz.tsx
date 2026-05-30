@@ -1507,7 +1507,7 @@ const Step5Measurement = ({
   return (
     <Card
       title="Infrastruktur & Dataproveniens"
-      subtitle="En objektiv kartläggning av var era valda leverantörers data har sitt ursprung, bearbetas och lagras, samt deras juridiska och tekniska riskattribut direkt från datasetet."
+      subtitle="En objektiv kartläggning av var era valda leverantörers data har sitt ursprung, bearbetas och lagras, samt deras juridiska och tekniska riskattribut."
     >
       <div className="grid gap-6">
         {vendors.map((v) => {
