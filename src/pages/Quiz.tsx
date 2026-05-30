@@ -1234,7 +1234,7 @@ const Step6ScoreSummary = ({
   const exposed =
     !!activeVendor && (activeVendor.cloud_act_exposure === true || activeVendor.hq_in_eu === false);
 
-  const profileText = buildVulnerabilityProfile(step1, exposed);
+  const profileText = buildVulnerabilityProfile(exposed);
 
   const category = activeVendor?.apiCategory ?? activeVendor?.type ?? null;
 
