@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp, ClipboardList, SlidersHorizontal, ScanSearch, ShieldCheck, LineChart, Database, Network, Lock, Landmark, FileText, BadgeCheck, ChevronDown } from "lucide-react";
+import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp, SlidersHorizontal, ShieldCheck, Database, Network, Lock, Landmark, FileText, BadgeCheck, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -247,88 +247,67 @@ const Index = () => {
           </div>
 
           {/* Step cards */}
-          <div className="relative mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="relative mt-12 grid grid-cols-1 gap-6 lg:grid-cols-3">
             {[
               {
-                icon: ClipboardList,
-                title: "1. Registrera tech-leverantörer",
-                bullets: [
-                  "Lägg till leverantörer ni använder idag",
-                  "Ange namn, system, land och dataplats",
-                  "Markera leverantörer som måste behållas",
-                ],
-              },
-              {
                 icon: SlidersHorizontal,
-                title: "2. Konfigurering",
-                bullets: [
-                  "Vikta säkerhet, kostnad, efterlevnad eller flexibilitet",
-                  "Välj sektor och betydelse av EU-datalagring",
-                  "Ange er beredskap att byta tjänster",
-                ],
+                step: "Steg 1",
+                title: "Verksamhetsanalys & Strategi",
+                text: "Analysen inleds med en kartläggning av er organisations unika förutsättningar, tidslinjer och regulatoriska tryck under NIS2 eller DORA. Svaren ligger till grund för den slutgiltiga handlingsplanen.",
               },
               {
-                icon: ScanSearch,
-                title: "3. Snabbanalys",
-                bullets: [
-                  "Snabb bedömning av alla leverantörer",
-                  "Kontroll av känslig data och certifieringar",
-                  "Första riskbild baserad på kritikalitet",
-                ],
+                icon: Network,
+                step: "Steg 2",
+                title: "Infrastruktur & Dataproveniens",
+                text: "Här visualiseras er leverantörsportfölj baserat på objektiva attribut direkt från vårt dataset. Verktyget spårar datans faktiska geografiska flöde samt identifierar legala kontrollrisker såsom exponering mot utländsk molnlagstiftning.",
               },
               {
                 icon: ShieldCheck,
-                title: "4. Fördjupad analys",
-                bullets: [
-                  "Följdfrågor för kritiska leverantörer",
-                  "Säkerhetsnivå, incidenthantering och dataplats",
-                  "Jurisdiktion, ägarskap och regelverk",
-                ],
-              },
-              {
-                icon: LineChart,
-                title: "5. Riskanalys och resultat",
-                bullets: [
-                  "Leverantörslista med komponentbidrag och status",
-                  "Total poäng per leverantör",
-                  "Rekommendation: behåll, reducera eller byt",
-                ],
+                step: "Steg 3",
+                title: "Strategisk Åtgärdsplan",
+                text: "I det sista steget sammanfogas er verksamhetsprofil med leverantörernas faktiska jurisdiktion. Resultatet är en skräddarsydd, strategisk åtgärdsplan som identifierar sårbarheter och presenterar suveräna europeiska alternativ.",
               },
             ].map((step, i) => {
               const Icon = step.icon;
-              const [num, ...rest] = step.title.split(". ");
-              const titleText = rest.join(". ");
               return (
-                <div key={i} className="relative">
-                  <div className="glass group h-full rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-deep)]">
-                    <div className="mb-4 flex items-center gap-3">
-                      <span
-                        className="bg-gradient-to-r from-blue-600 to-sky-400 bg-clip-text text-4xl font-bold leading-none text-transparent md:text-5xl"
-                      >
-                        {num}
-                      </span>
-                      <div
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-[var(--shadow-soft)]"
-                        style={{ background: "var(--gradient-cta)" }}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </div>
+                <div
+                  key={i}
+                  className="glass group flex h-full flex-col rounded-3xl p-7 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[var(--shadow-deep)] md:p-8"
+                >
+                  <div className="flex items-center justify-between">
+                    <div
+                      className="inline-flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-[var(--shadow-soft)]"
+                      style={{ background: "var(--gradient-cta)" }}
+                    >
+                      <Icon className="h-5 w-5" />
                     </div>
-                    <h3 className="text-base font-bold leading-snug text-foreground">
-                      {titleText}
-                    </h3>
-                    <ul className="mt-3 space-y-1.5 text-sm leading-relaxed text-foreground/70">
-                      {step.bullets.map((b, bi) => (
-                        <li key={bi} className="flex gap-2">
-                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/70" />
-                          <span>{b}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/50">
+                      {step.step}
+                    </span>
                   </div>
+                  <h3 className="mt-6 text-lg font-bold leading-snug text-foreground md:text-xl">
+                    {step.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-foreground/70">
+                    {step.text}
+                  </p>
                 </div>
               );
             })}
+          </div>
+
+          <div className="mt-10 flex justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-soft)] hover:opacity-95"
+              style={{ background: "var(--gradient-cta)" }}
+            >
+              <Link to="/registrera-leverantorer">
+                Starta Steg 1
+                <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
+              </Link>
+            </Button>
           </div>
 
           {/* Vad mäts? */}
@@ -373,8 +352,8 @@ const Index = () => {
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/65">
                   Datasetet samlar information om kända leverantörer. Det används för att besvara
                   frågor som redan finns dokumenterade, exempelvis land, dataplats, certifieringar
-                  och kända regelverksrisker. Om information saknas skickas frågan vidare till
-                  Fördjupad analys.
+                  och kända regelverksrisker. Om information saknas kompletteras profilen via
+                  verksamhetsanalysen.
                 </p>
                 <button
                   type="button"
@@ -406,16 +385,16 @@ const Index = () => {
                         <p className="font-semibold text-foreground/80">API och uppslag</p>
                         <p>
                           Varje leverantör matchas via ett uppslag i datasetet. Saknad metadata
-                          (land, jurisdiktion, certifieringar) faller tillbaka till Fördjupad analys
-                          där svaren samlas in via quizet.
+                          (land, jurisdiktion, certifieringar) kompletteras via verksamhetsanalysen
+                          där svaren samlas in i Steg 1.
                         </p>
                       </div>
                       <div>
-                        <p className="font-semibold text-foreground/80">Riskpoäng och viktning</p>
+                        <p className="font-semibold text-foreground/80">Risk och viktning</p>
                         <p>
-                          Sammanvägd poäng (0–100) beräknas som Snabbanalys 35 %, Fördjupad analys
-                          35 %, EU-vikt 15 % och Beredskap 15 %. Varje fråga har en intern viktning
-                          (0–1) baserad på regulatorisk tyngd.
+                          Riskbedömningen väger samman objektiva dataattribut, jurisdiktion och
+                          EU-rådighet mot er verksamhetsprofil. Varje attribut har en intern viktning
+                          baserad på regulatorisk tyngd under NIS2, DORA och GDPR.
                         </p>
                       </div>
                       <div>
