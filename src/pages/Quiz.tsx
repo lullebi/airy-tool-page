@@ -1932,6 +1932,9 @@ const Step5Measurement = ({
                       {hqInEu ? "EU-REGISTRERAT MODERBOLAG" : "MODERBOLAG I TREDJELAND"}
                     </span>
                   </div>
+                  <p className={`mt-3 text-2xl font-extrabold leading-none ${ownerScore === 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                    {ownerScore} <span className="text-sm font-bold text-foreground/40">/ 100p</span>
+                  </p>
                 </div>
 
                 {/* Column 3 — Teknisk Säkerhetsverifiering */}
