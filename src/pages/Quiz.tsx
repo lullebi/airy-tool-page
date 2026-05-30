@@ -1196,6 +1196,31 @@ const ControlRow = ({ c }: { c: BreakdownControl }) => {
   );
 };
 
+// Statisk "checkpoint"-rad som speglar ML-modellens features (ej quiz-svar).
+const CheckpointRow = ({
+  cp,
+}: {
+  cp: { label: string; status: string; score: number };
+}) => {
+  const tone =
+    cp.score >= 75
+      ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+      : cp.score <= 25
+        ? "bg-rose-50 text-rose-700 ring-rose-200"
+        : "bg-amber-50 text-amber-700 ring-amber-200";
+  return (
+    <div className="flex items-start justify-between gap-3 border-b border-border/40 py-2.5 last:border-0">
+      <p className="min-w-0 text-sm font-medium leading-snug text-foreground">{cp.label}</p>
+      <span
+        className={`mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ${tone}`}
+      >
+        {cp.status}
+        <span className="tabular-nums opacity-70">· {cp.score}p</span>
+      </span>
+    </div>
+  );
+};
+
 // Telemetri-uppslag per leverantör (origin / processing / storage).
 const telemetryFor = (d?: ApiVendorDetail) => {
   const f = d?.features;
