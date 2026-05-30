@@ -93,7 +93,7 @@ function RegionCard({
     <div className="glass flex-1 rounded-2xl p-5">
       <div className="mb-3 flex items-center justify-between">
         <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${s.chip} ring-1`}>
-          <Icon className="h-4.5 w-4.5" />
+          <Icon className="h-5 w-5" />
         </span>
         <ToneChip tone={tone}>{tone === "ok" ? "Inom EU" : tone === "warn" ? "Delvis" : "Utanför EU"}</ToneChip>
       </div>
