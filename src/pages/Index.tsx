@@ -105,24 +105,13 @@ const Index = () => {
 
       {/* NAV */}
       <header className="relative z-20 px-4 pt-4 md:px-8 md:pt-6">
-        <nav className="glass-nav mx-auto flex max-w-7xl items-center justify-between rounded-2xl px-5 py-3 md:px-7 md:py-4">
-          <div />
-
-          <div className="flex items-center gap-1 md:gap-2">
-            <a
-              href="#how-it-works"
-              className="rounded-xl px-4 py-2 text-sm font-semibold text-foreground/80 transition hover:bg-white/50 hover:text-foreground"
-            >
-              Så fungerar det
-            </a>
-            <Button
-              asChild
-              className="rounded-xl px-5 font-semibold text-white shadow-[var(--shadow-soft)] hover:opacity-95"
-              style={{ background: "var(--gradient-cta)" }}
-            >
-              <Link to="/registrera-leverantorer">Registrera</Link>
-            </Button>
-          </div>
+        <nav className="glass-nav mx-auto flex max-w-7xl items-center justify-end rounded-2xl px-5 py-3 md:px-7 md:py-4">
+          <Link
+            to="/"
+            className="text-lg font-bold tracking-tight text-foreground transition hover:opacity-80"
+          >
+            Lumen Analytics
+          </Link>
         </nav>
       </header>
 
