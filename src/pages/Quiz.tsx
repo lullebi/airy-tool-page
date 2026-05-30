@@ -276,6 +276,13 @@ const DEEP_DIVE: Question[] = [
    ========================================================================= */
 
 type Step1State = {
+  // Verksamhetsanalys & Strategi — organisatorisk kontext (styr Åtgärdsplanen,
+  // påverkar inte leverantörspoäng eller ML-vikter).
+  timeHorizon: string; // "A" | "B"
+  infrastructure: string; // "A" | "B"
+  techResource: string; // "A" | "B"
+  regulatoryFocus: string; // "A" | "B"
+  // Legacy-fält behålls för bakåtkompatibilitet i Resultat/scoring.
   priorities: string[]; // multi select
   sector: string;
   euDataWeight: number | null; // 1..5, null = unanswered
