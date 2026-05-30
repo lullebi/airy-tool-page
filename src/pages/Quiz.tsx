@@ -1339,7 +1339,7 @@ const Step6ScoreSummary = ({
             </div>
             <Button
               size="lg"
-              onClick={() => navigate("/atgardsplan", { state: { vendors } })}
+              onClick={() => navigate("/atgardsplan", { state: { vendors, step1 } })}
               className="group shrink-0 rounded-xl px-6 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
               style={{ background: "var(--gradient-cta)" }}
             >
