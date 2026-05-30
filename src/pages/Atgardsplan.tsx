@@ -214,29 +214,35 @@ const Atgardsplan = () => {
                     <p className="text-sm leading-relaxed text-foreground/75">{r.riskParagraph}</p>
                   </div>
                   <Separator />
-                  <div>
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-primary">
-                      Rekommenderade EU-alternativ
+                  {r.eu ? (
+                    <p className="text-sm leading-relaxed text-emerald-700">
+                      Ingen åtgärd krävs. Befintlig infrastruktur uppfyller suveränitetskraven.
                     </p>
-                    {r.alt.loading ? (
-                      <p className="inline-flex items-center gap-2 text-xs text-foreground/60">
-                        <Loader2 className="h-3 w-3 animate-spin" /> Hämtar alternativ…
+                  ) : (
+                    <div>
+                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-primary">
+                        Rekommenderat EU-alternativ
                       </p>
-                    ) : r.alt.eu.length === 0 ? (
-                      <p className="text-xs text-foreground/60">{r.alt.error ?? NO_ALT_MESSAGE}</p>
-                    ) : (
-                      <div className="flex flex-wrap gap-1.5">
-                        {r.alt.eu.map((name) => (
-                          <span
-                            key={name}
-                            className="rounded-full bg-primary/5 px-2.5 py-0.5 text-xs font-medium text-foreground ring-1 ring-primary/20"
-                          >
-                            {name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                      {r.alt.loading ? (
+                        <p className="inline-flex items-center gap-2 text-xs text-foreground/60">
+                          <Loader2 className="h-3 w-3 animate-spin" /> Hämtar alternativ…
+                        </p>
+                      ) : r.alt.eu.length === 0 ? (
+                        <p className="text-xs text-foreground/60">{r.alt.error ?? NO_ALT_MESSAGE}</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {r.alt.eu.map((name) => (
+                            <span
+                              key={name}
+                              className="rounded-full bg-primary/5 px-2.5 py-0.5 text-xs font-medium text-foreground ring-1 ring-primary/20"
+                            >
+                              {name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
