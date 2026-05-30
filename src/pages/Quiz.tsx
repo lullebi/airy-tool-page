@@ -665,32 +665,6 @@ const Quiz = () => {
             />
           )}
           {stepIndex === 1 && (
-            <StepQuestions
-              title="Snabbanalys"
-              subtitle="Generella frågor som gäller alla nuvarande leverantörer."
-              questions={QUICK_SCAN}
-              answers={quickAnswers}
-              setAnswers={setQuickAnswers}
-              missingIds={showErrors ? missingQuickIds : []}
-            />
-          )}
-          {stepIndex === 2 && (
-            <Step3DeepDive
-              enabled={deepDiveEnabled}
-              setEnabled={setDeepDiveEnabled}
-              vendor={currentDeepVendor}
-              vendorIndex={deepVendorIndex}
-              vendorTotal={deepVendors.length}
-              answers={currentDeepAnswers}
-              setAnswers={setCurrentDeepAnswers}
-              activeQuestions={activeDeepQuestions}
-              skippedCertNotice={skipCerts}
-              onPrevVendor={() => setDeepVendorIndex((i) => Math.max(0, i - 1))}
-              canPrevVendor={deepVendorIndex > 0}
-              missingIds={showErrors ? missingDeepIds : []}
-            />
-          )}
-          {stepIndex === 3 && (
             <Step5Measurement
               vendors={vendors}
               step1={step1}
@@ -702,7 +676,7 @@ const Quiz = () => {
               scoreError={scoreError}
             />
           )}
-          {stepIndex === 4 && (
+          {stepIndex === 2 && (
             <Step6ScoreSummary
               vendors={vendors}
               step1={step1}
