@@ -385,16 +385,16 @@ const Index = () => {
                         <p className="font-semibold text-foreground/80">API och uppslag</p>
                         <p>
                           Varje leverantör matchas via ett uppslag i datasetet. Saknad metadata
-                          (land, jurisdiktion, certifieringar) faller tillbaka till Fördjupad analys
-                          där svaren samlas in via quizet.
+                          (land, jurisdiktion, certifieringar) kompletteras via verksamhetsanalysen
+                          där svaren samlas in i Steg 1.
                         </p>
                       </div>
                       <div>
-                        <p className="font-semibold text-foreground/80">Riskpoäng och viktning</p>
+                        <p className="font-semibold text-foreground/80">Risk och viktning</p>
                         <p>
-                          Sammanvägd poäng (0–100) beräknas som Snabbanalys 35 %, Fördjupad analys
-                          35 %, EU-vikt 15 % och Beredskap 15 %. Varje fråga har en intern viktning
-                          (0–1) baserad på regulatorisk tyngd.
+                          Riskbedömningen väger samman objektiva dataattribut, jurisdiktion och
+                          EU-rådighet mot er verksamhetsprofil. Varje attribut har en intern viktning
+                          baserad på regulatorisk tyngd under NIS2, DORA och GDPR.
                         </p>
                       </div>
                       <div>
