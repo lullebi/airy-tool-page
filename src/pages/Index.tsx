@@ -352,8 +352,8 @@ const Index = () => {
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/65">
                   Datasetet samlar information om kända leverantörer. Det används för att besvara
                   frågor som redan finns dokumenterade, exempelvis land, dataplats, certifieringar
-                  och kända regelverksrisker. Om information saknas skickas frågan vidare till
-                  Fördjupad analys.
+                  och kända regelverksrisker. Om information saknas kompletteras profilen via
+                  verksamhetsanalysen.
                 </p>
                 <button
                   type="button"
