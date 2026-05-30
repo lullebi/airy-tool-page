@@ -247,88 +247,67 @@ const Index = () => {
           </div>
 
           {/* Step cards */}
-          <div className="relative mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="relative mt-12 grid grid-cols-1 gap-6 lg:grid-cols-3">
             {[
               {
-                icon: ClipboardList,
-                title: "1. Registrera tech-leverantörer",
-                bullets: [
-                  "Lägg till leverantörer ni använder idag",
-                  "Ange namn, system, land och dataplats",
-                  "Markera leverantörer som måste behållas",
-                ],
-              },
-              {
                 icon: SlidersHorizontal,
-                title: "2. Konfigurering",
-                bullets: [
-                  "Vikta säkerhet, kostnad, efterlevnad eller flexibilitet",
-                  "Välj sektor och betydelse av EU-datalagring",
-                  "Ange er beredskap att byta tjänster",
-                ],
+                step: "Steg 1",
+                title: "Verksamhetsanalys & Strategi",
+                text: "Analysen inleds med en kartläggning av er organisations unika förutsättningar, tidslinjer och regulatoriska tryck under NIS2 eller DORA. Svaren ligger till grund för den slutgiltiga handlingsplanen.",
               },
               {
-                icon: ScanSearch,
-                title: "3. Snabbanalys",
-                bullets: [
-                  "Snabb bedömning av alla leverantörer",
-                  "Kontroll av känslig data och certifieringar",
-                  "Första riskbild baserad på kritikalitet",
-                ],
+                icon: Network,
+                step: "Steg 2",
+                title: "Infrastruktur & Dataproveniens",
+                text: "Här visualiseras er leverantörsportfölj baserat på objektiva attribut direkt från vårt dataset. Verktyget spårar datans faktiska geografiska flöde samt identifierar legala kontrollrisker såsom exponering mot utländsk molnlagstiftning.",
               },
               {
                 icon: ShieldCheck,
-                title: "4. Fördjupad analys",
-                bullets: [
-                  "Följdfrågor för kritiska leverantörer",
-                  "Säkerhetsnivå, incidenthantering och dataplats",
-                  "Jurisdiktion, ägarskap och regelverk",
-                ],
-              },
-              {
-                icon: LineChart,
-                title: "5. Riskanalys och resultat",
-                bullets: [
-                  "Leverantörslista med komponentbidrag och status",
-                  "Total poäng per leverantör",
-                  "Rekommendation: behåll, reducera eller byt",
-                ],
+                step: "Steg 3",
+                title: "Strategisk Åtgärdsplan",
+                text: "I det sista steget sammanfogas er verksamhetsprofil med leverantörernas faktiska jurisdiktion. Resultatet är en skräddarsydd, strategisk åtgärdsplan som identifierar sårbarheter och presenterar suveräna europeiska alternativ.",
               },
             ].map((step, i) => {
               const Icon = step.icon;
-              const [num, ...rest] = step.title.split(". ");
-              const titleText = rest.join(". ");
               return (
-                <div key={i} className="relative">
-                  <div className="glass group h-full rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-deep)]">
-                    <div className="mb-4 flex items-center gap-3">
-                      <span
-                        className="bg-gradient-to-r from-blue-600 to-sky-400 bg-clip-text text-4xl font-bold leading-none text-transparent md:text-5xl"
-                      >
-                        {num}
-                      </span>
-                      <div
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-[var(--shadow-soft)]"
-                        style={{ background: "var(--gradient-cta)" }}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </div>
+                <div
+                  key={i}
+                  className="glass group flex h-full flex-col rounded-3xl p-7 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[var(--shadow-deep)] md:p-8"
+                >
+                  <div className="flex items-center justify-between">
+                    <div
+                      className="inline-flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-[var(--shadow-soft)]"
+                      style={{ background: "var(--gradient-cta)" }}
+                    >
+                      <Icon className="h-5 w-5" />
                     </div>
-                    <h3 className="text-base font-bold leading-snug text-foreground">
-                      {titleText}
-                    </h3>
-                    <ul className="mt-3 space-y-1.5 text-sm leading-relaxed text-foreground/70">
-                      {step.bullets.map((b, bi) => (
-                        <li key={bi} className="flex gap-2">
-                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/70" />
-                          <span>{b}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/50">
+                      {step.step}
+                    </span>
                   </div>
+                  <h3 className="mt-6 text-lg font-bold leading-snug text-foreground md:text-xl">
+                    {step.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-foreground/70">
+                    {step.text}
+                  </p>
                 </div>
               );
             })}
+          </div>
+
+          <div className="mt-10 flex justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-soft)] hover:opacity-95"
+              style={{ background: "var(--gradient-cta)" }}
+            >
+              <Link to="/registrera-leverantorer">
+                Starta Steg 1
+                <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
+              </Link>
+            </Button>
           </div>
 
           {/* Vad mäts? */}
