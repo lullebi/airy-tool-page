@@ -1840,14 +1840,12 @@ const Step5Measurement = ({
           const f = d?.features;
           const cloudAct = f?.cloud_act_exposure ?? v.cloud_act_exposure ?? false;
           const hqInEu = f?.hq_in_eu ?? v.hq_in_eu ?? false;
+          const certScore = f?.cert_score ?? null;
+          const euComplianceScore = f?.eu_compliance_score ?? null;
           const presentCerts = CERT_LABELS.filter((c) => {
             const val = f?.certifications?.[c.key];
             return typeof val === "number" && val > 0;
           });
-          // Datapoäng per pelare (objektiv mappning från datasetlogiken).
-          const jurisScore = cloudAct ? 0 : 100;
-          const ownerScore = hqInEu ? 100 : 0;
-          const techScore = presentCerts.length > 0 ? 100 : 0;
 
           return (
             <section
@@ -1906,9 +1904,6 @@ const Step5Measurement = ({
                       {cloudAct ? "CLOUD ACT EXPONERAD" : "SKYDDAD AV EU-LAG"}
                     </span>
                   </div>
-                  <p className={`mt-3 text-2xl font-extrabold leading-none ${jurisScore === 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                    {jurisScore} <span className="text-sm font-bold text-foreground/40">/ 100p</span>
-                  </p>
                 </div>
 
                 {/* Column 2 — Äganderättslig Suveränitet */}
@@ -1932,9 +1927,6 @@ const Step5Measurement = ({
                       {hqInEu ? "EU-REGISTRERAT MODERBOLAG" : "MODERBOLAG I TREDJELAND"}
                     </span>
                   </div>
-                  <p className={`mt-3 text-2xl font-extrabold leading-none ${ownerScore === 0 ? "text-amber-600" : "text-emerald-600"}`}>
-                    {ownerScore} <span className="text-sm font-bold text-foreground/40">/ 100p</span>
-                  </p>
                 </div>
 
                 {/* Column 3 — Teknisk Säkerhetsverifiering */}
@@ -1965,9 +1957,13 @@ const Step5Measurement = ({
                       </span>
                     )}
                   </div>
-                  <p className={`mt-3 text-2xl font-extrabold leading-none ${techScore === 100 ? "text-blue-700" : "text-foreground/40"}`}>
-                    {techScore} <span className="text-sm font-bold text-foreground/40">/ 100p</span>
-                  </p>
+                  {(certScore !== null || euComplianceScore !== null) && (
+                    <p className="mt-3 text-[10px] font-medium text-foreground/55">
+                      {certScore !== null && `Cert-score ${Math.round(certScore)}`}
+                      {certScore !== null && euComplianceScore !== null && " · "}
+                      {euComplianceScore !== null && `EU-compliance ${Math.round(euComplianceScore)}`}
+                    </p>
+                  )}
                 </div>
               </div>
             </section>
