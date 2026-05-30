@@ -293,7 +293,7 @@ type Answers = Record<string, string>; // questionId -> option label
 
 // VendorLike imported from "@/lib/vendorMapper"
 
-const STEPS = ["Verksamhetsanalys & Strategi", "Infrastruktur & Dataproveniens", "Så räknades poängen fram"] as const;
+const STEPS = ["Verksamhetsanalys & Strategi", "Infrastruktur & Dataproveniens", "Analys & Åtgärdsplan"] as const;
 
 // Canonical "European" check: hq_in_eu === true from GET /vendors.
 // No hardcoded country allowlists, no name-based heuristics.
@@ -1171,6 +1171,35 @@ const eurFmt = new Intl.NumberFormat("sv-SE", {
   maximumFractionDigits: 0,
 });
 
+/* Tailored advisory paragraph driven by the organizational context captured in
+   Step 1 (Verksamhetsanalys & Strategi). Pure presentation — does not alter any
+   objective vendor scores or ML weights. */
+const buildAdvisory = (step1: Step1State): string => {
+  const urgent = step1.timeHorizon === "A";
+  const privateInfra = step1.infrastructure === "A";
+  const highCompetence = step1.techResource === "A";
+  const regNis2Dora = step1.regulatoryFocus === "A";
+
+  const horizonClause = urgent
+    ? "Eftersom ni har angett ett omedelbart behov av en alternativ lösning bör migreringen drivas som ett prioriterat projekt med ett tydligt 1–3 månaders fönster och en konkret exit-plan från nuvarande leverantör"
+    : "Med en strategisk tidshorisont på 6–12 månader rekommenderas en stegvis omställning där ni hinner utvärdera, pilotera och kontraktera europeiska alternativ utan att äventyra pågående drift";
+
+  const infraClause = privateInfra
+    ? "Er preferens för lokalt datacenter eller privat moln talar för en arkitektur där affärskritisk data hålls under egen eller europeisk drift med full kontroll över krypteringsnycklar"
+    : "Er preferens för publikt moln inom EU innebär att fokus bör ligga på leverantörer med verifierad datalagring och bearbetning strikt inom unionen samt avtalsmässig garanti mot tredjelandsöverföring";
+
+  const resourceClause = highCompetence
+    ? "Med hög intern teknisk kompetens kan ni själva leda migrering och underhåll, vilket ger utrymme att välja mer flexibla, självdriftade europeiska plattformar"
+    : "Med begränsade interna resurser bör ni prioritera paketerade Managed Services från europeiska leverantörer som tar ansvar för drift, support och löpande efterlevnad";
+
+  const regClause = regNis2Dora
+    ? "Då NIS2 och DORA sätter högst press ligger tyngdpunkten på driftsäkerhet, kontinuitet och incidentrapportering, vilket gör leverantörens motståndskraft och rapporteringsförmåga till avgörande urvalskriterier"
+    : "Då GDPR och dataskydd sätter högst press ligger tyngdpunkten på juridisk rådighet, datalokalisering och kryptering, vilket gör leverantörens EU-suveränitet och avtalsmässiga dataskydd till avgörande urvalskriterier";
+
+  return `${horizonClause}. ${infraClause}. ${resourceClause}. ${regClause}.`;
+};
+
+
 const Step6ScoreSummary = ({
   vendors,
   step1,
@@ -1453,12 +1482,22 @@ const Step6ScoreSummary = ({
     <section className="rounded-3xl bg-[hsl(var(--sky-100))] p-6 ring-1 ring-[hsl(var(--sky-200))] shadow-[var(--shadow-deep)] md:p-8">
       <header className="mb-6">
         <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-          Så räknades poängen fram
+          Analys & Åtgärdsplan
         </h2>
         <p className="mt-1 text-sm font-medium text-foreground/60">
-          Klicka på ett kort för att se underliggande regelverk, kategorier och kontroller.
+          Skräddarsydd rådgivning utifrån er verksamhetsanalys, följt av hur suveränitetspoängen räknades fram.
         </p>
       </header>
+
+      {/* Skräddarsydd åtgärdsrekommendation baserad på Step 1 (organisatorisk kontext) */}
+      <div className="mb-6 rounded-2xl border-l-4 border-primary bg-white/80 p-5 ring-1 ring-[hsl(var(--sky-200))]">
+        <div className="mb-2 flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <p className="text-sm font-bold uppercase tracking-wider text-primary">Rekommenderad åtgärdsplan</p>
+        </div>
+        <p className="text-sm leading-relaxed text-foreground/80">{buildAdvisory(step1)}</p>
+      </div>
+
 
       {loading && (
         <div className="mb-4 flex items-center gap-2 text-sm text-foreground/70">
@@ -1958,11 +1997,32 @@ const Step5Measurement = ({
                     )}
                   </div>
                   {(certScore !== null || euComplianceScore !== null) && (
-                    <p className="mt-3 text-[10px] font-medium text-foreground/55">
-                      {certScore !== null && `Cert-score ${Math.round(certScore)}`}
-                      {certScore !== null && euComplianceScore !== null && " · "}
-                      {euComplianceScore !== null && `EU-compliance ${Math.round(euComplianceScore)}`}
-                    </p>
+                    <div className="mt-4 space-y-2 border-t border-blue-200/70 pt-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-medium text-foreground/60">
+                          Verifierade Certifikat (ISO/SOC2)
+                        </span>
+                        <span
+                          className={`text-[11px] font-bold uppercase tracking-wider ${
+                            certScore === 1 ? "text-emerald-700" : "text-rose-700"
+                          }`}
+                        >
+                          {certScore === null ? "—" : certScore === 1 ? "Ja" : "Nej"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-medium text-foreground/60">
+                          Fullständig EU-rådighet
+                        </span>
+                        <span
+                          className={`text-[11px] font-bold uppercase tracking-wider ${
+                            euComplianceScore === 1 ? "text-emerald-700" : "text-rose-700"
+                          }`}
+                        >
+                          {euComplianceScore === null ? "—" : euComplianceScore === 1 ? "Ja" : "Nej"}
+                        </span>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
