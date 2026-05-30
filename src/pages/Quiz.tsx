@@ -1482,12 +1482,22 @@ const Step6ScoreSummary = ({
     <section className="rounded-3xl bg-[hsl(var(--sky-100))] p-6 ring-1 ring-[hsl(var(--sky-200))] shadow-[var(--shadow-deep)] md:p-8">
       <header className="mb-6">
         <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-          Så räknades poängen fram
+          Analys & Åtgärdsplan
         </h2>
         <p className="mt-1 text-sm font-medium text-foreground/60">
-          Klicka på ett kort för att se underliggande regelverk, kategorier och kontroller.
+          Skräddarsydd rådgivning utifrån er verksamhetsanalys, följt av hur suveränitetspoängen räknades fram.
         </p>
       </header>
+
+      {/* Skräddarsydd åtgärdsrekommendation baserad på Step 1 (organisatorisk kontext) */}
+      <div className="mb-6 rounded-2xl border-l-4 border-primary bg-white/80 p-5 ring-1 ring-[hsl(var(--sky-200))]">
+        <div className="mb-2 flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <p className="text-sm font-bold uppercase tracking-wider text-primary">Rekommenderad åtgärdsplan</p>
+        </div>
+        <p className="text-sm leading-relaxed text-foreground/80">{buildAdvisory(step1)}</p>
+      </div>
+
 
       {loading && (
         <div className="mb-4 flex items-center gap-2 text-sm text-foreground/70">
