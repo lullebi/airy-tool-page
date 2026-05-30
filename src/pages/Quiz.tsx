@@ -617,14 +617,8 @@ const Quiz = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const togglePriority = (label: string) =>
-    setStep1((s) => {
-      if (s.priorities.includes(label)) {
-        return { ...s, priorities: s.priorities.filter((p) => p !== label) };
-      }
-      if (s.priorities.length >= 3) return s;
-      return { ...s, priorities: [...s.priorities, label] };
-    });
+  const setStrategy = (key: StrategyKey, value: "A" | "B") =>
+    setStep1((s) => ({ ...s, [key]: value }));
 
   return (
     <div className="relative min-h-screen overflow-hidden">
