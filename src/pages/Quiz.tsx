@@ -1456,7 +1456,7 @@ const Step6ScoreSummary = ({
       score: snabbScore,
       regelverk: snabbRegelverk,
       explanation:
-        "Visar leverantörens förmåga att motstå tekniska avbrott och cyberattacker. Mycket hög stabilitet, vilket minimerar risken för oförutsedda systemstopp.",
+        `Den tekniska infrastrukturen är mycket säker (${snabbScore}p) med hög motståndskraft mot avbrott och cyberattacker. Men teknisk säkerhet hindrar inte att åtkomsten till data stängs av på legal eller geopolitisk grund.`,
     },
     {
       key: "deep",
@@ -1465,7 +1465,7 @@ const Step6ScoreSummary = ({
       score: deepScore,
       regelverk: deepRegelverk,
       explanation:
-        "Mäter sårbarheten mot legala och regulatoriska krav (t.ex. NIS2/DORA). Den lägre poängen indikerar att brister i avtalsstrukturer utgör en risk för verksamhetens kontinuitet.",
+        `Ett starkt NIS2-ramverk förhindrar lokala efterlevnadsstopp och säkrar driftskontinuitet. Risken kvarstår dock vid tredjelandsöverföring – data kan lämna EU i ett eller flera led, vilket urholkar den regulatoriska rådigheten.`,
     },
     {
       key: "eu",
@@ -1474,7 +1474,7 @@ const Step6ScoreSummary = ({
       score: euScore,
       regelverk: euRegelverk,
       explanation:
-        "Detta mäter risken för att förlora tillgången till er data. Trots krypteringsskydd innebär en datalokalisering på 0% EU att ni har en kritisk sårbarhet: om leverantören tvingas blockera er åtkomst (t.ex. via US CLOUD Act) förlorar ni rådigheten över er egen data.",
+        `Poängen straffas hårt eftersom datalokaliseringen verifierats till 0% EU på föregående sida. Om den geopolitiska kranen stängs (t.ex. via US CLOUD Act) förlorar verksamheten omedelbart rådigheten över sin egen data.`,
     },
   ];
 
