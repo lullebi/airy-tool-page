@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, Download, ShieldCheck, ShieldAlert, Inbox, Sparkles, Info, Loader2, Globe, Cpu, Server, BadgeCheck, XCircle, Gavel, ScrollText } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, Download, ShieldCheck, ShieldAlert, Inbox, Sparkles, Info, Loader2, Globe, Cpu, Server, BadgeCheck, XCircle, Gavel, ScrollText, Building2, Stamp } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { rescore, type RescoredVendor, type VendorClass } from "@/lib/api";
 import { CLASS_LABELS, CLASS_TAILWIND, RISK_DRIVER_SV, SCORE_CAP, SCORE_TOOLTIP, prioritiesToWeights } from "@/lib/scoringConstants";
@@ -293,7 +293,7 @@ type Answers = Record<string, string>; // questionId -> option label
 
 // VendorLike imported from "@/lib/vendorMapper"
 
-const STEPS = ["Verksamhetsanalys & Strategi", "Resultat på mätning", "Så räknades poängen fram"] as const;
+const STEPS = ["Verksamhetsanalys & Strategi", "Infrastruktur & Dataproveniens", "Så räknades poängen fram"] as const;
 
 // Canonical "European" check: hq_in_eu === true from GET /vendors.
 // No hardcoded country allowlists, no name-based heuristics.
@@ -704,7 +704,7 @@ const Quiz = () => {
               className="group rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
               style={{ background: "var(--gradient-cta)" }}
             >
-              {["Gå till Resultat på mätning", "Visa poängberäkning"][stepIndex]}
+              {["Gå till Infrastruktur & Dataproveniens", "Visa poängberäkning"][stepIndex]}
               <ArrowRight className="ml-1 h-4 w-4 transition group-hover:translate-x-1" />
             </Button>
           ) : (
@@ -1751,15 +1751,17 @@ const buildBadges = (quick: Answers, deep: Answers, hasDeep: boolean, eu: boolea
   return base;
 };
 
+const CERT_LABELS: { key: keyof ApiVendorDetail["features"]["certifications"]; label: string }[] = [
+  { key: "iso27001", label: "ISO 27001" },
+  { key: "soc2", label: "SOC 2" },
+  { key: "dora", label: "DORA" },
+  { key: "nis2", label: "NIS2" },
+  { key: "c5_attestation", label: "C5" },
+  { key: "gdpr_commitments", label: "GDPR" },
+];
+
 const Step5Measurement = ({
   vendors,
-  step1,
-  quick,
-  deepByVendor,
-  hasDeep,
-  scoredMap,
-  scoring,
-  scoreError,
 }: {
   vendors: VendorLike[];
   step1: Step1State;
@@ -1770,27 +1772,7 @@ const Step5Measurement = ({
   scoring: boolean;
   scoreError: string | null;
 }) => {
-  const deepFor = (v: VendorLike) => deepByVendor[v.id] ?? {};
-  const [openId, setOpenId] = useState<string | null>(null);
-  const navigate = useNavigate();
-
-  // Fetch EU alternatives per unique vendor category from API.
-  const [altsByCategory, setAltsByCategory] = useState<Record<string, string[]>>({});
-  const categoriesKey = vendors.map((v) => v.apiCategory ?? v.type ?? "").filter(Boolean).join("|");
-  useEffect(() => {
-    const cats = Array.from(new Set(
-      vendors.map((v) => v.apiCategory ?? v.type).filter((t): t is string => !!t),
-    ));
-    cats.forEach((cat) => {
-      setAltsByCategory((prev) => (prev[cat] ? prev : { ...prev, [cat]: [] }));
-      fetchAlternatives(cat)
-        .then((r) => setAltsByCategory((prev) => ({ ...prev, [cat]: r.eu_alternatives })))
-        .catch(() => {});
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoriesKey]);
-
-  // Fetch full vendor detail (origin/processing/storage regions) per API vendor.
+  // Fetch full vendor detail (raw dataset features) per selected vendor.
   const [detailsById, setDetailsById] = useState<Record<string, ApiVendorDetail>>({});
   const apiIdsKey = vendors.map((v) => v.apiId ?? "").filter(Boolean).join("|");
   useEffect(() => {
@@ -1809,7 +1791,7 @@ const Step5Measurement = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiIdsKey]);
 
-  // Resolve the three technical regions for a vendor (falls back to list-view booleans).
+  // Resolve the three technical regions for a vendor from raw dataset columns.
   const regionsFor = (v: VendorLike) => {
     const d = detailsById[v.apiId ?? ""];
     const f = d?.features;
@@ -1825,820 +1807,169 @@ const Step5Measurement = ({
     const storageText =
       f?.storage_region || (typeof v.storage_in_eu === "boolean" ? (v.storage_in_eu ? "Inom EU" : "Utanför EU") : "—");
     const storageStatus = regionStatus(undefined, f?.storage_in_eu ?? v.storage_in_eu);
-    const statuses: RegionStatus[] = [originStatus, procStatus, storageStatus];
-    const hasNonEu = statuses.includes("noneu");
-    const hasUnknown = statuses.includes("unknown");
-    const euOnes = statuses.filter((s) => s === "eu").length;
-    const mismatch = euOnes > 0 && euOnes < 3; // some EU, some not
     return {
       loading: !!v.apiId && !d,
       origin: { text: originText, status: originStatus },
       processing: { text: procText, status: procStatus },
       storage: { text: storageText, status: storageStatus },
-      hasNonEu,
-      hasUnknown,
-      mismatch,
     };
   };
 
-  const altFor = (v: VendorLike): { name: string; country: string; reason: string } => {
-    const cat = v.apiCategory ?? v.type;
-    const list = cat ? altsByCategory[cat] ?? [] : [];
-    const name = list[0];
-    if (name) {
-      return {
-        name,
-        country: "EU",
-        reason: "EU-baserat alternativ från Eurostack-datasetet.",
-      };
-    }
-    return {
-      name: "Inga EU-alternativ taggade för denna kategori",
-      country: "—",
-      reason: "Saknas i modellen — granska manuellt.",
-    };
-  };
-
-
-
-  const euCount = vendors.filter(isEU).length;
-  const nonEuCount = vendors.length - euCount;
-  const total = vendors.length || 1;
-  const euPct = Math.round((euCount / total) * 100);
-  const nonEuPct = 100 - euPct;
-
-  // Donut math
-  const r = 54;
-  const c = 2 * Math.PI * r;
-  const euDash = (euPct / 100) * c;
-
-  const complianceText =
-    euPct >= 70
-      ? "Hög EU-andel – stark suveränitetsstatus."
-      : euPct >= 40
-        ? "Blandad portfölj – delvis EU-suverän."
-        : "Hög exponering mot icke-EU – ersättning rekommenderas.";
-
-  // Simplified split: "Kända" contains every active vendor regardless of how
-  // it was added (snabbval or manual). "Nischade" only lists vendors that
-  // have actually been put through the deep-dive — those answers exist in
-  // `deepByVendor`. This avoids any reliance on a backend "general vs niche"
-  // category, which the database doesn't model.
-  const kanda = vendors;
-  const nischade = vendors.filter(
-    (v) => Object.keys(deepByVendor[v.id] ?? {}).length > 0,
-  );
-
-  const handleExport = async () => {
-    toast("Genererar högupplöst rapport...", {
-      description: "Eurostack-analys förbereds för nedladdning.",
-    });
-    try {
-      const { default: jsPDF } = await import("jspdf");
-      const doc = new jsPDF({ unit: "pt", format: "a4" });
-      const pageW = doc.internal.pageSize.getWidth();
-      const pageH = doc.internal.pageSize.getHeight();
-      const margin = 48;
-
-      // Palette (RGB)
-      const C = {
-        primary: [15, 27, 61] as [number, number, number],
-        primarySoft: [30, 58, 95] as [number, number, number],
-        emerald: [16, 185, 129] as [number, number, number],
-        rose: [225, 29, 72] as [number, number, number],
-        amber: [245, 158, 11] as [number, number, number],
-        text: [20, 24, 35] as [number, number, number],
-        muted: [107, 114, 128] as [number, number, number],
-        line: [229, 231, 235] as [number, number, number],
-        zebra: [248, 250, 252] as [number, number, number],
-        white: [255, 255, 255] as [number, number, number],
-      };
-      const setFill = (c: [number, number, number]) => doc.setFillColor(c[0], c[1], c[2]);
-      const setStroke = (c: [number, number, number]) => doc.setDrawColor(c[0], c[1], c[2]);
-      const setText = (c: [number, number, number]) => doc.setTextColor(c[0], c[1], c[2]);
-
-      // Data
-      const perVendorTotals = vendors.map((v) => computeVendorScore(v, scoredMap).total);
-      const total = perVendorTotals.length
-        ? Math.round(perVendorTotals.reduce((a, b) => a + b, 0) / perVendorTotals.length)
-        : 0;
-      const euCount = vendors.filter(isEU).length;
-      const nonEuCount = vendors.length - euCount;
-      const euPct = vendors.length ? Math.round((euCount / vendors.length) * 100) : 0;
-
-      // ===== Header band =====
-      setFill(C.primary);
-      doc.rect(0, 0, pageW, 90, "F");
-      setFill(C.emerald);
-      doc.rect(0, 90, pageW, 3, "F");
-      setText(C.white);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
-      doc.text("Eurostack — Suveränitetsrapport", margin, 48);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(200, 215, 235);
-      const headRight = `${new Date().toLocaleDateString("sv-SE")}  ·  ${vendors.length} leverantörer`;
-      doc.text(headRight, pageW - margin, 48, { align: "right" });
-      doc.setFontSize(9);
-      doc.text("Datadriven analys baserad på EU-suveränitetsmodell", margin, 68);
-
-      let y = 90 + 28;
-
-      // ===== Summary card with donut =====
-      const cardH = 170;
-      setFill(C.zebra);
-      setStroke(C.line);
-      doc.setLineWidth(0.6);
-      doc.roundedRect(margin, y, pageW - margin * 2, cardH, 6, 6, "FD");
-
-      // Donut (left)
-      const cx = margin + 80;
-      const cy = y + cardH / 2;
-      const rOuter = 55;
-      const rInner = 34;
-      const drawDonutSegment = (
-        startAngle: number,
-        endAngle: number,
-        color: [number, number, number],
-      ) => {
-        setFill(color);
-        const steps = Math.max(8, Math.ceil(((endAngle - startAngle) / (Math.PI * 2)) * 80));
-        for (let i = 0; i < steps; i++) {
-          const a1 = startAngle + ((endAngle - startAngle) * i) / steps;
-          const a2 = startAngle + ((endAngle - startAngle) * (i + 1)) / steps;
-          const x1o = cx + rOuter * Math.cos(a1);
-          const y1o = cy + rOuter * Math.sin(a1);
-          const x2o = cx + rOuter * Math.cos(a2);
-          const y2o = cy + rOuter * Math.sin(a2);
-          const x1i = cx + rInner * Math.cos(a1);
-          const y1i = cy + rInner * Math.sin(a1);
-          const x2i = cx + rInner * Math.cos(a2);
-          const y2i = cy + rInner * Math.sin(a2);
-          // Quad as two triangles
-          doc.triangle(x1o, y1o, x2o, y2o, x2i, y2i, "F");
-          doc.triangle(x1o, y1o, x2i, y2i, x1i, y1i, "F");
-        }
-      };
-
-      if (vendors.length === 0) {
-        setFill(C.line);
-        doc.circle(cx, cy, rOuter, "F");
-        setFill(C.white);
-        doc.circle(cx, cy, rInner, "F");
-      } else {
-        const euFrac = euCount / vendors.length;
-        const start = -Math.PI / 2;
-        if (euFrac > 0) drawDonutSegment(start, start + Math.PI * 2 * euFrac, C.emerald);
-        if (euFrac < 1) drawDonutSegment(start + Math.PI * 2 * euFrac, start + Math.PI * 2, C.rose);
-      }
-      // Center label
-      setText(C.primary);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
-      doc.text(`${euPct}%`, cx, cy + 2, { align: "center" });
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      setText(C.muted);
-      doc.text("EU", cx, cy + 14, { align: "center" });
-
-      // Legend under donut
-      const legY = y + cardH - 22;
-      setFill(C.emerald);
-      doc.rect(cx - 56, legY, 8, 8, "F");
-      setText(C.text);
-      doc.setFontSize(9);
-      doc.text(`EU (${euCount})`, cx - 44, legY + 7);
-      setFill(C.rose);
-      doc.rect(cx + 6, legY, 8, 8, "F");
-      doc.text(`Icke-EU (${nonEuCount})`, cx + 18, legY + 7);
-
-      // Stats (right)
-      const sx = margin + 180;
-      let sy = y + 28;
-      setText(C.muted);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.text("SAMMANFATTNING", sx, sy);
-      sy += 16;
-      const statRow = (label: string, value: string) => {
-        setText(C.muted);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.text(label, sx, sy);
-        setText(C.text);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.text(value, sx + 160, sy, { align: "left" });
-        sy += 18;
-      };
-      statRow("Total Eurostack-score", `${total} / 100`);
-      statRow("EU-leverantörer", `${euCount} (${euPct}%)`);
-      statRow("Icke-EU-leverantörer", `${nonEuCount} (${100 - euPct}%)`);
-      statRow("Sektor", step1.sector || "–");
-      const prios = step1.priorities.join(", ") || "–";
-      statRow("Prioriteringar", prios.length > 38 ? prios.slice(0, 36) + "…" : prios);
-
-      y += cardH + 26;
-
-      // ===== Vendors table =====
-      setText(C.text);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.text("Leverantörer", margin, y);
-      y += 12;
-
-      const cols = [
-        { key: "#", w: 24, align: "left" as const },
-        { key: "Leverantör", w: 130, align: "left" as const },
-        { key: "Kategori", w: 100, align: "left" as const },
-        { key: "Region", w: 60, align: "left" as const },
-        { key: "Status", w: 110, align: "left" as const },
-        { key: "Score", w: 75, align: "right" as const },
-      ];
-      const tableW = cols.reduce((a, c) => a + c.w, 0);
-      const tableX = margin;
-      const rowH = 22;
-
-      const drawHeader = () => {
-        setFill(C.primary);
-        doc.rect(tableX, y, tableW, rowH, "F");
-        setText(C.white);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(9);
-        let x = tableX + 8;
-        cols.forEach((c) => {
-          doc.text(
-            c.key,
-            c.align === "right" ? x + c.w - 16 : x,
-            y + rowH / 2 + 3,
-            { align: c.align === "right" ? "right" : "left" },
-          );
-          x += c.w;
-        });
-        y += rowH;
-      };
-
-      drawHeader();
-
-      const ensureSpace = (need: number) => {
-        if (y + need > pageH - 60) {
-          doc.addPage();
-          y = margin;
-          drawHeader();
-        }
-      };
-
-      vendors.forEach((v, i) => {
-        ensureSpace(rowH);
-        const status = statusFromVendor(v, scoredMap);
-        const score = computeVendorScore(v, scoredMap).total;
-        const eu = isEU(v);
-        // Zebra
-        if (i % 2 === 0) {
-          setFill(C.zebra);
-          doc.rect(tableX, y, tableW, rowH, "F");
-        }
-        // Bottom line
-        setStroke(C.line);
-        doc.setLineWidth(0.3);
-        doc.line(tableX, y + rowH, tableX + tableW, y + rowH);
-
-        let x = tableX + 8;
-        const cellY = y + rowH / 2 + 3;
-        setText(C.text);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-
-        const clip = (s: string, max: number) => (s.length > max ? s.slice(0, max - 1) + "…" : s);
-
-        // #
-        doc.text(String(i + 1), x, cellY);
-        x += cols[0].w;
-        // Name
-        doc.setFont("helvetica", "bold");
-        doc.text(clip(v.name || "–", 28), x, cellY);
-        doc.setFont("helvetica", "normal");
-        x += cols[1].w;
-        // Category
-        setText(C.muted);
-        doc.text(clip(v.type ?? "–", 22), x, cellY);
-        x += cols[2].w;
-        // Region pill
-        const regionLabel = eu ? "EU" : "Icke-EU";
-        const regionColor = eu ? C.emerald : C.rose;
-        setFill(regionColor);
-        doc.roundedRect(x, y + 5, 44, rowH - 10, 6, 6, "F");
-        setText(C.white);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(8);
-        doc.text(regionLabel, x + 22, y + rowH / 2 + 2.5, { align: "center" });
-        x += cols[3].w;
-        // Status pill
-        const stTone = status.tone as "ok" | "warn" | "bad" | string;
-        const stColor =
-          stTone === "ok" ? C.emerald : stTone === "warn" ? C.amber : C.rose;
-        setFill(stColor);
-        const stLabel = clip(status.label, 18);
-        const stW = Math.min(96, doc.getTextWidth(stLabel) + 16);
-        doc.roundedRect(x, y + 5, stW, rowH - 10, 6, 6, "F");
-        setText(C.white);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(8);
-        doc.text(stLabel, x + stW / 2, y + rowH / 2 + 2.5, { align: "center" });
-        x += cols[4].w;
-        // Score
-        setText(C.text);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.text(`${score}`, x + cols[5].w - 16, cellY, { align: "right" });
-
-        y += rowH;
-      });
-
-      y += 22;
-
-      // ===== Score motivation per vendor =====
-      ensureSpace(40);
-      setText(C.text);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.text("Motivering — varför varje leverantör fick sin poäng", margin, y);
-      y += 16;
-
-      const contentW = pageW - margin * 2;
-      vendors.forEach((v, i) => {
-        const eu = isEU(v);
-        const score = computeVendorScore(v, scoredMap).total;
-        const status = statusFromVendor(v, scoredMap);
-        const badges = buildBadges(
-          quick,
-          deepByVendor[v.id] ?? {},
-          hasDeep,
-          eu,
-        );
-        const drivers = (v.top_risk_drivers ?? [])
-          .map((d) => RISK_DRIVER_SV[d] ?? d)
-          .filter(Boolean);
-
-        // Header line for the vendor
-        ensureSpace(26);
-        setText(C.primary);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.text(`${i + 1}. ${v.name || "–"}`, margin, y);
-        setText(eu ? C.emerald : C.rose);
-        doc.setFontSize(9);
-        doc.text(
-          `${score}/100 · ${status.label} · ${eu ? "EU" : "Icke-EU"}`,
-          pageW - margin,
-          y,
-          { align: "right" },
-        );
-        y += 13;
-
-        // Build the explanation paragraph from the evidence behind each metric.
-        const intro = eu
-          ? "Leverantören är EU-baserad, vilket möjliggör full poäng på datalagring och GDPR förutsatt att svaren stödjer det."
-          : "Leverantören saknar EU-hemvist; datalagring och GDPR nollställs eftersom suveränitet inte kan garanteras vid tredjelandsöverföring (US CLOUD Act).";
-        const metricLines = badges.map(
-          (b) => `• ${b.label}: ${b.value}/100 — ${b.evidence}`,
-        );
-        const driverLine =
-          drivers.length > 0 ? `Främsta riskdrivare: ${drivers.join(", ")}.` : "";
-
-        const paragraph = [intro, ...metricLines, driverLine]
-          .filter(Boolean)
-          .join("\n")
-          // Helvetica i jsPDF använder WinAnsi-encoding. Tecken utanför den
-          // (t.ex. pilen "→", U+2192) tvingar jsPDF att koda HELA raden som
-          // 2-byte-text, vilket lägger in ett mellanrum före varje bokstav.
-          // Byt ut/ta bort sådana tecken så att texten renderas normalt.
-          .replace(/→/g, "»")
-          .replace(/[^\x00-\xff]/g, "");
-        setText(C.text);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5);
-        const lines = doc.splitTextToSize(paragraph, contentW) as string[];
-        lines.forEach((ln) => {
-          ensureSpace(13);
-          doc.text(ln, margin, y);
-          y += 13;
-        });
-        y += 13;
-      });
-
-      y += 12;
-
-      // ===== EU alternatives =====
-      const nonEuVendors = vendors.filter((v) => !isEU(v));
-      if (nonEuVendors.length > 0) {
-        ensureSpace(40);
-        setText(C.text);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(12);
-        doc.text("Rekommenderade EU-alternativ", margin, y);
-        y += 14;
-        nonEuVendors.forEach((v) => {
-          ensureSpace(20);
-          const alt = altFor(v);
-          setFill(C.zebra);
-          setStroke(C.line);
-          doc.setLineWidth(0.4);
-          doc.roundedRect(margin, y, pageW - margin * 2, 22, 4, 4, "FD");
-          setText(C.text);
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(9);
-          doc.text(v.name, margin + 10, y + 14);
-          setText(C.muted);
-          doc.setFont("helvetica", "normal");
-          doc.text("→", margin + 130, y + 14);
-          setText(C.emerald);
-          doc.setFont("helvetica", "bold");
-          doc.text(alt.name, margin + 145, y + 14);
-          setText(C.muted);
-          doc.setFont("helvetica", "normal");
-          doc.text(`(${alt.country})`, margin + 145 + doc.getTextWidth(alt.name) + 6, y + 14);
-          y += 26;
-        });
-      }
-
-      // ===== Footer on every page =====
-      const pageCount = doc.getNumberOfPages();
-      for (let p = 1; p <= pageCount; p++) {
-        doc.setPage(p);
-        setStroke(C.line);
-        doc.setLineWidth(0.4);
-        doc.line(margin, pageH - 36, pageW - margin, pageH - 36);
-        setText(C.muted);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
-        doc.text("© 2026 Lumen Analytics AB — Eurostack", margin, pageH - 22);
-        doc.text(`Sida ${p} / ${pageCount}`, pageW - margin, pageH - 22, { align: "right" });
-      }
-
-      const filename = `eurostack-rapport-${new Date().toISOString().slice(0, 10)}.pdf`;
-      doc.save(filename);
-
-      toast.success("Rapport klar", {
-        description: "Din PDF-rapport har laddats ned.",
-      });
-    } catch (err) {
-      toast.error("Kunde inte generera rapport", {
-        description: err instanceof Error ? err.message : "Okänt fel",
-      });
-    }
-  };
-
-
-  const renderCard = (v: VendorLike) => {
-    const eu = isEU(v);
-    const deep = deepFor(v);
-    const { total: tot } = computeVendorScore(v, scoredMap);
-    const status = statusFromVendor(v, scoredMap);
-    const badges = buildBadges(quick, deep, hasDeep, eu);
-    const isOpen = !eu ? true : openId === v.id;
-    const alt = altFor(v);
-    const reg = regionsFor(v);
-
+  if (vendors.length === 0) {
     return (
-      <div
-        key={v.id}
-        className={`w-full rounded-2xl bg-white/75 p-4 ring-1 transition ${
-          eu ? "ring-emerald-200" : "ring-rose-200"
-        }`}
-      >
-        <button
-          type="button"
-          onClick={() => !eu && setOpenId(isOpen ? null : v.id)}
-          className="w-full text-left"
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="text-sm font-bold text-foreground">{v.name}</p>
-              <p className="text-[11px] font-medium text-foreground/60">
-                {v.type ?? "—"} · {v.country ?? "—"}
-              </p>
-            </div>
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                eu
-                  ? "bg-emerald-100 text-emerald-700"
-                  : "bg-rose-100 text-rose-700"
-              }`}
-            >
-              {eu ? "EU" : "Icke-EU"}
-            </span>
-          </div>
-        </button>
-
-        {/* 1 — TECHNICAL PROVENANCE: where data originates → is processed → is stored */}
-        <div
-          className={`mt-3 rounded-xl p-3 ring-1 ${
-            reg.hasNonEu
-              ? "bg-rose-50/70 ring-rose-200"
-              : reg.hasUnknown
-                ? "bg-amber-50/60 ring-amber-200"
-                : "bg-emerald-50/60 ring-emerald-200"
-          }`}
-        >
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-foreground/55">
-              Teknisk dataproveniens
-            </p>
-            {reg.hasNonEu ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-rose-700">
-                <AlertTriangle className="h-3 w-3" />
-                Risk för avbrott
-              </span>
-            ) : reg.mismatch ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-700">
-                <AlertTriangle className="h-3 w-3" />
-                Jurisdiktionsglapp
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
-                <CheckCircle2 className="h-3 w-3" />
-                Samlad i EU
-              </span>
-            )}
-          </div>
-
-          {reg.loading ? (
-            <p className="flex items-center gap-2 py-2 text-[11px] font-medium text-foreground/55">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Hämtar regioner…
-            </p>
-          ) : (
-            <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-stretch gap-1">
-              <RegionCell icon={Globe} label="Ursprung" location={reg.origin.text} status={reg.origin.status} />
-              <FlowArrow />
-              <RegionCell icon={Cpu} label="Bearbetning" location={reg.processing.text} status={reg.processing.status} />
-              <FlowArrow />
-              <RegionCell icon={Server} label="Lagring" location={reg.storage.text} status={reg.storage.status} />
-            </div>
-          )}
-
-          {!reg.loading && (reg.hasNonEu || reg.mismatch) && (
-            <p className="mt-2 text-[10px] font-medium leading-snug text-foreground/70">
-              {reg.hasNonEu
-                ? "Data lämnar EU i ett eller flera led – konkret risk för avbrott eller dataåtkomst under tredjelandsregler (t.ex. US CLOUD Act)."
-                : "Regionerna spänner över olika jurisdiktioner – verifiera dataflödet mellan ursprung, bearbetning och lagring."}
-            </p>
-          )}
-        </div>
-
-        {/* Risk read */}
-        <div className="mt-3 rounded-lg bg-white/80 px-2.5 py-2 ring-1 ring-white/70">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-foreground/55">
-            Riskprofil
+      <Card title="Infrastruktur & Dataproveniens" subtitle="Inga leverantörer valda.">
+        <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+          <Inbox className="h-8 w-8 text-foreground/40" />
+          <p className="max-w-sm text-sm font-medium text-foreground/60">
+            Registrera minst en leverantör för att kartlägga dess geografiska dataproveniens och tekniska riskprofil.
           </p>
-          <div className="mt-1.5 space-y-1.5">
-            <div className="flex items-start gap-1.5">
-              <AlertTriangle
-                className={`mt-0.5 h-3 w-3 flex-shrink-0 ${eu ? "text-emerald-600" : "text-rose-600"}`}
-              />
-              <p className="text-[11px] font-medium text-foreground/75">
-                <span className="font-bold text-foreground/80">Compliance-risk: </span>
-                <span className={eu ? "font-bold text-emerald-600" : "font-bold text-rose-600"}>
-                  {eu ? "Låg risk" : "Hög risk"}
-                </span>
-                <span className="text-foreground/65">
-                  {eu
-                    ? " – Jurisdiktion inom EU."
-                    : " – Jurisdiktion utanför EU (exponering mot CLOUD Act)."}
-                </span>
-              </p>
-            </div>
-            <div className="flex items-start gap-1.5">
-              <ShieldCheck
-                className={`mt-0.5 h-3 w-3 flex-shrink-0 ${
-                  status.tone === "ok"
-                    ? "text-emerald-600"
-                    : status.tone === "warn"
-                      ? "text-amber-600"
-                      : "text-rose-600"
-                }`}
-              />
-              <p className="text-[11px] font-medium text-foreground/75">
-                <span className="font-bold text-foreground/80">Säkerhetsrisk: </span>
-                <span
-                  className={`font-bold ${
-                    status.tone === "ok"
-                      ? "text-emerald-600"
-                      : status.tone === "warn"
-                        ? "text-amber-600"
-                        : "text-rose-600"
-                  }`}
-                >
-                  {status.tone === "ok" ? "Låg risk" : status.tone === "warn" ? "Medel risk" : "Hög risk"}
-                </span>
-                <span className="text-foreground/65">
-                  {status.tone === "ok"
-                    ? " – Hög teknisk motståndskraft och regulatorisk beredskap (NIS2/DORA)."
-                    : status.tone === "warn"
-                      ? " – Acceptabel teknisk motståndskraft, vissa förbättringsområden."
-                      : " – Bristande teknisk motståndskraft, åtgärder rekommenderas."}
-                </span>
-              </p>
-            </div>
-          </div>
         </div>
-
-        {/* 2 — REGULATORY SUPPORT: certifications as secondary verification ("bevisbörda") */}
-        <div className="mt-3 rounded-lg bg-white/60 px-2.5 py-2 ring-1 ring-white/70">
-          <p className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-foreground/55">
-            <BadgeCheck className="h-3 w-3 text-blue-500" aria-hidden="true" />
-            Regulatoriskt stöd · Bevisbörda
-          </p>
-          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-            {badges.map((b) => {
-              const pass = b.value >= 70;
-              const partial = b.value >= 40 && b.value < 70;
-              const Mark = pass ? CheckCircle2 : partial ? AlertTriangle : XCircle;
-              const markColor = pass ? "text-emerald-600" : partial ? "text-amber-600" : "text-rose-500";
-              return (
-                <div
-                  key={b.key}
-                  title={b.evidence}
-                  className="flex items-center gap-1.5 rounded-md bg-white/80 px-2 py-1 ring-1 ring-white/70"
-                >
-                  <Mark className={`h-3.5 w-3.5 flex-shrink-0 ${markColor}`} aria-hidden="true" />
-                  <span className="truncate text-[10px] font-semibold text-foreground/75">{b.label}</span>
-                  <span className="ml-auto text-[10px] font-bold text-foreground/55">{b.value}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 3 — ACTIONABLE SOLUTION: European alternative */}
-        {!eu && isOpen && (
-          <div className="mt-4 animate-in fade-in slide-in-from-top-1 duration-200">
-            <div className="rounded-lg bg-emerald-200/40 p-3 ring-1 ring-emerald-300/50">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-900/70">
-                Matchande EU-alternativ
-              </p>
-              <p className="mt-0.5 text-sm font-bold text-emerald-950">{alt.name}</p>
-              <p className="text-[11px] font-medium text-emerald-900/75">{alt.country}</p>
-              <p className="mt-1 text-[11px] text-emerald-900/85">{alt.reason}</p>
-            </div>
-          </div>
-        )}
-      </div>
+      </Card>
     );
-  };
-
+  }
 
   return (
     <Card
-      title="Resultat på mätning"
-      subtitle="Översikt av era leverantörer mätt mot Eurostack-standard."
+      title="Infrastruktur & Dataproveniens"
+      subtitle="En objektiv kartläggning av var era valda leverantörers data har sitt ursprung, bearbetas och lagras, samt deras juridiska och tekniska riskattribut direkt från datasetet."
     >
-      {/* HEADER: Donut + summary */}
-      <div className="mb-8 flex flex-col items-center gap-6 rounded-2xl bg-white/60 p-5 ring-1 ring-white/70 md:flex-row md:items-center md:gap-8">
-        <div
-          className="relative h-36 w-36 flex-shrink-0"
-        >
-          <svg viewBox="0 0 140 140" className="h-full w-full -rotate-90">
-            <circle cx="70" cy="70" r={r} fill="none" stroke="hsl(0 80% 60%)" strokeWidth="16" />
-            <circle
-              cx="70"
-              cy="70"
-              r={r}
-              fill="none"
-              stroke="hsl(150 65% 45%)"
-              strokeWidth="16"
-              strokeDasharray={`${euDash} ${c}`}
-              strokeLinecap="butt"
-            />
-          </svg>
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold text-foreground">{euPct}%</span>
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-foreground/60 text-center leading-tight">
-              EU-rådighet
-            </span>
-          </div>
-        </div>
+      <div className="grid gap-6">
+        {vendors.map((v) => {
+          const reg = regionsFor(v);
+          const d = detailsById[v.apiId ?? ""];
+          const f = d?.features;
+          const cloudAct = f?.cloud_act_exposure ?? v.cloud_act_exposure ?? false;
+          const hqInEu = f?.hq_in_eu ?? v.hq_in_eu ?? false;
+          const certScore = f?.cert_score ?? null;
+          const euComplianceScore = f?.eu_compliance_score ?? null;
+          const presentCerts = CERT_LABELS.filter((c) => {
+            const val = f?.certifications?.[c.key];
+            return typeof val === "number" && val > 0;
+          });
 
+          return (
+            <section
+              key={v.id}
+              className="rounded-2xl bg-white/70 p-5 ring-1 ring-white/70 shadow-[var(--shadow-deep)] md:p-6"
+            >
+              {/* Vendor header */}
+              <header className="mb-5 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-bold tracking-tight text-foreground md:text-xl">{v.name}</h3>
+                  {(v.apiCategory ?? v.type) && (
+                    <p className="text-xs font-medium text-foreground/55">{v.apiCategory ?? v.type}</p>
+                  )}
+                </div>
+                {reg.loading && <Loader2 className="h-4 w-4 animate-spin text-foreground/40" />}
+              </header>
 
-
-        <div className="flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/55">
-            Efterlevnadsstatus
-          </p>
-          <p className="mt-1 text-lg font-bold text-foreground">{complianceText}</p>
-          {(() => {
-            const rating =
-              euPct >= 90
-                ? { label: "Utmärkt", tone: "text-emerald-700 bg-emerald-100" }
-                : euPct >= 80
-                  ? { label: "Bra", tone: "text-emerald-700 bg-emerald-100" }
-                  : euPct >= 60
-                    ? { label: "Acceptabelt", tone: "text-amber-700 bg-amber-100" }
-                    : { label: "Otillräckligt", tone: "text-rose-700 bg-rose-100" };
-            const meets = euPct >= 80;
-            return (
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${rating.tone}`}>
-                  {rating.label} enligt Eurostack-standard
-                </span>
-                <span className="text-[11px] font-medium text-foreground/60">
-                  {meets
-                    ? `Tröskeln på 80 % är uppnådd (+${euPct - 80} p över gränsen).`
-                    : `${80 - euPct} p kvar till Eurostack-tröskeln på 80 %.`}
-                </span>
-                <Tooltip delayDuration={150}>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label="Vad krävs för 100 %?"
-                      className="inline-flex h-5 w-5 items-center justify-center rounded-full text-foreground/40 transition hover:bg-white hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                    >
-                      <Info className="h-3.5 w-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs rounded-lg bg-foreground px-3 py-2 text-xs font-medium leading-relaxed text-background shadow-lg">
-                    För att nå 100 % krävs att samtliga leverantörer har huvudkontor och datalagring inom EU/EES, omfattas av EU-jurisdiktion (utan CLOUD Act-exponering) och uppfyller fullständig efterlevnad av GDPR, NIS2 och DORA. Eurostack-tröskeln går vid 80 %.
-                  </TooltipContent>
-                </Tooltip>
+              {/* Geographic provenance pipeline */}
+              <div className="mb-6">
+                <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground/55">
+                  Geografisk dataproveniens
+                </p>
+                <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-stretch gap-1.5">
+                  <RegionCell icon={Globe} label="Ursprungsregion" location={reg.origin.text} status={reg.origin.status} />
+                  <FlowArrow />
+                  <RegionCell icon={Cpu} label="Processeringsregion" location={reg.processing.text} status={reg.processing.status} />
+                  <FlowArrow />
+                  <RegionCell icon={Server} label="Lagringsregion" location={reg.storage.text} status={reg.storage.status} />
+                </div>
               </div>
-            );
-          })()}
-          <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium text-foreground/70">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-              EU: {euCount} ({euPct}%)
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-              Icke-EU: {nonEuCount} ({nonEuPct}%)
-            </span>
-          </div>
-        </div>
+
+              {/* ML risk & compliance grid */}
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                {/* Column 1 — Jurisdiktionell Exponering */}
+                <div
+                  className={`flex flex-col rounded-xl p-4 ring-1 ${
+                    cloudAct ? "bg-rose-50/70 ring-rose-200" : "bg-emerald-50/70 ring-emerald-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {cloudAct ? (
+                      <ShieldAlert className="h-5 w-5 text-rose-600" />
+                    ) : (
+                      <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                    )}
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-foreground/55">
+                      Jurisdiktionell Exponering
+                    </p>
+                  </div>
+                  <div className="mt-3">
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
+                        cloudAct ? "bg-rose-600 text-white" : "bg-emerald-600 text-white"
+                      }`}
+                    >
+                      {cloudAct ? "CLOUD ACT EXPONERAD" : "SKYDDAD AV EU-LAG"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Column 2 — Äganderättslig Suveränitet */}
+                <div
+                  className={`flex flex-col rounded-xl p-4 ring-1 ${
+                    hqInEu ? "bg-emerald-50/70 ring-emerald-200" : "bg-amber-50/70 ring-amber-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Building2 className={`h-5 w-5 ${hqInEu ? "text-emerald-600" : "text-amber-600"}`} />
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-foreground/55">
+                      Äganderättslig Suveränitet
+                    </p>
+                  </div>
+                  <div className="mt-3">
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
+                        hqInEu ? "bg-emerald-600 text-white" : "bg-amber-500 text-white"
+                      }`}
+                    >
+                      {hqInEu ? "EU-REGISTRERAT MODERBOLAG" : "MODERBOLAG I TREDJELAND"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Column 3 — Teknisk Säkerhetsverifiering */}
+                <div className="flex flex-col rounded-xl bg-blue-50/60 p-4 ring-1 ring-blue-200">
+                  <div className="flex items-center gap-2">
+                    <Stamp className="h-5 w-5 text-blue-700" />
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-foreground/55">
+                      Teknisk Säkerhetsverifiering
+                    </p>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {presentCerts.length > 0 ? (
+                      presentCerts.map((c) => (
+                        <span
+                          key={c.key}
+                          className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-800 ring-1 ring-blue-200"
+                        >
+                          <BadgeCheck className="h-3 w-3" />
+                          {c.label}
+                        </span>
+                      ))
+                    ) : reg.loading ? (
+                      <span className="text-[11px] font-medium text-foreground/45">Hämtar verifieringar…</span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-foreground/45 ring-1 ring-foreground/15">
+                        <XCircle className="h-3 w-3" />
+                        Inga verifierade ramverk
+                      </span>
+                    )}
+                  </div>
+                  {(certScore !== null || euComplianceScore !== null) && (
+                    <p className="mt-3 text-[10px] font-medium text-foreground/55">
+                      {certScore !== null && `Cert-score ${Math.round(certScore)}`}
+                      {certScore !== null && euComplianceScore !== null && " · "}
+                      {euComplianceScore !== null && `EU-compliance ${Math.round(euComplianceScore)}`}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+          );
+        })}
       </div>
-
-      {/* UNIFIED VENDOR ANALYSIS */}
-      <div className="mb-6">
-        <div className="mb-2 flex items-baseline justify-between">
-          <h3 className="text-sm font-bold text-foreground">
-            Leverantörsanalys <span className="text-foreground/50">· Samlad vy</span>
-          </h3>
-          <span className="text-[11px] font-medium text-foreground/55">
-            {vendors.length > 0
-              ? `${vendors.length} leverantör${vendors.length === 1 ? "" : "er"}`
-              : "Tom lista"}
-          </span>
-        </div>
-        <div className="flex flex-col gap-3 pb-3">
-          {vendors.length > 0 ? (
-            vendors.map(renderCard)
-          ) : (
-            <div className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-foreground/20 bg-white/50 px-4 py-8 text-center">
-              <Inbox className="h-6 w-6 text-foreground/40" aria-hidden="true" />
-              <p className="text-sm font-semibold text-foreground/70">
-                Inga leverantörer ännu
-              </p>
-              <p className="text-xs text-foreground/55">
-                Lägg till leverantörer via snabbval eller manuell registrering för att se analysen här.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-
-      {/* Sticky Actions */}
-      <div className="sticky bottom-4 mt-4 flex flex-col items-center gap-2">
-        <Button
-          onClick={() => {
-            const scores: Record<string, number> = {};
-            const scoredArr: RescoredVendor[] = [];
-            vendors.forEach((v) => {
-              const r = computeVendorScore(v, scoredMap);
-              scores[v.id] = r.total;
-              if (r.rec) scoredArr.push(r.rec);
-            });
-            navigate("/atgardsplan", { state: { vendors, scores, scored: scoredArr } });
-          }}
-          size="lg"
-          className="group w-full max-w-md rounded-xl px-7 py-6 text-base font-bold text-white shadow-[var(--shadow-glow)] hover:opacity-95"
-          style={{ background: "var(--gradient-cta)" }}
-        >
-          <Sparkles className="mr-2 h-5 w-5" />
-          Se åtgärdsplan
-        </Button>
-        <Button
-          onClick={handleExport}
-          size="sm"
-          variant="outline"
-          className="w-full max-w-md rounded-xl border-primary/30 text-primary hover:bg-primary/5"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Exportera rapport
-        </Button>
-      </div>
-
     </Card>
   );
 };
