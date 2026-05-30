@@ -1448,7 +1448,15 @@ const Step6ScoreSummary = ({
       euScore * BREAKDOWN_WEIGHTS.eu,
   );
 
-  const cards = [
+  const cards: {
+    key: string;
+    title: string;
+    weight: number;
+    score: number;
+    regelverk: BreakdownRegelverk[];
+    explanation: string;
+    checkpoints: { label: string; status: string; score: number }[];
+  }[] = [
     {
       key: "snabb",
       title: "Teknisk Resiliens",
@@ -1456,7 +1464,11 @@ const Step6ScoreSummary = ({
       score: snabbScore,
       regelverk: snabbRegelverk,
       explanation:
-        `Den tekniska infrastrukturen är mycket säker (${snabbScore}p) med hög motståndskraft mot avbrott och cyberattacker. Men teknisk säkerhet hindrar inte att åtkomsten till data stängs av på legal eller geopolitisk grund.`,
+        `Den tekniska infrastrukturen är robust och kan nå 100p – krypteringen är stark, drifttillgängligheten hög och leverantören bär stödjande certifieringar. Detta lager mäter dock enbart teknisk motståndskraft och är helt skilt från legal och geografisk suveränitet: även en tekniskt perfekt leverantör kan stängas av på jurisdiktionell grund.`,
+      checkpoints: [
+        { label: "Teknisk kryptering & Drifttillgänglighet", status: "Verifierad", score: 100 },
+        { label: "Stödjande certifieringar (ISO 27001, SOC2, C5)", status: "Aktiv", score: 100 },
+      ],
     },
     {
       key: "deep",
@@ -1465,7 +1477,11 @@ const Step6ScoreSummary = ({
       score: deepScore,
       regelverk: deepRegelverk,
       explanation:
-        `Ett starkt NIS2-ramverk förhindrar lokala efterlevnadsstopp och säkrar driftskontinuitet. Risken kvarstår dock vid tredjelandsöverföring – data kan lämna EU i ett eller flera led, vilket urholkar den regulatoriska rådigheten.`,
+        `Det regulatoriska ramverket väger tyngst i modellen. NIS2-beredskapen är fullt uppfylld med stark incidentrapportering och säkerhetskrav, medan DORA-motståndskraften endast är delvis täckt utifrån leverantörens finansiella ICT-riskprofil. Tillsammans håller dessa ramverk uppe den regulatoriska rådigheten, men eliminerar inte risken vid tredjelandsöverföring.`,
+      checkpoints: [
+        { label: "NIS2-beredskap (Incidentrapportering & Säkerhetskrav)", status: "Uppfylld", score: 100 },
+        { label: "DORA-motståndskraft (Finansiell ICT-riskprofil)", status: "Delvis", score: 50 },
+      ],
     },
     {
       key: "eu",
@@ -1474,7 +1490,13 @@ const Step6ScoreSummary = ({
       score: euScore,
       regelverk: euRegelverk,
       explanation:
-        `Poängen straffas hårt eftersom datalokaliseringen verifierats till 0% EU på föregående sida. Om den geopolitiska kranen stängs (t.ex. via US CLOUD Act) förlorar verksamheten omedelbart rådigheten över sin egen data.`,
+        `Detta är de geografiska särdrag som driver vår Random Forest-modells riskprediktion. Leverantören är exponerad mot US CLOUD Act, har sitt huvudkontor utanför EU och både lagrar och bearbetar data utanför unionen. Det är denna kontrollrisk som drar ned den samlade suveränitetspoängen – trots att den tekniska resiliensen kan vara 100p förlorar verksamheten omedelbart rådigheten över sin data om den geopolitiska kranen stängs.`,
+      checkpoints: [
+        { label: "US CLOUD Act Exposure (Jurisdiktionell risk)", status: "Hög risk / Exponerad", score: 0 },
+        { label: "Huvudkontor inom EU (hq_in_eu)", status: "Nej / USA", score: 0 },
+        { label: "Fysisk datalagring (storage_region)", status: "Utanför EU", score: 0 },
+        { label: "Geografisk bearbetning (process_region)", status: "Utanför EU / Globalt", score: 0 },
+      ],
     },
   ];
 
