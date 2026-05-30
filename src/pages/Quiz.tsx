@@ -550,7 +550,7 @@ const Quiz = () => {
 
   const canNext = useMemo(() => {
     if (stepIndex === 0)
-      return step1.priorities.length > 0 && step1.sector !== "" && step1.euDataWeight !== null && step1.readiness !== "";
+      return step1.timeHorizon !== "" && step1.infrastructure !== "" && step1.techResource !== "" && step1.regulatoryFocus !== "";
     if (stepIndex === 1) return QUICK_SCAN.every((q) => quickAnswers[q.id]);
     if (stepIndex === 2) {
       if (!deepDiveEnabled || deepVendors.length === 0) return true;
