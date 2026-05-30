@@ -617,14 +617,9 @@ const Quiz = () => {
             <ArrowLeft className="h-4 w-4" />
             Tillbaka
           </Link>
-          <div className="flex items-center gap-2">
-            <span className="hidden rounded-md bg-foreground/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/70 md:inline-block">
-              Verktyg
-            </span>
-            <span className="text-sm font-bold tracking-tight text-foreground">
-              Eurostack Quiz
-            </span>
-          </div>
+          <Link to="/" className="text-lg font-bold tracking-tight text-foreground transition hover:opacity-80">
+            Lumen Analytics
+          </Link>
         </nav>
       </header>
 
