@@ -1200,27 +1200,17 @@ const buildAdvisory = (step1: Step1State): string => {
 };
 
 
-// Exakt rådgivningstext för det kritiska scenariot (tredjelandsexponering +
-// omedelbart behov + publikt EU-moln + NIS2/DORA).
-const PROFILE_EXACT_TEXT =
-  "Leverantören uppvisar strukturella kontrollrisker gällande geopolitisk rådighet. Eftersom er organisation har ett omedelbart förändringsbehov under regulatorisk press (NIS2/DORA) samt kräver en europeisk molnlösning, innebär nuvarande infrastruktur en direkt strategisk verksamhetsrisk. En kontrollerad migrering bör inledas omgående.";
+// Exakt rådgivningstext beroende på leverantörens regulatoriska status.
+const PROFILE_SAFE_TEXT =
+  "Leverantören bedöms ha fullständig geopolitisk rådighet och noll exponering mot tredjelandsstiftning. Befintlig infrastruktur uppfyller rådande suveränitetskrav under GDPR, NIS2 och DORA. Inga migreringsåtgärder krävs för denna tjänst, och organisationen rekommenderas att fortsätta driften i nuvarande miljö.";
+
+const PROFILE_RISK_TEXT =
+  "Leverantören uppvisar strukturella kontrollrisker gällande geopolitisk rådighet och dataägande. Eftersom er verksamhet står under omedelbar regulatorisk press samt har ett uttalat behov av publika molntjänster inom EU, innebär nuvarande leverantörsberoende en direkt strategisk verksamhetsrisk. En kontrollerad migration bör inledas.";
 
 // Genererar en sammanhängande sårbarhetsbedömning (ett stycke, inga punktlistor)
-// utifrån organisationens val i Step 1 samt leverantörens exponering.
-const buildVulnerabilityProfile = (step1: Step1State, exposed: boolean): string => {
-  if (
-    exposed &&
-    step1.timeHorizon === "A" &&
-    step1.infrastructure === "B" &&
-    step1.regulatoryFocus === "A"
-  ) {
-    return PROFILE_EXACT_TEXT;
-  }
-  const exposureClause = exposed
-    ? "Leverantören uppvisar strukturella kontrollrisker gällande geopolitisk rådighet, vilket utgör en strategisk verksamhetsrisk för er organisation"
-    : "Leverantören bedöms ha tillfredsställande geopolitisk rådighet utan akut kontrollrisk";
-  return `${exposureClause}. ${buildAdvisory(step1)}`;
-};
+// utifrån leverantörens exponering mot tredjelandslagstiftning.
+const buildVulnerabilityProfile = (exposed: boolean): string =>
+  exposed ? PROFILE_RISK_TEXT : PROFILE_SAFE_TEXT;
 
 const Step6ScoreSummary = ({
   vendors,
