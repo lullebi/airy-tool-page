@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp, SlidersHorizontal, ShieldCheck, Database, Network, Lock, Landmark, FileText, BadgeCheck, ChevronDown } from "lucide-react";
+import { ArrowRight, Sparkles, BarChart3, Zap, TrendingUp, SlidersHorizontal, ShieldCheck, Database, Network, Lock, Landmark, FileText, BadgeCheck, ChevronDown, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -310,8 +310,22 @@ const Index = () => {
             </Button>
           </div>
 
+          {/* Strategisk kontext — Eurostack */}
+          <div className="mt-10 flex items-start gap-4 rounded-3xl border border-[hsl(var(--sky-200))] bg-[hsl(var(--sky-100))]/70 p-6 shadow-[var(--shadow-soft)] backdrop-blur-sm md:p-7">
+            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/70 text-primary ring-1 ring-[hsl(var(--sky-200))]">
+              <Info className="h-5 w-5" />
+            </span>
+            <p className="text-sm leading-relaxed text-foreground/80 md:text-base">
+              I takt med att europeiska organisationer digitaliseras ökar kraven på datasuveränitet
+              och regulatorisk efterlevnad. Eurostack har utvecklats för att belysa dolda
+              kontrollrisker i leverantörskedjan och hjälpa verksamheter att navigera i det skärpta
+              regelverkslandskapet. Genom att utvärdera teknisk proveniens, ägarförhållanden och
+              juridisk rådighet skapas en tydlig bild av er digitala motståndskraft.
+            </p>
+          </div>
+
           {/* Vad mäts? */}
-          <div className="glass mt-10 rounded-3xl p-7 md:p-9">
+          <div className="glass mt-6 rounded-3xl p-7 md:p-9">
             <div className="mb-5 flex items-center gap-3">
               <div
                 className="grid h-9 w-9 place-items-center rounded-lg text-white"
