@@ -1958,11 +1958,32 @@ const Step5Measurement = ({
                     )}
                   </div>
                   {(certScore !== null || euComplianceScore !== null) && (
-                    <p className="mt-3 text-[10px] font-medium text-foreground/55">
-                      {certScore !== null && `Cert-score ${Math.round(certScore)}`}
-                      {certScore !== null && euComplianceScore !== null && " · "}
-                      {euComplianceScore !== null && `EU-compliance ${Math.round(euComplianceScore)}`}
-                    </p>
+                    <div className="mt-4 space-y-2 border-t border-blue-200/70 pt-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-medium text-foreground/60">
+                          Verifierade Certifikat (ISO/SOC2)
+                        </span>
+                        <span
+                          className={`text-[11px] font-bold uppercase tracking-wider ${
+                            certScore === 1 ? "text-emerald-700" : "text-rose-700"
+                          }`}
+                        >
+                          {certScore === null ? "—" : certScore === 1 ? "Ja" : "Nej"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-medium text-foreground/60">
+                          Fullständig EU-rådighet
+                        </span>
+                        <span
+                          className={`text-[11px] font-bold uppercase tracking-wider ${
+                            euComplianceScore === 1 ? "text-emerald-700" : "text-rose-700"
+                          }`}
+                        >
+                          {euComplianceScore === null ? "—" : euComplianceScore === 1 ? "Ja" : "Nej"}
+                        </span>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
