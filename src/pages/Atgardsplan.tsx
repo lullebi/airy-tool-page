@@ -148,8 +148,8 @@ const Atgardsplan = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Tillbaka
           </Button>
-          <Link to="/" className="text-xs font-medium text-foreground/50 hover:text-foreground">
-            Eurostack
+          <Link to="/" className="text-lg font-bold tracking-tight text-foreground transition hover:opacity-80">
+            Lumen Analytics
           </Link>
         </div>
 
