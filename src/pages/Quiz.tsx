@@ -138,6 +138,56 @@ const STEP1_READINESS: (Option & { description: string })[] = [
   },
 ];
 
+/* Verksamhetsanalys & Strategi — organisatorisk kontext som senare styr
+   Åtgärdsplanen. Påverkar INTE leverantörernas objektiva poäng eller ML-vikter. */
+type StrategyKey = "timeHorizon" | "infrastructure" | "techResource" | "regulatoryFocus";
+
+type StrategyQuestion = {
+  key: StrategyKey;
+  eyebrow: string;
+  text: string;
+  options: { value: "A" | "B"; label: string; description: string }[];
+};
+
+const STRATEGY_QUESTIONS: StrategyQuestion[] = [
+  {
+    key: "timeHorizon",
+    eyebrow: "Tidshorisont & Press",
+    text: "Hur snabbt måste en alternativ lösning vara på plats om er nuvarande leverantör drabbas av regulatoriska begränsningar eller avbrott?",
+    options: [
+      { value: "A", label: "Omedelbart", description: "Kritiskt behov inom 1–3 månader" },
+      { value: "B", label: "Strategiskt", description: "Långsiktig omställning inom 6–12 månader" },
+    ],
+  },
+  {
+    key: "infrastructure",
+    eyebrow: "Infrastrukturpreferens",
+    text: "Vilken typ av infrastruktur föredrar er organisation av strategiska skäl framåt?",
+    options: [
+      { value: "A", label: "Lokalt datacenter / Privat moln", description: "Egen drift eller privat molnlösning" },
+      { value: "B", label: "Publikt moln inom EU", description: "Publikt moln (SaaS/IaaS) men strikt inom EU" },
+    ],
+  },
+  {
+    key: "techResource",
+    eyebrow: "Intern Teknisk Resurs",
+    text: "Hur ser er interna IT-organisations tekniska resurser och kompetens ut?",
+    options: [
+      { value: "A", label: "Hög intern kompetens", description: "Vi kan drifta, migrera och underhålla arkitekturen själva" },
+      { value: "B", label: "Begränsad resurs", description: "Vi är beroende av paketerade Managed Services och extern support" },
+    ],
+  },
+  {
+    key: "regulatoryFocus",
+    eyebrow: "Primärt Regulatoriskt Fokus",
+    text: "Vilket regelverk sätter absolut högst press på er organisation just nu?",
+    options: [
+      { value: "A", label: "NIS2 / DORA", description: "Fokus på driftsäkerhet, kontinuitet och incidentrapportering" },
+      { value: "B", label: "GDPR / Dataskydd", description: "Fokus på personuppgifter, juridisk rådighet och kryptering" },
+    ],
+  },
+];
+
 const QUICK_SCAN: Question[] = [
   {
     id: "qs_sensitive_data",
