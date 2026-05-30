@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, Download, ShieldCheck, ShieldAlert, Inbox, Sparkles, Info, Loader2, Globe, Cpu, Server, BadgeCheck, XCircle, Gavel, ScrollText } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, Download, ShieldCheck, ShieldAlert, Inbox, Sparkles, Info, Loader2, Globe, Cpu, Server, BadgeCheck, XCircle, Gavel, ScrollText, Building2, Stamp } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { rescore, type RescoredVendor, type VendorClass } from "@/lib/api";
 import { CLASS_LABELS, CLASS_TAILWIND, RISK_DRIVER_SV, SCORE_CAP, SCORE_TOOLTIP, prioritiesToWeights } from "@/lib/scoringConstants";
