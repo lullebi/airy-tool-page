@@ -121,19 +121,292 @@ const Atgardsplan = () => {
   );
 
   const handleExport = () => {
-    const blocks = rows.map((r) => {
-      const status = r.eu ? "Regulatoriskt Säker" : "Strukturell Kontrollrisk";
-      const alts = r.alt.eu.length ? r.alt.eu.join(", ") : "Inga taggade EU-alternativ";
-      return `${r.vendor.name} (${r.vendor.type ?? "Tjänst"})\nStatus: ${status}\nBedömning: ${r.riskParagraph}\nRekommenderade EU-alternativ: ${alts}`;
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pageW = 210;
+    const pageH = 297;
+    const margin = 20;
+    const contentW = pageW - margin * 2; // 170
+
+    // Palette
+    const brand: [number, number, number] = [30, 64, 175];
+    const ink: [number, number, number] = [31, 41, 55];
+    const sub: [number, number, number] = [96, 105, 122];
+    const red: [number, number, number] = [176, 58, 58];
+    const green: [number, number, number] = [33, 122, 79];
+    const tint: [number, number, number] = [239, 246, 255];
+    const tintBorder: [number, number, number] = [191, 219, 254];
+    const altRow: [number, number, number] = [247, 249, 252];
+    const badgeBg: [number, number, number] = [237, 242, 248];
+    const lineCol: [number, number, number] = [226, 230, 237];
+
+    const fill = (c: [number, number, number]) => doc.setFillColor(c[0], c[1], c[2]);
+    const stroke = (c: [number, number, number]) => doc.setDrawColor(c[0], c[1], c[2]);
+    const txt = (c: [number, number, number]) => doc.setTextColor(c[0], c[1], c[2]);
+
+    let y = 0;
+
+    // Column geometry for the analysis table
+    const c1 = margin;
+    const w1 = 46;
+    const c2 = margin + 46;
+    const w2 = 34;
+    const c3 = margin + 80;
+    const w3 = 90;
+    const padX = 4;
+    const padY = 5;
+
+    const drawTableHeader = () => {
+      fill(brand);
+      doc.rect(margin, y, contentW, 9, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      txt([255, 255, 255]);
+      doc.text("Leverantör", c1 + padX, y + 6);
+      doc.text("Status", c2 + padX, y + 6);
+      doc.text("Bedömning & rekommendation", c3 + padX, y + 6);
+      y += 9;
+    };
+
+    const layoutBadges = (alts: string[], maxW: number) => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      const bh = 5;
+      const gap = 2;
+      const padb = 2.4;
+      const rowGap = 2;
+      const rows: { text: string; w: number }[][] = [];
+      let cur: { text: string; w: number }[] = [];
+      let curW = 0;
+      alts.forEach((a) => {
+        const tw = doc.getTextWidth(a) + padb * 2;
+        if (curW + tw > maxW && cur.length) {
+          rows.push(cur);
+          cur = [];
+          curW = 0;
+        }
+        cur.push({ text: a, w: tw });
+        curW += tw + gap;
+      });
+      if (cur.length) rows.push(cur);
+      const height = rows.length ? rows.length * bh + (rows.length - 1) * rowGap : 0;
+      return { rows, height, bh, gap, padb, rowGap };
+    };
+
+    // ===== Header banner =====
+    fill(brand);
+    doc.rect(0, 0, pageW, 4, "F");
+    y = margin;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    txt(ink);
+    doc.text("Migreringsunderlag", margin, y + 4);
+    const dateStr = new Date().toLocaleDateString("sv-SE");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    txt(sub);
+    doc.text(dateStr, pageW - margin, y + 4, { align: "right" });
+    y += 9;
+    doc.setFontSize(10);
+    txt(sub);
+    doc.text(
+      "Strategisk leverantörsanalys för datasuveränitet — Lumen Analytics",
+      margin,
+      y + 2,
+    );
+    y += 6;
+    stroke(lineCol);
+    doc.setLineWidth(0.3);
+    doc.line(margin, y, pageW - margin, y);
+    y += 11;
+
+    // ===== Executive summary callout =====
+    const summaryTitle = "Sårbarhetsprofil för ledningsgrupp";
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    const summaryLines = doc.splitTextToSize(profileText, contentW - 16) as string[];
+    const lineH = 5.2;
+    const boxH = 8 + 7 + (summaryLines.length - 1) * lineH + 8;
+    fill(tint);
+    stroke(tintBorder);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, y, contentW, boxH, 3, 3, "FD");
+    fill(brand);
+    doc.roundedRect(margin, y, 1.6, boxH, 0.8, 0.8, "F");
+    let ty = y + 8;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    txt(brand);
+    doc.text(summaryTitle.toUpperCase(), margin + 8, ty);
+    ty += 7;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    txt(ink);
+    summaryLines.forEach((ln) => {
+      doc.text(ln, margin + 8, ty);
+      ty += lineH;
     });
-    const content = `MIGRERINGSUNDERLAG — Eurostack\n\nSårbarhetsprofil för ledningsgrupp:\n${profileText}\n\n— Leverantörsanalys —\n\n${blocks.join("\n\n")}\n`;
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "migreringsunderlag.txt";
-    a.click();
-    URL.revokeObjectURL(url);
+    y += boxH + 12;
+
+    // ===== Section heading =====
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    txt(ink);
+    doc.text("Leverantörsanalys", margin, y);
+    y += 5;
+    stroke(brand);
+    doc.setLineWidth(0.6);
+    doc.line(margin, y, margin + 24, y);
+    y += 8;
+
+    drawTableHeader();
+
+    rows.forEach((r, idx) => {
+      const statusText = r.eu ? "Regulatoriskt Säker" : "Strukturell Kontrollrisk";
+      const safeMsg =
+        "Ingen åtgärd krävs. Befintlig infrastruktur uppfyller suveränitetskraven.";
+
+      // Measure column blocks
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      const nameLines = doc.splitTextToSize(r.vendor.name, w1 - 2 * padX) as string[];
+      doc.setFontSize(8);
+      const catLines = doc.splitTextToSize(r.vendor.type ?? "Tjänst", w1 - 2 * padX) as string[];
+      const nameH = nameLines.length * 4.6 + 1.5 + catLines.length * 4;
+
+      doc.setFontSize(9);
+      const statusLines = doc.splitTextToSize(statusText, w2 - 2 * padX) as string[];
+      const statusH = statusLines.length * 4.6;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      const assessLines = doc.splitTextToSize(r.riskParagraph, w3 - 2 * padX) as string[];
+      const assessH = assessLines.length * 4.6;
+
+      const safeLines = doc.splitTextToSize(safeMsg, w3 - 2 * padX) as string[];
+      const alts = r.alt.eu;
+      let extraH = 0;
+      let badges: ReturnType<typeof layoutBadges> | null = null;
+      if (r.eu) {
+        extraH = 1.5 + safeLines.length * 4.6;
+      } else if (alts.length) {
+        badges = layoutBadges(alts, w3 - 2 * padX);
+        extraH = 2 + 4 + badges.height + 1;
+      } else {
+        extraH = 2 + 4.6;
+      }
+
+      const rowH = Math.max(nameH, statusH, assessH + extraH) + 2 * padY;
+
+      // Page break (re-draw table header)
+      if (y + rowH > pageH - margin - 6) {
+        doc.addPage();
+        y = margin;
+        drawTableHeader();
+      }
+
+      if (idx % 2 === 1) {
+        fill(altRow);
+        doc.rect(margin, y, contentW, rowH, "F");
+      }
+
+      const ystart = y + padY + 2;
+
+      // Column 1 — Leverantör
+      let ny = ystart;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      txt(ink);
+      nameLines.forEach((ln) => {
+        doc.text(ln, c1 + padX, ny);
+        ny += 4.6;
+      });
+      ny += 1.5;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      txt(sub);
+      catLines.forEach((ln) => {
+        doc.text(ln, c1 + padX, ny);
+        ny += 4;
+      });
+
+      // Column 2 — Status
+      let sy = ystart;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      txt(r.eu ? green : red);
+      statusLines.forEach((ln) => {
+        doc.text(ln, c2 + padX, sy);
+        sy += 4.6;
+      });
+
+      // Column 3 — Bedömning & rekommendation
+      let ay = ystart;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      txt(ink);
+      assessLines.forEach((ln) => {
+        doc.text(ln, c3 + padX, ay);
+        ay += 4.6;
+      });
+      ay += 1.5;
+
+      if (r.eu) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        txt(green);
+        safeLines.forEach((ln) => {
+          doc.text(ln, c3 + padX, ay);
+          ay += 4.6;
+        });
+      } else if (badges) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7);
+        txt(brand);
+        doc.text("REKOMMENDERAT EU-ALTERNATIV", c3 + padX, ay);
+        ay += 4;
+        let by = ay + 1;
+        badges.rows.forEach((row) => {
+          let bxx = c3 + padX;
+          row.forEach((b) => {
+            fill(badgeBg);
+            doc.roundedRect(bxx, by - 3.6, b.w, badges!.bh, 1.2, 1.2, "F");
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(7.5);
+            txt(ink);
+            doc.text(b.text, bxx + badges!.padb, by);
+            bxx += b.w + badges!.gap;
+          });
+          by += badges!.bh + badges!.rowGap;
+        });
+      } else {
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(8.5);
+        txt(sub);
+        doc.text("Inga taggade EU-alternativ för denna kategori.", c3 + padX, ay);
+      }
+
+      stroke(lineCol);
+      doc.setLineWidth(0.2);
+      doc.line(margin, y + rowH, margin + contentW, y + rowH);
+      y += rowH;
+    });
+
+    // ===== Footer (page numbers + confidentiality) on every page =====
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      stroke(lineCol);
+      doc.setLineWidth(0.2);
+      doc.line(margin, pageH - 14, pageW - margin, pageH - 14);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      txt(sub);
+      doc.text("Konfidentiellt — Endast för internt bruk", margin, pageH - 9);
+      doc.text("Lumen Analytics", pageW / 2, pageH - 9, { align: "center" });
+      doc.text(`Sida ${i} av ${pageCount}`, pageW - margin, pageH - 9, { align: "right" });
+    }
+
+    doc.save("migreringsunderlag.pdf");
   };
 
   return (
