@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldAlert, Download, Loader2 } from "lucide-react";
+import { ArrowLeft, ShieldAlert, ShieldCheck, Download, Loader2 } from "lucide-react";
 import jsPDF from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { fetchAlternatives, type RescoredVendor } from "@/lib/api";
 import type { VendorLike } from "@/lib/vendorMapper";
@@ -72,6 +80,7 @@ const Atgardsplan = () => {
   const step1: Step1Like = state.step1 ?? {};
 
   const [altsByCategory, setAltsByCategory] = useState<Record<string, AltState>>({});
+  const [completionOpen, setCompletionOpen] = useState(false);
 
   useEffect(() => {
     const categories = Array.from(
@@ -538,12 +547,45 @@ const Atgardsplan = () => {
         <div className="flex justify-center pt-2">
           <Button
             variant="outline"
-            onClick={() => navigate("/quiz", { state: { vendors: state.vendors, stepIndex: 2 } })}
+            onClick={() => setCompletionOpen(true)}
             className="rounded-xl"
           >
             Slutför Konsultation
           </Button>
         </div>
+
+        <Dialog open={completionOpen} onOpenChange={setCompletionOpen}>
+          <DialogContent className="rounded-2xl shadow-xl sm:max-w-md">
+            <DialogHeader>
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <ShieldCheck className="h-6 w-6 text-primary" />
+              </div>
+              <DialogTitle className="text-center text-xl">Analysen är slutförd</DialogTitle>
+              <DialogDescription className="text-center">
+                Riskbedömningen har sammanställts och leverantörsanalysen är nu klar. Resultatet kan användas som beslutsunderlag för vidare utvärdering.
+              </DialogDescription>
+            </DialogHeader>
+            <p className="text-center text-xs text-muted-foreground">
+              Tack för att ni använder Eurostack.
+            </p>
+            <DialogFooter className="mt-2 gap-2 sm:justify-center">
+              <Button
+                variant="outline"
+                onClick={() => setCompletionOpen(false)}
+                className="rounded-xl"
+              >
+                Stäng
+              </Button>
+              <Button
+                onClick={() => { setCompletionOpen(false); navigate("/"); }}
+                className="rounded-xl text-white"
+                style={{ background: "var(--gradient-cta)" }}
+              >
+                Till startsidan
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
